@@ -6,3 +6,7 @@ objectdetection/test/result/
 objectdetection/test/models/
 
 objectdetection/test/images/
+
+objectdetection/test/__pycache__/
+
+objectdetection/coral/
