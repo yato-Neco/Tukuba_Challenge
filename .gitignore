@@ -1,0 +1,8 @@
+
+objectdetection/test/tensorflow-models/
+
+objectdetection/test/result/
+
+objectdetection/test/models/
+
+objectdetection/test/images/
