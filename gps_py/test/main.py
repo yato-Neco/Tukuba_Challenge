@@ -25,6 +25,32 @@ class GPS:
             return True
         else:
             return False
+    
+
+    def is_into_r(self, LonLat:Tuple[float,float], r:float) -> bool:
+
+
+        if (self.LonLat1[0] - r) < LonLat[0] < (self.LonLat1[0] + r) and (self.LonLat1[1] - r) < LonLat[1] < (self.LonLat1[1] + r):
+            return True
+        else:
+            return False
+
+        
+
+
+    def nav(input) -> None:
+
+        """
+        Example
+
+        [(0.0,1.0),(2.0,3.0),(4.0,5.0)]
+
+
+        0 -> 1 -> 2 -> 3
+
+
+        """
+        pass
 
     def println(self) -> None:
         print('%s %s %s %s' % (self.LonLat1, self.LonLat2, self.LonLat3, self.LonLat4))
@@ -32,3 +58,7 @@ class GPS:
 
 tmp = GPS((35.627490,139.339816),(35.627608,139.340224),(35.627774,139.339650),(35.627939,139.339977))
 print(tmp.is_into_x2((35.627791,139.339956)))
+
+tmp = GPS((35.627741,139.339908))
+
+print(tmp.is_into_r((35.627791,139.339956),0.000100))
