@@ -1,5 +1,6 @@
 from tkinter.messagebox import NO
 from typing import List, Tuple, Dict, Set, Optional
+import math
 
 class GPS:
     
@@ -15,11 +16,19 @@ class GPS:
         self.LonLat4 = LonLat4
 
     def is_into_x4(self,LonLat:Tuple[float,float]) -> bool:
+        """
+        4点のBOXの中にいるか判定
+
+        """
         pass
         
         
 
     def is_into_x2(self, LonLat:Tuple[float,float]) -> bool:
+        """
+        非推奨
+        2点からなるBoxの中にいるか判定
+        """
 
         if self.LonLat1[0] < LonLat[0] < self.LonLat4[0] and self.LonLat1[1] < LonLat[1] < self.LonLat4[1]:
             return True
@@ -28,7 +37,10 @@ class GPS:
     
 
     def is_into_r(self, LonLat:Tuple[float,float], r:float) -> bool:
-
+        """
+        GPSの引数LonLat1を中心点としたほぼ半径2rにいるか判定
+        ＊円なのかも怪しい....
+        """
 
         if (self.LonLat1[0] - r) < LonLat[0] < (self.LonLat1[0] + r) and (self.LonLat1[1] - r) < LonLat[1] < (self.LonLat1[1] + r):
             return True
