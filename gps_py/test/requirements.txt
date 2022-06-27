@@ -1,0 +1,2 @@
+pyproj == 3.3.1
+serial_asyncio == 0.6
