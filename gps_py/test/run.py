@@ -5,6 +5,7 @@ import time
 
 now = []
 
+
 class Output(asyncio.Protocol):
     def connection_made(self, transport):
         self.transport = transport
@@ -30,28 +31,19 @@ class Output(asyncio.Protocol):
 async def gps_test():
     print("NAV Start!!")
 
-
-    tmp = GPS(point_list=[
-              (35.627741, 139.340910), (35.627095, 139.341195)])
-
-    print(tmp.nav((35.627741, 139.339908)))
-    print(tmp.nav((35.627741, 139.339908), True))
+    tmp = GPS(
+        point_list=[
+            (35.627148, 139.340235), (35.626668, 139.340600), (35.626254, 139.341007), (35.625778, 139.341501)])
 
     while True:
-        if len(now) > 1:
-            Lon = None
-            Lat = None
-            try:
-                Lon = float(now[1].replace("Lon=", ""))
-                Lat = float(now[0].replace("Lat=", ""))
-            except Exception as e:
-                print(e)
 
-            print((Lon),(Lat))
+        if len(now) == 2:
+            Lon = float(now[1])
+            Lat = float(now[0])
 
-            
+            tmp.nav((Lat, Lon))
+
         await asyncio.sleep(0.1)
-
 
 
 loop = asyncio.get_event_loop()

@@ -36,16 +36,24 @@ class GPS:
         else:
             return False
 
-    def is_into_r(self, now_LatLon: Tuple[float, float], r: float) -> bool:
+    def is_into_r(self, now_LatLon: Tuple[float, float], LatLon1: Tuple[float, float] = None,  r: float  = 0.0) -> bool:
         """
         GPSの引数LatLon1を中心点としたほぼ半径2rにいるか判定
         ＊円なのかも怪しい....
         """
 
-        if (self.LatLon1[0] - r) < now_LatLon[0] < (self.LatLon1[0] + r) and (self.LatLon1[1] - r) < now_LatLon[1] < (self.LatLon1[1] + r):
-            return True
+        if LatLon1 == None:
+
+            if (self.LatLon1[0] - r) < now_LatLon[0] < (self.LatLon1[0] + r) and (self.LatLon1[1] - r) < now_LatLon[1] < (self.LatLon1[1] + r):
+                return True
+            else:
+                return False
         else:
-            return False
+            if (LatLon1[0] - r) < now_LatLon[0] < (LatLon1[0] + r) and (LatLon1[1] - r) < now_LatLon[1] < (LatLon1[1] + r):
+                return True
+            else:
+                return False
+
 
     def zaimuth_return(self, now_LatLon: Tuple[float, float], LatLon: Tuple[float, float] = None) -> Dict["azimuth", "back_azimuth"]:
         """
@@ -71,28 +79,19 @@ class GPS:
 
             return {"azimuth": azimuth, "back_azimuth": back_azimuth}
 
-    def nav(self, now_LatLon: Tuple[float, float], flag:bool = False) -> None:
+    def nav(self, now_LatLon: Tuple[float, float],) -> None:
+
+        flag = self.is_into_r(now_LatLon,self.point_list[0],0.0001)
 
         if flag:
+            print("Ok")
+            print(self.zaimuth_return(now_LatLon, self.point_list[0]))
+            flag = False
             self.point_list.pop(0)
+        
+        if len(self.point_list) == 0:
+            print("GG")
 
-        print(self.point_list)
-        print(self.zaimuth_return(now_LatLon, self.point_list[0]))
-
-
-
-
-        """
-        Example
-
-        [(0.0,1.0),(2.0,3.0),(4.0,5.0)]
-
-
-        0 -> 1 -> 2 -> 3
-
-
-        """
-        pass
 
     
 
