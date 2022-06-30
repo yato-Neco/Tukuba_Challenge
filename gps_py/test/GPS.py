@@ -2,7 +2,7 @@ from typing import List, Tuple, Dict, Set, Optional
 from pyproj import Geod
 import asyncio
 
-
+#GPSのclass
 class GPS:
 
     LatLon1 = None
