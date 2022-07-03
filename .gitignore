@@ -10,3 +10,13 @@ objectdetection/test/images/
 objectdetection/test/__pycache__/
 
 objectdetection/coral/
+
+objectdetection/train/.venv/
+
+objectdetection/train/dataset/
+
+objectdetection/fifty/.ipynb_checkpoints/
+
+objectdetection/train25/.venv/
+
+objectdetection/train25/dataset/
