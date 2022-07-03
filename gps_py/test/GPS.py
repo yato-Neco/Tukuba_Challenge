@@ -84,10 +84,12 @@ class GPS:
         flag = self.is_into_r(now_LatLon,self.point_list[0],0.0001)
 
         if flag:
-            print("Ok")
-            print(self.zaimuth_return(now_LatLon, self.point_list[0]))
             flag = False
             self.point_list.pop(0)
+            print("Ok")
+            print(self.zaimuth_return(now_LatLon, self.point_list[0]))
+            print(self.point_list)
+
         
         if len(self.point_list) == 0:
             print("GG")
