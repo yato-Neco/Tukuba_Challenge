@@ -1,0 +1,10 @@
+
+objectdetection/train/.venv/
+
+objectdetection/train/dataset/
+
+objectdetection/train25/.venv/
+
+objectdetection/train25/dataset/
+
+objectdetection/fifty/.ipynb_checkpoints/
