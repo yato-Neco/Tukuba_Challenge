@@ -1,4 +1,6 @@
 from typing import List, Tuple, Dict, Set, Optional
+
+import scipy as sp
 from pyproj import Geod
 import asyncio
 
@@ -10,6 +12,8 @@ class GPS:
     LatLon3 = None
     LatLon4 = None
     point_list = []
+
+
 
     def __init__(self, LatLon1: Tuple[float, float] = None, LatLon2: Tuple[float, float] = (None, None), LatLon3: Tuple[float, float] = (None, None), LatLon4: Tuple[float, float] = (None, None), point_list = []):
         self.point_list = point_list
@@ -78,6 +82,20 @@ class GPS:
             back_azimuth = result[1]
 
             return {"azimuth": azimuth, "back_azimuth": back_azimuth}
+    
+
+    def spped(self, now_LatLon: Tuple[float, float], LatLon: Tuple[float, float] = None,) -> float:
+        g = Geod(ellps='WGS84')
+        time :float = 3.0
+        result = g.inv(now_LatLon[1], now_LatLon[0],
+                           LatLon[1], LatLon[0])
+        distance = result[3]
+
+
+        speed = distance / time 
+
+
+        return speed
 
     def nav(self, now_LatLon: Tuple[float, float],) -> None:
 
