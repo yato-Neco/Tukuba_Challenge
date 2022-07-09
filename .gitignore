@@ -1,10 +1,21 @@
-
 objectdetection/train/.venv/
 
-objectdetection/train/dataset/
 
+objectdetection/train/dataset/
 objectdetection/train25/.venv/
 
-objectdetection/train25/dataset/
 
+objectdetection/train25/dataset/
 objectdetection/fifty/.ipynb_checkpoints/
+objectdetection/test/tensorflow-models/
+objectdetection/test/result/
+objectdetection/test/models/
+main_program/rust/obtflite/target/
+objectdetection/train25/dataset/
+objectdetection/train25/.venv/
+objectdetection/fifty/.ipynb_checkpoints/
+objectdetection/train/dataset/
+objectdetection/train/.venv/
+objectdetection/coral/
+objectdetection/test/__pycache__/
+objectdetection/test/images/
