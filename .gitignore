@@ -20,3 +20,5 @@ objectdetection/fifty/.ipynb_checkpoints/
 objectdetection/train25/.venv/
 
 objectdetection/train25/dataset/
+
+main_program/rust/obtflite/target/
