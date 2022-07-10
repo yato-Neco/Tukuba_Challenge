@@ -19,3 +19,4 @@ objectdetection/train/.venv/
 objectdetection/coral/
 objectdetection/test/__pycache__/
 objectdetection/test/images/
+main_program/rust/callPython/target/

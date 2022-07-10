@@ -17,7 +17,7 @@ struct MotorGPIO {
 
 impl MotorGPIO {
 
-
+    
     pub fn new(r_pin: [u8; 2], l_pin: [u8; 2]) -> MotorGPIOs {
 
         let mut r_pin0: OutputPin = Gpio::new().unwrap().get(self.r_pin[0]).unwrap().into_output();
