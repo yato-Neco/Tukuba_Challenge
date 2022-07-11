@@ -4,6 +4,7 @@ use std::{thread, vec};
 use std::time::Duration;
 
 mod robot;
+mod senser;
 
 fn main() {
 
@@ -30,7 +31,7 @@ fn py_test(){
     https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
 
     */
-    robot::tflite::python().unwrap();
+    senser::tflite::python().unwrap();
 
 }
 

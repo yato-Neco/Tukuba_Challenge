@@ -14,6 +14,9 @@ import platform
 class CallTFlite(object):
 
     t = None
+    labels = None
+    interpreter = None
+
 
     def __init__(self):
         self.t = "hello"
@@ -55,24 +58,32 @@ class CallTFlite(object):
     def hello(self):
         return self.t
 
-    def start(self):
-        labels = self.load_labels("./scripts/coco_labels.txt") if "./scripts/coco_labels.txt" else {}
-        interpreter =self. make_interpreter("./scripts/lite-model_efficientdet_lite0_int8_1.tflite")
-        interpreter.allocate_tensors()
 
-        image = Image.open("./scripts/dog2.jpg")
-        scale = detect.set_input(interpreter, image.size,
+    def load_mode_label(self):
+        self.labels = self.load_labels("./py_scripts/coco_labels.txt") if "./py_scripts/coco_labels.txt" else {}
+        self.interpreter =self. make_interpreter("./py_scripts/lite-model_efficientdet_lite0_int8_1.tflite")
+        self.interpreter.allocate_tensors()
+        
+
+    def start(self):
+        
+
+        image = Image.open("./py_scripts/dog2.jpg")
+        scale = detect.set_input(self.interpreter, image.size,
                            lambda size: image.resize(size, Image.ANTIALIAS))
 
-        interpreter.invoke()
-        objs = detect.get_output(interpreter, 0.4, scale)
+        self.interpreter.invoke()
+        objs = detect.get_output(self.interpreter, 0.4, scale)
 
         if not objs:
             print('No objects detected')
 
         for obj in objs:
-            print(labels.get(obj.id, obj.id))
+            print(self.labels.get(obj.id, obj.id))
             print('  id:    ', obj.id)
             print('  score: ', obj.score)
             print('  bbox:  ', obj.bbox)
+        
+
+        return objs
 
