@@ -1,6 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyList};
 
+
+/*
+python 呼び出せるコード。
+説明はまた今度
+*/
 pub fn python() -> PyResult<()> {
     Python::with_gil(|py| {
         let syspath: &PyList =
