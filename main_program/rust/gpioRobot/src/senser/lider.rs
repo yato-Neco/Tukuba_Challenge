@@ -2,8 +2,8 @@ use std::time::Duration;
 use std::io;
 use std::io::Write;
 
-#[test]
 
+#[test]
 fn lider(){
     let mut port = serialport::new("/dev/ttyUSB0", 115200)
         .stop_bits(serialport::StopBits::One)
@@ -16,13 +16,30 @@ fn lider(){
     });
 
 
-    let mut serial_buf: Vec<u8> = vec![0; 1000];
+
+    let mut serial_buf: Vec<u8> = vec![0; 15000];
+    //1 2 3 4 5 6
+
+
+    //let mut tmp = [];
+    
+    
     loop {
-        match port.read(serial_buf.as_mut_slice()) {
-            Ok(t) => io::stdout().write_all(&serial_buf[..t]).unwrap(),
+        
+         match port.read(serial_buf.as_mut_slice()) {
+            Ok(t) => println!("{:?}",&serial_buf[..t]),
             Err(_e) => {},
         }
+        
+        
+       
     }
 
 
 }
+
+
+/*
+
+
+*/
