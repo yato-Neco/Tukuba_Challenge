@@ -75,14 +75,14 @@ class CallTFlite(object):
         self.interpreter.invoke()
         objs = detect.get_output(self.interpreter, 0.4, scale)
 
-        if not objs:
+        """if not objs:
             print('No objects detected')
 
         for obj in objs:
             print(self.labels.get(obj.id, obj.id))
             print('  id:    ', obj.id)
             print('  score: ', obj.score)
-            print('  bbox:  ', obj.bbox)
+            print('  bbox:  ', obj.bbox)"""
         
 
         return objs
