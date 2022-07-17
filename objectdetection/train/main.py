@@ -172,7 +172,7 @@ val_acc = model.history['val_accuracy']
 loss = model.history['loss']
 val_loss = model.history['val_loss']
 
-epochs_range = range(epochs)
+epochs_range = range(30)
 
 plt.figure(figsize=(8, 8))
 plt.subplot(1, 2, 1)

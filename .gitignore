@@ -20,3 +20,7 @@ objectdetection/coral/
 objectdetection/test/__pycache__/
 objectdetection/test/images/
 main_program/rust/callPython/target/
+
+main_program/rust/lidar_plot/target/
+
+objectdetection/train/

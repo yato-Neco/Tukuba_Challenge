@@ -1,2 +1,2 @@
 pub mod tflite;
-pub mod lider;
+pub mod lidar;
