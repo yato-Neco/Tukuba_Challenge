@@ -8,19 +8,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut ld1 = [170, 85, 14, 34, 133, 143, 223, 168, 26, 86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 8, 156, 8, 168, 8, 184, 8, 196, 8, 212, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 238, 6, 0, 0, 0, 0, 0, 0, 0, 0];
 
-    
+    let mut ld2 = [170, 85, 42, 40, 93, 170, 51, 20, 217, 245, 186, 220, 41, 222, 156, 223, 40, 224, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 2, 0, 0, 0, 0, 74, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 182, 9, 144, 9, 220, 9, 40, 10, 0, 0, 150, 13, 216, 12, 180, 12, 148, 12, 56, 12, 52, 11];    
 
-    println!("len {}",ld0[3]);
-    println!("FSA angle {} {}",ld0[4], ld0[5]);
-    println!("LSA angle {} {}",ld0[6], ld0[7]);
+    //println!("len {}",ld0[3]);
+    //println!("FSA angle {}",((u32::from_str_radix(&hex2(&mut [ld0[5],ld0[4]]), 16).unwrap()) >> 1) as f32 / 64.0);
+    //println!("LSA angle {}",((u32::from_str_radix(&hex2(&mut [ld0[7],ld0[6]]), 16).unwrap()) >> 1) as f32 / 64.0);
 
-    println!("angle {}",(28645 >> 1) as f32 / 64.0);
+    //println!("TEST angle {}",(28645 >> 1) as f32 / 64.0);
     //println!("{}",ld0[7]);
 
-    change(&mut ld0);
+    change(&mut ld2);
 
 
-    let (mut f, mut b) = ld0.split_at_mut(10);
+    let (mut f, mut b) = ld2.split_at_mut(10);
     let mut tmp2 = data_shaping(&b);
 
 
@@ -32,12 +32,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for j in tmp2.iter_mut() {
 
-        data.push(u32::from_str_radix(&hex2(j), 16).unwrap() / 4);
+        data.push(u32::from_str_radix(&hex2(j), 16).unwrap() as f32 / 4.0);
         
     }
 
     println!("{:?}",data);    
     println!("{:?}",data.len());
+
+    /*
+
+    for i in 2..39 {
+        println!("{}",intermediate_angle((ld2[3] - 1) as usize, i,223.78,243.47));
+
+    }
+    
+    */
+
+    let mut x = std::f64::consts::FRAC_PI_4;
+
+    
+    println!("{}",x);
+
+    x = 3.14 / 2.0;
+
+    println!("{}",(x.sin()));    
+
+
+    for (i,data) in ld1.iter().enumerate() {
+        
+        let angcorrect = 0;
+
+
+        //println!("{}",data);
+
+
+        
+
+
+        
+
+    }
+
 
 
     
@@ -77,6 +112,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+
+
+
+
+
+fn intermediate_angle(LSN:usize,i:usize,angleFSA:f32,angleLSA:f32) -> f32{
+    //diff angleFSA - angleLSA
+
+
+    (angleLSA - angleFSA) / (LSN as f32 - 1.0) * (i - 1) as f32 + angleFSA
+
+
+
+}
 
 
 
