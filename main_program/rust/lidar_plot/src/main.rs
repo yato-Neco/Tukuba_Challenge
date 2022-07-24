@@ -1,5 +1,11 @@
 use std::{u32, ops::Add};
 
+use plotters::prelude::*;
+use plotters::coord::types::RangedCoordf32;
+use rand::SeedableRng;
+use rand_distr::{Distribution, Normal};
+use rand_xorshift::XorShiftRng;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3000Hz
 
@@ -48,14 +54,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     */
 
-    let mut x = std::f64::consts::FRAC_PI_4;
 
+    let x = std::f64::consts::PI / 4.0;
+    let abs_difference = x.atan();
     
-    println!("{}",x);
 
-    x = 3.14 / 2.0;
+    println!("{}",abs_difference);
 
-    println!("{}",(x.sin()));    
+
 
 
     for (i,data) in ld1.iter().enumerate() {
@@ -76,37 +82,69 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     
-    /*
+    
 
-    let root = BitMapBackend::new("0.png", (640, 480)).into_drawing_area();
+    let root = BitMapBackend::new("0.png", (1024, 768)).into_drawing_area();
 
-    root.fill(&RGBColor(240, 200, 200))?;
+    root.fill(&WHITE)?;
 
-    let root = root.apply_coord_spec(Cartesian2d::<RangedCoordf32, RangedCoordf32>::new(
-        0f32..1f32,
-        0f32..1f32,
-        (0..640, 0..480),
-    ));
+    let sd = 0.13;
 
-    let dot_and_label = |x: f32, y: f32| {
-        return EmptyElement::at((x, y))
-            + Circle::new((0, 0), 3, ShapeStyle::from(&BLACK).filled())
-            + Text::new(
-                format!("({:.2},{:.2})", x, y),
-                (10, 0),
-                ("sans-serif", 15.0).into_font(),
-            );
+    let random_points: Vec<(f64, f64)> = {
+        let norm_dist = Normal::new(0.5, sd).unwrap();
+        let mut x_rand = XorShiftRng::from_seed(*b"MyFragileSeed123");
+        let mut y_rand = XorShiftRng::from_seed(*b"MyFragileSeed321");
+        let x_iter = norm_dist.sample_iter(&mut x_rand);
+        let y_iter = norm_dist.sample_iter(&mut y_rand);
+        x_iter.zip(y_iter).take(5000).collect()
     };
 
-    root.draw(&dot_and_label(0.5, 0.6))?;
-    root.draw(&dot_and_label(0.25, 0.33))?;
-    root.draw(&dot_and_label(0.8, 0.8))?;
-    root.draw(&dot_and_label(0.8, 0.6))?;
-    root.present()?;
+    let mut points = Vec::new();
+
+    points.push((0.5_f64,0.5_f64));
+    points.push((0.7_f64,0.0_f64));
+
+
+    let areas = root.split_by_breakpoints([944], [80]);
+
+    let mut x_hist_ctx = ChartBuilder::on(&areas[0])
+        .y_label_area_size(40)
+        .build_cartesian_2d((0.0..1.0).step(0.01).use_round().into_segmented(), 0..250)?;
+    let mut y_hist_ctx = ChartBuilder::on(&areas[3])
+        .x_label_area_size(40)
+        .build_cartesian_2d(0..250, (0.0..1.0).step(0.01).use_round())?;
+    let mut scatter_ctx = ChartBuilder::on(&areas[2])
+        .x_label_area_size(40)
+        .y_label_area_size(40)
+        .build_cartesian_2d(0f64..1f64, 0f64..1f64)?;
+    scatter_ctx
+        .configure_mesh()
+        .disable_x_mesh()
+        .disable_y_mesh()
+        .draw()?;
+    scatter_ctx.draw_series(
+        points
+            .iter()
+            .map(|(x, y)| Circle::new((*x, *y), 2, GREEN.filled())),
+    )?;
+    let x_hist = Histogram::vertical(&x_hist_ctx)
+        .style(GREEN.filled())
+        .margin(0)
+        .data(points.iter().map(|(x, _)| (*x, 1)));
+    let y_hist = Histogram::horizontal(&y_hist_ctx)
+        .style(GREEN.filled())
+        .margin(0)
+        .data(points.iter().map(|(_, y)| (*y, 1)));
+
+    x_hist_ctx.draw_series(x_hist)?;
+    y_hist_ctx.draw_series(y_hist)?;
+
+    // To avoid the IO failure being ignored silently, we manually call the present function
+    root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
     
     
     
-    */
+    
 
 
     Ok(())

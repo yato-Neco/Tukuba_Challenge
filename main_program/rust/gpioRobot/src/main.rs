@@ -3,28 +3,31 @@ use std::time::Duration;
 use std::{thread, vec};
 
 mod robot;
-mod senser;
+mod sensor;
 
 fn main() {
     let (tx, rx) = mpsc::channel();
 
     let mut handles = vec![];
+    let mut handles_data = vec![];
 
-    let lider = thread::spawn(move || {
-        tx.send("t").unwrap();
-        println!("lider");
-    });
+    const SENSER_HANDLES_LEN:u32 = 4;
 
-    let motor = thread::spawn(|| {
-        println!("motor");
 
-    });
+    for i in 0..SENSER_HANDLES_LEN {
+        handles_data.push(mpsc::Sender::clone(&tx));
+    }
 
-    handles.push(lider);
-    handles.push(motor);
 
+    handles.push(s0(handles_data[0].to_owned()));
+    handles.push(s1(handles_data[1].to_owned()));
+    handles.push(s2(handles_data[2].to_owned()));
+    handles.push(s3(handles_data[3].to_owned()));
+    
+    let handles_len = handles.len();
+    
+    
     let mut i = 0;
-
 
 
 
@@ -33,11 +36,28 @@ fn main() {
 
         i+=1;
     }
+
+
+    //time_sleep(3);
+
+
+    for (i, received) in rx.iter().enumerate() {
+        println!("{:?}", received);
+        //println!("{}",i);
+        if i == (handles_len - 1) {break};
+
+    }
     
 
 
     Motor();
 }
+
+
+
+
+
+
 
 //#[test] はpy_test()だけを動かすことができる
 #[test]
@@ -50,7 +70,7 @@ fn py_test() {
     https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
 
     */
-    senser::tflite::python().unwrap();
+    sensor::tflite::python().unwrap();
 }
 
 //#[cfg(target_os = "linux")]linux の場合呼び出される関数
@@ -66,3 +86,53 @@ pub fn Motor() {
 //#[cfg(target_os = "windows")]はwindows の場合呼び出される関数
 #[cfg(target_os = "windows")]
 pub fn Motor() {}
+
+
+fn s0(tx:mpsc::Sender<Vec<u64>> ) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        println!("s0");
+        time_sleep(0);
+        tx.send(vec![0]).unwrap();
+
+    })
+    
+}
+
+fn s1(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
+    thread::spawn(move|| {
+        println!("s1");
+        time_sleep(1);
+        tx.send(vec![1]).unwrap();
+
+
+    })
+
+}
+
+fn s2(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
+    thread::spawn(move|| {
+        println!("s2");
+        time_sleep(2);
+        tx.send(vec![2]).unwrap();
+
+
+    })
+
+}
+
+
+fn s3(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
+    thread::spawn(move|| {
+        println!("s3");
+        time_sleep(5);
+        tx.send(vec![3]).unwrap();
+
+
+    })
+    
+}
+
+#[inline]
+fn time_sleep(sec:u64) {
+    thread::sleep(Duration::from_secs(sec));
+}
