@@ -1,63 +1,116 @@
+use std::collections::HashMap;
+use std::panic;
 use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Mutex;
 use std::time::Duration;
 use std::{thread, vec};
 
 mod robot;
 mod sensor;
 
+
+
+/// ┌────────┐    ┌────────┐
+/// │thread:1│    │thread:2│
+/// └───┬────┘    └────┬───┘
+///     │              │
+///     └──────┬───────┘
+///            │
+///            │
+/// ┌──────────▼───────────┐     ┌─────────────────────────┐
+/// │                      │     │     send_panic_msg      │
+/// │  thread_generate()   │     │                         │
+/// │                      │     │ ┌─────────┐ ┌─────────┐ │
+/// └──────────┬───────────┘     │ │thread1()│ │thread2()│ ├──┐
+///            │                 │ └─────────┘ └─────────┘ │  │
+///            │                 │                         │  │
+///            │                 │      thread_spwan       │  │panic!
+///            │                 │                         │  │
+///            │                 └────────────▲────────────┘  │
+///            │                              │               │
+///            └──────────────────────────────┘               │
+///                                                           │
+///                                                           │
+///                                                        ┌──▼─┐
+///                                                        │main│
+///                                                        └────┘
+
+
 fn main() {
-    let (tx, rx) = mpsc::channel();
+    //println!("{:?}",contacts);
 
-    let mut handles = vec![];
-    let mut handles_data = vec![];
+    let mut contacts: HashMap<&str, fn(Sender<String>, Sender<String>)> = HashMap::new();
 
-    const SENSER_HANDLES_LEN:u32 = 4;
+    //let mut tname = Vec::new();
 
+    //let (tx, rx) = mpsc::channel();
 
-    for i in 0..SENSER_HANDLES_LEN {
-        handles_data.push(mpsc::Sender::clone(&tx));
-    }
+    contacts.insert("name-s3", s3);
+    contacts.insert("name-s4", s4);
+    //contacts.insert("name-s5", s5);
 
+    /*
+    for (name, i) in contacts {
+        let tx1 = mpsc::Sender::clone(&tx);
 
-    handles.push(s0(handles_data[0].to_owned()));
-    handles.push(s1(handles_data[1].to_owned()));
-    handles.push(s2(handles_data[2].to_owned()));
-    handles.push(s3(handles_data[3].to_owned()));
-    
-    let handles_len = handles.len();
-    
-    
-    let mut i = 0;
+        let _thread =  thread::Builder::new().name(name.to_string()).spawn(move || {
+            i(tx1);
+        }).unwrap();
 
-
-
-    for handle in handles {
-        handle.join().expect(&format!("err handle index by {}",i));
-
-        i+=1;
-    }
-
-
-    //time_sleep(3);
-
-
-    for (i, received) in rx.iter().enumerate() {
-        println!("{:?}", received);
-        //println!("{}",i);
-        if i == (handles_len - 1) {break};
+        tname.push(_thread);
 
     }
-    
 
+    */
+
+    let (sendr_err__handles, receiver_err_handle): (Sender<String>, Receiver<String>) =
+        mpsc::channel();
+
+    let (sendr_msg, receiver_msg): (Sender<String>, Receiver<String>) =
+        mpsc::channel();
+
+    let handle_len = contacts.len();
+
+    thread_generate(contacts.clone(), &sendr_err__handles, &sendr_msg);
+
+    //thread_generate!(s4);
+
+    //let mut count = 1;
+    //let mut tmp = Vec::new();
+
+    loop {
+        //println!("{}",count);
+        let rethread = contacts.clone();
+
+        //println!("{}",receiver_join_handle.recv().unwrap());
+
+        for j in receiver_msg.try_recv() {
+            println!("{}", j);
+        }
+
+
+        println!("main");
+
+        time_sleep(1);
+    }
+
+    //println!("------------------------------------");
+
+    //time_sleep(1);
 
     Motor();
 }
 
+#[test]
+fn test() {
+    panic::set_hook(Box::new(|panic_info| {
+        println!("test");
+        println!("{}", panic_info);
+    }));
 
-
-
-
-
+    panic!("Normal panic");
+}
 
 //#[test] はpy_test()だけを動かすことができる
 #[test]
@@ -87,52 +140,128 @@ pub fn Motor() {
 #[cfg(target_os = "windows")]
 pub fn Motor() {}
 
+fn s3(panic_msg: Sender<String>, msg: Sender<String>) {
+    let mut c = 0;
 
-fn s0(tx:mpsc::Sender<Vec<u64>> ) -> thread::JoinHandle<()> {
-    thread::spawn(move || {
-        println!("s0");
-        time_sleep(0);
-        tx.send(vec![0]).unwrap();
+    send_panic_msg(panic_msg);
 
-    })
-    
+    loop {
+        if c > 0 {
+            panic!("panic")
+        };
+        println!("s3 is moved");
+        time_sleep(10);
+        //c += 1;
+
+        msg.send("re".to_owned()).unwrap();
+    }
 }
 
-fn s1(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
-    thread::spawn(move|| {
-        println!("s1");
+fn s4(panic_msg: Sender<String>, msg: Sender<String>) {
+    send_panic_msg(panic_msg);
+    let mut c = 0;
+
+    loop {
+        if c > 0 {
+            panic!("panic")
+        };
+
+        println!("s4 is moved");
+        //panic!();
         time_sleep(1);
-        tx.send(vec![1]).unwrap();
-
-
-    })
-
+        //c += 1;
+    }
 }
 
-fn s2(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
-    thread::spawn(move|| {
-        println!("s2");
-        time_sleep(2);
-        tx.send(vec![2]).unwrap();
+fn s5(panic_msg: Sender<String>) {
+    send_panic_msg(panic_msg);
+    let mut c = 0;
 
+    loop {
+        if c > 0 {
+            panic!("panic")
+        };
 
-    })
-
+        println!("s5 is moved");
+        time_sleep(1);
+        //panic!();
+        //c += 1;
+    }
 }
-
-
-fn s3(tx:mpsc::Sender<Vec<u64>>) -> thread::JoinHandle<()> {
-    thread::spawn(move|| {
-        println!("s3");
-        time_sleep(5);
-        tx.send(vec![3]).unwrap();
-
-
-    })
-    
-}
-
 #[inline]
-fn time_sleep(sec:u64) {
+fn time_sleep(sec: u64) {
     thread::sleep(Duration::from_secs(sec));
+}
+
+// スレッド生成
+fn thread_generate(
+    threads: HashMap<&str, fn(Sender<String>, Sender<String>)>,
+    err: &Sender<String>,
+    msg: &Sender<String>,
+)
+/* ->   (Vec<&str>, std::sync::mpsc::Receiver<String>)*/
+{
+    //let mut join_handle: Vec<thread::JoinHandle<()>> = Vec::new();
+
+    /*
+
+    let (sendr_join_handles, receiver_join_handle): (Sender<String>, Receiver<String>) =
+        mpsc::channel();
+
+    let join_handle_name: Vec<&str> = threads
+        .to_owned()
+        .into_iter()
+        .map(|(name, _value)| name)
+        .collect();
+
+    */
+
+    //println!("{:?}",join_handle_name);
+
+    for (name, i) in threads {
+        let sendr_join_handle_errmsg = mpsc::Sender::clone(err);
+        let sendr_join_handle_msg = mpsc::Sender::clone(msg);
+
+        let _thread = thread::Builder::new()
+            .name(name.to_string())
+            .spawn(move || {
+                i(sendr_join_handle_errmsg, sendr_join_handle_msg);
+            })
+            .unwrap();
+
+        //join_handle.push(_thread);
+    }
+
+    //(join_handle_name, receiver_join_handle)
+}
+
+//独自panicシステム
+fn send_panic_msg(panic_msg: Sender<String>) {
+    let default_hook: Box<dyn Fn(&panic::PanicInfo) + Sync + Send> = panic::take_hook();
+    let m: Mutex<Sender<String>> = Mutex::new(panic_msg);
+
+    panic::set_hook(Box::new(move |panic_info: &panic::PanicInfo| {
+        let handle: thread::Thread = thread::current();
+
+        let t: std::sync::MutexGuard<Sender<String>> = m.lock().unwrap();
+
+        t.send(handle.name().unwrap().to_owned()).unwrap();
+
+        default_hook(panic_info)
+    }));
+}
+
+#[macro_export]
+macro_rules! thread_generate {
+    ( $( $x:expr ),* ) => {
+        {
+            $(
+
+                thread::spawn(move ||  {
+                    $x();
+                });
+            )*
+
+        }
+    };
 }
