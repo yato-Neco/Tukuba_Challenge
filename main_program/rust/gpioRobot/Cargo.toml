@@ -9,3 +9,4 @@ edition = "2021"
 #rppal = { version = "0.13.1", features = ["hal"] }
 pyo3 = { version = "0.16.5", features = ["auto-initialize"] }
 serialport = "4.0.0"
+nav-types = "0.5.1"

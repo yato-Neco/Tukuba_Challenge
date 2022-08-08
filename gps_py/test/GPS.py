@@ -120,3 +120,17 @@ class GPS:
               (self.LatLon1, self.LatLon2, self.LatLon3, self.LatLon4))
 
 
+
+
+
+
+g = Geod(ellps='WGS84')
+
+pos_a = (35.629514,139.904730)
+pos_b = (35.629614,139.904830)
+
+result = g.inv(pos_a[1], pos_a[0],
+                           pos_b[1], pos_b[0])
+azimuth = result[0]
+print(azimuth)
+#39.22883123445416
