@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyList};
 
@@ -6,6 +8,9 @@ use pyo3::types::{IntoPyDict, PyList};
 python 呼び出せるコード。
 説明はまた今度
 */
+
+
+
 #[test]
 pub fn python() -> PyResult<()> {
     Python::with_gil(|py| {
@@ -19,10 +24,23 @@ pub fn python() -> PyResult<()> {
         let tflite = script.call1(()).unwrap();
 
         tflite.call_method0("load_mode_label")?;
-    
+        
+        
+
         let mp =  tflite.call_method0("start")?;
 
-        println!("{:?}",mp);
+        let a:Vec<[f64;6]>  = mp.extract()?;
+
+        //[Object(id=17, score=0.8515625, bbox=BBox(xmin=392, ymin=14, xmax=873, ymax=670))]
+        //(&str,usize),(&str,f64), (&str,(&str, usize, &str, usize, &str, usize, &str, usize))
+
+        for i in a.iter() {
+            println!("{:?}",i);
+        }
+
+
+
+        
         Ok(())
     })
 }

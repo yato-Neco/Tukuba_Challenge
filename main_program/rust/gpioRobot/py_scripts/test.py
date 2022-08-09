@@ -68,22 +68,33 @@ class CallTFlite(object):
     def start(self):
         
 
-        image = Image.open("./py_scripts/dog2.jpg")
+        image = Image.open("./py_scripts/human.jpg")
         scale = detect.set_input(self.interpreter, image.size,
                            lambda size: image.resize(size, Image.ANTIALIAS))
 
         self.interpreter.invoke()
         objs = detect.get_output(self.interpreter, 0.4, scale)
 
+
+
         """if not objs:
             print('No objects detected')
 
+        """
+
+        b = []
+
         for obj in objs:
-            print(self.labels.get(obj.id, obj.id))
-            print('  id:    ', obj.id)
-            print('  score: ', obj.score)
-            print('  bbox:  ', obj.bbox)"""
+            a = []
+            a.append(obj.id)
+            a.append(obj.score)
+            a.append(obj.bbox.xmin)
+            a.append(obj.bbox.ymin)
+            a.append(obj.bbox.xmax)
+            a.append(obj.bbox.ymax)
+            b.append(a)
+    
         
 
-        return objs
+        return b
 

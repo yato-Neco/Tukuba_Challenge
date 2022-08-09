@@ -70,9 +70,9 @@ fn main() {
     let (sendr_msg, receiver_msg): (Sender<String>, Receiver<String>) =
         mpsc::channel();
 
-    let handle_len = contacts.len();
+    let _handle_len = contacts.len();
 
-    thread_generate(contacts.clone(), &sendr_err__handles, &sendr_msg);
+    thread_generate(contacts, &sendr_err__handles, &sendr_msg);
 
     //thread_generate!(s4);
 
@@ -81,13 +81,15 @@ fn main() {
 
     loop {
         //println!("{}",count);
-        let rethread = contacts.clone();
+        //let rethread = contacts.clone();
 
         //println!("{}",receiver_join_handle.recv().unwrap());
 
         for j in receiver_msg.try_recv() {
             println!("{}", j);
         }
+
+        
 
 
         println!("main");
@@ -104,12 +106,7 @@ fn main() {
 
 #[test]
 fn test() {
-    panic::set_hook(Box::new(|panic_info| {
-        println!("test");
-        println!("{}", panic_info);
-    }));
-
-    panic!("Normal panic");
+    
 }
 
 //#[test] はpy_test()だけを動かすことができる
