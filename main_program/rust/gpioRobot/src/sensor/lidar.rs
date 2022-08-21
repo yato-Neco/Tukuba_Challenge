@@ -2,7 +2,7 @@ use std::io;
 use std::io::Write;
 use std::time::Duration;
 
-#[test]
+//#[test]
 fn lider() {
     let mut port = serialport::new("COM4", 115200)
         .stop_bits(serialport::StopBits::One)

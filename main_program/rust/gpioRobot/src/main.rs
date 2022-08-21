@@ -40,7 +40,7 @@ use sensor::gps::GPSmodule;
 */
 
 fn main() {
-    const S: &str = r"
+    const S: &str = r#"
      _____ _             _     _____       _           _   
     / ____| |           | |   |  __ \     | |         | |  
    | (___ | |_ __ _ _ __| |_  | |__) |___ | |__   ___ | |_ 
@@ -49,7 +49,7 @@ fn main() {
    |_____/ \__\__,_|_|   \__| |_|  \_\___/|_.__/ \___/ \__|
                                                            
                                                            
-    ";
+    "#;
 
     println!("{}", S);
 
@@ -66,34 +66,34 @@ fn main() {
 
     let d: u16 = 0xFFFF;
 
-    // 0: 0 前後 1 右 2 左 3
-    // 1: 16段階速度(前後) stop 0
-    // 2: 360 / 16
-    // 3:
+    // 0: 0 前後 1 右 2 左 3 F無視
+    // 1: 16段階速度(前後) stop 0 F 無視
+    // 2: ms 0: 100 1: 200 2: 300 ..
+    // 3: 
 
     loop {
         for d in receiver_msg.try_recv() {
-            /*
+            println!("1: {}", (d & 0x0F00) >> 8_u8);
+            println!("3: {}", (d & 0x000F) >> 0_u8);
 
+            /*
             println!("0: {}", (d & 0xF000) >> 12);
             println!("1: {}", (d & 0x0F00) >> 8);
             println!("2: {}", (d & 0x00F0) >> 4);
             println!("3: {}", (d & 0x000F) >> 0);
-
-
             */
 
-            println!("catch");
+
+            //println!("catch");
         }
-        time_sleep(1);
+        ms_sleep(500);
     }
 }
 
 #[test]
 fn test() {}
 
-//#[test] はpy_test()だけを動かすことができる
-#[test]
+//#[test]
 fn py_test() {
     /*unwrap()　はResult(型)で包まれた値を元の値へ戻すメゾット
     ことの時、エラー処理を追加する。
@@ -126,44 +126,73 @@ pub fn Motor() {
 fn s3(panic_msg: Sender<String>, msg: Sender<u16>) {
     send_panic_msg(panic_msg);
 
-    let mut latlot: Vec<(f64, f64)> = Vec::new();
-    let mut nlatlot = (36.061899, 136.222481);
+    let t: f64 = 10.0_f64.powf(-6.0);
 
-    latlot.push((36.061899, 136.222482));
+    let s:u8 = 0xff;
+
+    let mut latlot: Vec<(f64, f64)> = Vec::new();
+    let mut nlatlot = (36.000000, 136.000000);
+
+    latlot.push((37.000000, 136.000_000));
+    latlot.push((37.000000, 137.000000));
+    latlot.push((36.000000, 137.000000));
+    latlot.push((36.000000, 136.000000));
+
     //latlot.push((36.061899, 136.222481));
     //latlot.push((36.061899, 136.232481));
 
-    let t = 10.0_f64.powf(-6.0);
-
-
     let mut tmp = GPSmodule {
         r: 0.0,
-        latlot: latlot,
+        latlot: &mut latlot,
     };
 
     loop {
         //println!("{:?}", nlatlot);
-
+        //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff)
         let flag = tmp.nav(nlatlot);
 
         if flag.0 {
             msg.send(0x0000).unwrap();
-
+            //latlot.push((36.061899, 136.222483));
             break;
         } else {
-            //println!("azimuth {}", flag.1 .0);
+            println!("azimuth {}", flag.1 .0);
             println!("distance {}", flag.1 .1);
             //println!("now {:?}", nlatlot);
             //println!("diff {:?}", flag.2);
 
-            nlatlot.0+= (flag.2.0) * t;
-            nlatlot.1+= (flag.2.1) * t;
+            //println!("{}", (flag.2 .0) + (flag.2 .1));
 
+            match (flag.2 .0 + flag.2 .1).abs() as usize {
+                0 => {
+                    msg.send(0xF0FF).unwrap();
+                }
+                1..=3 => {
+                    msg.send(0xF2FF).unwrap();
+                }
+                4..=6 => {
+                    msg.send(0xF4FF).unwrap();
+                }
+                7..=9 => {
+                    msg.send(0xF8FF).unwrap();
+                }
+                10..=12 => {
+                    msg.send(0xFCFF).unwrap();
+                }
+                13.. => {
+                    msg.send(0xFFFF).unwrap();
+                }
+
+                _ => {}
+            }
+
+            nlatlot.0 += (flag.2 .0) * t;
+            nlatlot.1 += (flag.2 .1) * t;
         }
 
         //nlatlot.1 += t;
 
-        time_sleep(1);
+        ms_sleep(500);
     }
 
     //msg.send(0x0000).unwrap();
@@ -182,6 +211,11 @@ fn s4(panic_msg: Sender<String>, msg: Sender<u16>) {
 #[inline]
 fn time_sleep(sec: u64) {
     thread::sleep(Duration::from_secs(sec));
+}
+
+#[inline]
+fn ms_sleep(ms: u64) {
+    thread::sleep(Duration::from_millis(ms));
 }
 
 /// スレッドに名前を付けて生成

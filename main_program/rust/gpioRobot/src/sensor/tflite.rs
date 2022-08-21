@@ -11,7 +11,7 @@ python 呼び出せるコード。
 
 
 
-#[test]
+//#[test]
 pub fn python() -> PyResult<()> {
     Python::with_gil(|py| {
         let syspath: &PyList =

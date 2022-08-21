@@ -2,7 +2,7 @@ use nav_types::{ENU, WGS84};
 use std::time::Duration;
 use std::{thread, vec};
 
-#[test]
+//#[test]
 fn gps_test() {
     let mut latlot: Vec<(f64, f64)> = Vec::new();
 
@@ -14,7 +14,7 @@ fn gps_test() {
 
     let mut tmp = GPSmodule {
         r: 0.001,
-        latlot: latlot,
+        latlot: &mut latlot,
     };
 
     loop {
@@ -39,14 +39,14 @@ fn test2() {
     println!("{}", azimuth);
 }
 
-pub struct GPSmodule {
+pub struct GPSmodule<'a> {
     pub r: f64,
-    pub latlot: Vec<(f64, f64)>,
+    pub latlot: &'a mut Vec<(f64, f64)>,
 }
 
 ///
 ///
-impl GPSmodule {
+impl GPSmodule<'_> {
     /// ナビの機能
     /// 小数点で計算すると誤差があるので整数にしてる
     ///
@@ -58,7 +58,7 @@ impl GPSmodule {
             (now_postion.1 * (10.0_f64.powf(6.0))).round(),
         );
 
-        println!("{:?}", now_postion_int);
+        //println!("{:?}", now_postion_int);
 
         let r_int: f64 = self.r * (10.0_f64.powf(6.0));
 
@@ -70,6 +70,7 @@ impl GPSmodule {
                 return (true, (azimuth, distance), (0.0, 0.0));
             }
             1.. => {
+                //println!("{:?}", self.latlot);
                 let latlot_int: (f64, f64) = (
                     self.latlot[0].0 * (10.0_f64.powf(6.0)),
                     self.latlot[0].1 * (10.0_f64.powf(6.0)),
@@ -85,19 +86,16 @@ impl GPSmodule {
                 (azimuth, distance) = self.fm_azimuth_int(&now_postion_int);
 
                 if flag {
-                    
                     self.latlot.remove(0);
                     return (false, (azimuth, distance), diff);
-                }else {
+                } else {
                     return (false, (azimuth, distance), diff);
-
                 }
             }
             _ => {
                 return (false, (azimuth, distance), (0.0, 0.0));
             }
         }
-
     }
 
     /// TODO: 距離も追加
@@ -109,8 +107,6 @@ impl GPSmodule {
             now_postion_int.1 / (10.0_f64.powf(6.0)).round(),
             0.0,
         );
-
-
 
         let distance: f64 = pos_a.distance(&pos_b);
         //println!("Distance between a and b: {:.2}m", pos_a.distance(&pos_b));
@@ -128,7 +124,7 @@ impl GPSmodule {
         let pos_b = WGS84::from_degrees_and_meters(now_postion.0, now_postion.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
 
-        println!("{}",distance);
+        println!("{}", distance);
         let vec = pos_b - pos_a;
         let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
 
