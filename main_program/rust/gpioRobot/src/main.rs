@@ -11,8 +11,6 @@ use rthred::Rthd;
 use sensor::gps::GPSmodule;
 use xtools::{ms_sleep, time_sleep};
 
-
-
 fn main() {
     const S: &str = r#"
      _____ _             _     _____       _           _   
@@ -47,7 +45,7 @@ fn main() {
     // 0: 0 前後 1 右 2 左 3 F無視
     // 1: 16段階速度(前後) stop 0 F 無視
     // 2: ms 0: 100 1: 200 2: 300 ..
-    // 3: 
+    // 3:
 
     loop {
         for d in receiver_msg.try_recv() {
@@ -61,7 +59,28 @@ fn main() {
 }
 
 #[test]
-fn test() {}
+fn test() {
+
+    // 0: 権限 0特権 以下...
+    // 1: 
+    // 2: 
+    // 3:
+    // 4:
+    // 5:
+    // 6:
+
+
+    let d: u32 = 0x01234567;
+
+    println!("{}", (d & 0xF0000000) >> 28);
+    println!("{}", (d & 0x0F000000) >> 24);
+    println!("{}", (d & 0x00F00000) >> 20);
+    println!("{}", (d & 0x000F0000) >> 16);
+    println!("{}", (d & 0x0000F000) >> 12);
+    println!("{}", (d & 0x00000F00) >> 8);
+    println!("{}", (d & 0x000000F0) >> 4);
+    println!("{}", (d & 0x0000000F) >> 0);
+}
 
 fn analysis() {}
 
