@@ -1,43 +1,17 @@
 use std::collections::HashMap;
-use std::panic;
-use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Mutex;
-use std::time::Duration;
-use std::{thread, vec};
+use std::sync::{mpsc, Mutex};
+use std::{panic, thread};
 
 mod robot;
+mod rthred;
 mod sensor;
-
+mod xtools;
+use rthred::Rthd;
 use sensor::gps::GPSmodule;
+use xtools::{ms_sleep, time_sleep};
 
-/*
- ┌────────┐    ┌────────┐
- │thread:1│    │thread:2│
- └───┬────┘    └────┬───┘
-     │              │
-     └──────┬───────┘
-            │
-            │
- ┌──────────▼───────────┐     ┌─────────────────────────┐
- │                      │     │     send_panic_msg      │
- │  thread_generate()   │     │                         │
- │                      │     │ ┌─────────┐ ┌─────────┐ │
- └──────────┬───────────┘     │ │thread1()│ │thread2()│ ├──┐
-            │                 │ └─────────┘ └─────────┘ │  │
-            │                 │                         │  │
-            │                 │      thread_spwan       │  │panic!
-            │                 │                         │  │
-            │                 └────────────▲────────────┘  │
-            │                              │               │
-            └──────────────────────────────┘               │
-                                                           │
-                                                           │
-                                                        ┌──▼─┐
-                                                        │main│
-                                                        └────┘
 
-*/
 
 fn main() {
     const S: &str = r#"
@@ -62,9 +36,13 @@ fn main() {
 
     let (sendr_msg, receiver_msg): (Sender<u16>, Receiver<u16>) = mpsc::channel();
 
-    thread_generate(threads, &sendr_err_handles, &sendr_msg);
+    let (sendr_order0, receiver_order0): (Sender<u8>, Receiver<u8>) = mpsc::channel();
 
-    let d: u16 = 0xFFFF;
+    let orders = [sendr_order0];
+
+    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);
+
+    let _d: u16 = 0xFFFF;
 
     // 0: 0 前後 1 右 2 左 3 F無視
     // 1: 16段階速度(前後) stop 0 F 無視
@@ -73,18 +51,10 @@ fn main() {
 
     loop {
         for d in receiver_msg.try_recv() {
-            println!("1: {}", (d & 0x0F00) >> 8_u8);
-            println!("3: {}", (d & 0x000F) >> 0_u8);
-
-            /*
             println!("0: {}", (d & 0xF000) >> 12);
             println!("1: {}", (d & 0x0F00) >> 8);
             println!("2: {}", (d & 0x00F0) >> 4);
             println!("3: {}", (d & 0x000F) >> 0);
-            */
-
-
-            //println!("catch");
         }
         ms_sleep(500);
     }
@@ -93,19 +63,7 @@ fn main() {
 #[test]
 fn test() {}
 
-//#[test]
-fn py_test() {
-    /*unwrap()　はResult(型)で包まれた値を元の値へ戻すメゾット
-    ことの時、エラー処理を追加する。
-    unwrap()　だとエラーだった場合システムが止まる。
-
-    例外系は一通りここで学べる
-    https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
-
-    */
-
-    sensor::tflite::python().unwrap();
-}
+fn analysis() {}
 
 //#[cfg(target_os = "linux")]linux の場合呼び出される関数
 #[cfg(target_os = "linux")]
@@ -124,11 +82,9 @@ pub fn Motor() {
 }
 
 fn s3(panic_msg: Sender<String>, msg: Sender<u16>) {
-    send_panic_msg(panic_msg);
+    Rthd::send_panic_msg(panic_msg);
 
     let t: f64 = 10.0_f64.powf(-6.0);
-
-    let s:u8 = 0xff;
 
     let mut latlot: Vec<(f64, f64)> = Vec::new();
     let mut nlatlot = (36.000000, 136.000000);
@@ -199,7 +155,7 @@ fn s3(panic_msg: Sender<String>, msg: Sender<u16>) {
 }
 
 fn s4(panic_msg: Sender<String>, msg: Sender<u16>) {
-    send_panic_msg(panic_msg);
+    Rthd::send_panic_msg(panic_msg);
 
     loop {
         time_sleep(1);
@@ -208,79 +164,16 @@ fn s4(panic_msg: Sender<String>, msg: Sender<u16>) {
     }
 }
 
-#[inline]
-fn time_sleep(sec: u64) {
-    thread::sleep(Duration::from_secs(sec));
-}
+//#[test]
+fn py_test() {
+    /*unwrap()　はResult(型)で包まれた値を元の値へ戻すメゾット
+    ことの時、エラー処理を追加する。
+    unwrap()　だとエラーだった場合システムが止まる。
 
-#[inline]
-fn ms_sleep(ms: u64) {
-    thread::sleep(Duration::from_millis(ms));
-}
+    例外系は一通りここで学べる
+    https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
 
-/// スレッドに名前を付けて生成
-///
-/// TODO: 後で構造体にする
-/// 使用例
-/// ```
-/// let mut threads: HashMap<&str, fn(Sender<String>, Sender<u16>)> = HashMap::new();
-///
-/// threads.insert("test", test);
-///
-/// let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) = mpsc::channel();
-///   
-/// let (sendr_msg, receiver_msg): (Sender<u16>, Receiver<u16>) = mpsc::channel();
-///
-/// thread_generate(threads, &sendr_err_handles, &sendr_msg);
-///
-/// fn test(panic_msg: Sender<String>, msg: Sender<u16>){}
-///
-/// ```
-fn thread_generate(
-    threads: HashMap<&str, fn(Sender<String>, Sender<u16>)>,
-    err: &Sender<String>,
-    msg: &Sender<u16>,
-) {
-    for (name, i) in threads {
-        let sendr_join_handle_errmsg = mpsc::Sender::clone(err);
-        let sendr_join_handle_msg = mpsc::Sender::clone(msg);
+    */
 
-        let _thread = thread::Builder::new()
-            .name(name.to_string())
-            .spawn(move || {
-                i(sendr_join_handle_errmsg, sendr_join_handle_msg);
-            })
-            .unwrap();
-    }
-}
-
-/// 独自panicシステム
-fn send_panic_msg(panic_msg: Sender<String>) {
-    let default_hook: Box<dyn Fn(&panic::PanicInfo) + Sync + Send> = panic::take_hook();
-    let m: Mutex<Sender<String>> = Mutex::new(panic_msg);
-
-    panic::set_hook(Box::new(move |panic_info: &panic::PanicInfo| {
-        let handle: thread::Thread = thread::current();
-
-        let err_msg: std::sync::MutexGuard<Sender<String>> = m.lock().unwrap();
-
-        err_msg.send(handle.name().unwrap().to_owned()).unwrap();
-
-        default_hook(panic_info)
-    }));
-}
-
-#[macro_export]
-macro_rules! thread_generate {
-    ( $( $x:expr ),* ) => {
-        {
-            $(
-
-                thread::spawn(move ||  {
-                    $x();
-                });
-            )*
-
-        }
-    };
+    sensor::tflite::python().unwrap();
 }
