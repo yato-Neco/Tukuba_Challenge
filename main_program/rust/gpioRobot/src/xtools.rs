@@ -5,6 +5,14 @@ pub struct Benchmark {
     start_time: Instant,
 }
 
+/// プログラムの実行スピードを測る
+/// 
+/// ```
+/// let mut time =  Benchmark::start();
+/// 
+/// time.end();
+/// 
+/// ```
 impl Benchmark {
     pub fn start() -> Benchmark {
         let now_time = Instant::now();

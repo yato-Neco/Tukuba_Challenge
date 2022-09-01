@@ -3,6 +3,8 @@ use std::sync::{mpsc,Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread,panic};
 
+use crate::SenderOrders;
+
 /*
  ┌────────┐    ┌────────┐
  │thread:1│    │thread:2│
@@ -53,10 +55,12 @@ impl Rthd {
     ///
     /// ```
     pub fn thread_generate(
-        threads: HashMap<&str, fn(Sender<String>, Sender<u16>)>,
+        threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
         err_msg: &Sender<String>,
-        msg: &Sender<u16>,
+        msg: &SenderOrders,
     ) {
+
+        
         for (name, i) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
             let sendr_join_handle_msg = mpsc::Sender::clone(msg);

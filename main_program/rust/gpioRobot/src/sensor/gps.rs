@@ -51,7 +51,7 @@ impl GPSmodule<'_> {
     /// 小数点で計算すると誤差があるので整数にしてる
     ///
     pub fn nav(&mut self, now_postion: (f64, f64)) -> (bool, (f64, f64), (f64, f64)) {
-        println!("{:?}", self.latlot);
+        //println!("{:?}", self.latlot);
 
         let now_postion_int: (f64, f64) = (
             (now_postion.0 * (10.0_f64.powf(6.0))).round(),
