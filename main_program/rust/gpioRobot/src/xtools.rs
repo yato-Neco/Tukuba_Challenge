@@ -1,17 +1,19 @@
-use std::{thread, time::{Duration, Instant}};
-
+use std::{
+    thread,
+    time::{Duration, Instant},
+};
 
 pub struct Benchmark {
     start_time: Instant,
 }
 
 /// プログラムの実行スピードを測る
-/// 
+///
 /// ```
 /// let mut time =  Benchmark::start();
-/// 
+///
 /// time.end();
-/// 
+///
 /// ```
 impl Benchmark {
     pub fn start() -> Benchmark {
@@ -31,10 +33,10 @@ impl Benchmark {
     }
 }
 
-
 #[inline]
-pub fn time_sleep(sec: u64) {
+pub fn time_sleep(sec: u64, ms: u64) {
     thread::sleep(Duration::from_secs(sec));
+    thread::sleep(Duration::from_millis(ms));
 }
 
 #[inline]

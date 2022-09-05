@@ -61,14 +61,14 @@ impl Rthd {
     ) {
 
         
-        for (name, i) in threads {
+        for (name, fnc) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
             let sendr_join_handle_msg = mpsc::Sender::clone(msg);
 
             let _thread = thread::Builder::new()
                 .name(name.to_string())
                 .spawn(move || {
-                    i(sendr_join_handle_errmsg, sendr_join_handle_msg);
+                    fnc(sendr_join_handle_errmsg, sendr_join_handle_msg);
                 })
                 .unwrap();
         }

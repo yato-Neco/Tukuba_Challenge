@@ -237,7 +237,7 @@ pub fn Motor() {
 }
 
 fn lidar(panic_msg: Sender<String>, msg: Sender<u32>) {
-    time_sleep(5);
+    time_sleep(5,0);
     msg.send(0x0F00FFFF).unwrap();
 }
 
@@ -250,11 +250,11 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
 
     let mut latlot: Vec<(f64, f64)> = Vec::new();
     let mut now_azimuth = 0.0;
-    let mut nlatlot: (f64, f64) = (36.000000, 136.000000);
+    let mut nlatlot: (f64, f64) = (36.000_000, 136.000_000);
 
     println!("初期値 {:?}", nlatlot);
 
-    latlot.push((36.500000, 136.000_000));
+    latlot.push((36.500_000, 136.000_000));
     //latlot.push((36.000000, 136.000_000));
 
     //latlot.push((36.500000, 136.500_000));
@@ -280,7 +280,7 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
         } else {
             let mut azimuth = (flag.1 .0 * c2).round();
             //println!("{}", now_azimuth);
-            azimuth = azimuth + now_azimuth;
+            //azimuth = azimuth + now_azimuth;
 
             println!("azimuth {}", azimuth / c2);
             let razi = azimuth;
@@ -391,7 +391,7 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
     Rthd::send_panic_msg(panic_msg);
 
     loop {
-        time_sleep(1);
+        time_sleep(1,0);
 
         msg.send(0x0000).unwrap();
     }

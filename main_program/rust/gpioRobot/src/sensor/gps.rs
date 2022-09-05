@@ -7,9 +7,7 @@ fn gps_test() {
     let mut latlot: Vec<(f64, f64)> = Vec::new();
 
     latlot.push((36.061899, 136.222481));
-    latlot.push((36.061899, 136.222481));
-    latlot.push((36.061899, 136.222481));
-    latlot.push((36.061899, 136.222481));
+
     //latlot.push((36.061899, 137.222481));
 
     let mut tmp = GPSmodule {
@@ -27,10 +25,10 @@ fn gps_test() {
 
 #[test]
 fn test2() {
-    let pos_a = WGS84::from_degrees_and_meters(36.061899, 136.222481, 0.0);
-    let pos_b = WGS84::from_degrees_and_meters(36.061899, 136.222482, 0.0);
+    let pos_a = WGS84::from_degrees_and_meters(36.000_000, 136.000_000, 0.0);
+    let pos_b = WGS84::from_degrees_and_meters(36.000_001, 136.000_001, 0.0);
 
-    println!("Distance between a and b: {:.2}m", pos_a.distance(&pos_b));
+    println!("Distance between a and b: {:.4}m", pos_a.distance(&pos_b));
 
     let vec = pos_b - pos_a;
 
@@ -118,7 +116,7 @@ impl GPSmodule<'_> {
     }
 
     /// TODO: 距離も追加
-    ///
+    /// 非推奨
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> f64 {
         let pos_a = WGS84::from_degrees_and_meters(self.latlot[0].0, self.latlot[0].1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(now_postion.0, now_postion.1, 0.0);
