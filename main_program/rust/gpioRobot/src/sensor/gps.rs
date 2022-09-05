@@ -49,9 +49,11 @@ pub struct GPSmodule<'a> {
 impl GPSmodule<'_> {
     /// ナビの機能
     /// 小数点で計算すると誤差があるので整数にしてる
-    ///
+    /// TODO: 整数にする所にバグとコンピューターリソースに問題あり？
+    /// nav()のリターン (終了フラグ), 角度, 距離, 現在位置と目的位置の差分)
     pub fn nav(&mut self, now_postion: (f64, f64)) -> (bool, (f64, f64), (f64, f64)) {
-        //println!("{:?}", self.latlot);
+        println!("{}","-".repeat(20));
+        println!("ウェイポイント {:?}", self.latlot);
 
         let now_postion_int: (f64, f64) = (
             (now_postion.0 * (10.0_f64.powf(6.0))).round(),
@@ -65,10 +67,8 @@ impl GPSmodule<'_> {
         let mut azimuth: f64 = 0.0_f64;
         let mut distance: f64 = 0.0_f64;
 
-        match self.latlot.len() {
-            0 => {
-                return (true, (azimuth, distance), (0.0, 0.0));
-            }
+        let result: (bool, (f64, f64), (f64, f64)) = match self.latlot.len() {
+            0 => (true, (azimuth, distance), (0.0, 0.0)),
             1.. => {
                 //println!("{:?}", self.latlot);
                 let latlot_int: (f64, f64) = (
@@ -87,15 +87,15 @@ impl GPSmodule<'_> {
 
                 if flag {
                     self.latlot.remove(0);
-                    return (false, (azimuth, distance), diff);
+                    (false, (azimuth, distance), diff)
                 } else {
-                    return (false, (azimuth, distance), diff);
+                    (false, (azimuth, distance), diff)
                 }
             }
-            _ => {
-                return (false, (azimuth, distance), (0.0, 0.0));
-            }
-        }
+            _ => (false, (azimuth, distance), (0.0, 0.0)),
+        };
+
+        result
     }
 
     /// TODO: 距離も追加
