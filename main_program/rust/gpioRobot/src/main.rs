@@ -4,13 +4,14 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
+
 mod robot;
 mod rthred;
 mod sensor;
 mod xtools;
 use rthred::Rthd;
 use sensor::gps::GPSmodule;
-use xtools::{ms_sleep, time_sleep};
+use xtools::{ms_sleep, time_sleep,warning_msg};
 
 type SenderOrders = Sender<u32>;
 type ReceiverOrders = Receiver<u32>;
@@ -136,9 +137,9 @@ fn auto() {
         };
 
         if result != None {
-            let d: u32 = result.unwrap();
+            let order: u32 = result.unwrap();
 
-            if ((d & 0xF0000000) >> 28_u8) == 0 {
+            if ((order & 0xF0000000) >> 28_u8) == 0 {
                 println!("特権コードー");
             }
             /*
@@ -149,7 +150,7 @@ fn auto() {
             );
             */
 
-            analysis(d);
+            analysis(order);
         }
 
         //ms_sleep(1500);
@@ -237,14 +238,12 @@ pub fn Motor() {
 }
 
 fn lidar(panic_msg: Sender<String>, msg: Sender<u32>) {
-    time_sleep(5,0);
+    time_sleep(5, 0);
     msg.send(0x0F00FFFF).unwrap();
 }
 
 fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
     Rthd::send_panic_msg(panic_msg);
-
-    let t1: f64 = 10.0_f64.powf(-6.0);
 
     let c2: f64 = 10.0_f64.powf(2.0);
 
@@ -254,12 +253,7 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
 
     println!("初期値 {:?}", nlatlot);
 
-    latlot.push((36.500_000, 136.000_000));
-    //latlot.push((36.000000, 136.000_000));
-
-    //latlot.push((36.500000, 136.500_000));
-    //latlot.push((36.061899, 136.222481));
-    //latlot.push((36.061899, 136.232481));
+    latlot.push((36.500_000, 136.500_000));
 
     let mut tmp = GPSmodule {
         r: 0.0,
@@ -269,118 +263,63 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
     const STOP: u32 = 0x1F00FFFF;
 
     loop {
-        //println!("{:?}", nlatlot);
         //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff)
-        let flag = tmp.nav(nlatlot);
-        //println!("{:?}", flag);
+        let flag: (bool, (f64, f64), (f64, f64)) = tmp.nav(nlatlot);
+
         if flag.0 {
             msg.send(STOP).unwrap();
-            //latlot.push((36.061899, 136.222483));
             break;
         } else {
-            let mut azimuth = (flag.1 .0 * c2).round();
-            //println!("{}", now_azimuth);
-            //azimuth = azimuth + now_azimuth;
-
-            println!("azimuth {}", azimuth / c2);
-            let razi = azimuth;
-
-            //println!("{} {} {}", azi, azi >= 0.0, azi <= 0.0);
-
-            // 回転系
-            let mut count = 0;
-            loop {
-                let r: bool = azimuth >= 0.0;
-                let l: bool = azimuth <= 0.0;
-
-                // シュミ系 ->
-
-                //azi = azi + (-1.0 * azi);
-                //println!("{}", razi);
-
-                if r != l {
-                    //now_azimuth = razi;
-
-                    if count == 0 {
-                        match msg.send(0x1F18FFFF) {
-                            Ok(_) => {}
-                            Err(_) => {}
-                        };
-                    }
-                    if r {
-                        azimuth -= 1000.0;
-                    } else {
-                        azimuth += 1000.0;
-                    }
-                }
-                // <-
-                //time_sleep(1);
-                else if r == l {
-                    //println!("回転");
-                    now_azimuth = razi;
-
-                    if count == 0 {
-                        break;
-                    } else {
-                        match msg.send(STOP) {
-                            Ok(_) => {}
-                            Err(_) => {}
-                        };
-                        break;
-                    }
-                }
-
-                count += 1;
-            }
-            //
-
             let index: usize = (flag.2 .0 + flag.2 .1).abs() as usize;
 
             let order: u32 = distance_con(index);
 
+            println!("{}", flag.1 .0);
+
             match msg.send(order) {
                 Ok(_) => {}
-                Err(_) => {}
+                Err(_) => {
+                    warning_msg("Can not send msg");
+                }
             };
 
-            //println!("{:?}", r);
-
-            //rintln!("distance {} {}", flag.2 .0, flag.2 .1);
-
-            // シュミ系 ->
-            println!("{:?} {:?}", nlatlot, flag.2);
-
-            if (flag.2 .0 * t1) > 0.0 {
-                nlatlot.0 += 0.1;
-            } else if (flag.2 .0 * t1) < 0.0 {
-                nlatlot.0 -= 0.1;
-            }
-
-            if (flag.2 .1 * t1) > 0.0 {
-                nlatlot.1 += 0.1;
-            } else if (flag.2 .1 * t1) < 0.0 {
-                nlatlot.1 -= 0.1;
-            }
-
-            //nlatlot.0 += (flag.2 .0) * t1;
-            //nlatlot.1 += (flag.2 .1) * t1;
-            // <-
+            simulater(&mut nlatlot, &flag.2);
         }
 
         ms_sleep(25);
     }
-
+    ///
+    ///
+    ///
     fn distance_con(index: usize) -> u32 {
-        //msg.send(0xFFFF).unwrap();
+        let t1: f64 = 10.0_f64.powf(-6.0);
+        //println!("{}", index);
         match index {
-            0 => 0x1F00FFFF,
-            1..=3 => 0x1F77FFFF,
-            4..=6 => 0x1FAAFFFF,
-            7..=9 => 0x1FCCFFFF,
-            10..=12 => 0x1FDDFFFF,
-            13.. => 0x1FEEFFFF,
+            000000 => 0x1F00FFFF,
+            100000..=300000 => 0x1F88FFFF,
+            400000..=600000 => 0x1FAAFFFF,
+            700000..=900000 => 0x1FCCFFFF,
+            1000000..=1200000 => 0x1FDDFFFF,
+            1300000.. => 0x1FEEFFFF,
 
             _ => 0x1FFFFFFF,
+        }
+    }
+
+    #[inline]
+    fn simulater(nlatlot: &mut (f64, f64), diff: &(f64, f64)) {
+        let t1: f64 = 10.0_f64.powf(-6.0);
+
+        if (diff.0 * t1) > 0.0 {
+            nlatlot.0 += 0.1;
+        } else if (diff.0 * t1) < 0.0 {
+            nlatlot.0 -= 0.1;
+        }
+
+        if (diff.1 * t1) > 0.0 {
+            nlatlot.1 += 0.1;
+        } else if (diff.1 * t1) < 0.0 {
+            nlatlot.1 -= 0.1;
         }
     }
 
@@ -391,7 +330,7 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
     Rthd::send_panic_msg(panic_msg);
 
     loop {
-        time_sleep(1,0);
+        time_sleep(1, 0);
 
         msg.send(0x0000).unwrap();
     }

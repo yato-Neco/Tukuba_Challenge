@@ -25,8 +25,8 @@ fn gps_test() {
 
 #[test]
 fn test2() {
-    let pos_a = WGS84::from_degrees_and_meters(36.000_000, 136.000_000, 0.0);
-    let pos_b = WGS84::from_degrees_and_meters(36.000_001, 136.000_001, 0.0);
+    let pos_a = WGS84::from_degrees_and_meters(36.000_005, 136.000_005, 0.0);
+    let pos_b = WGS84::from_degrees_and_meters(36.000_005, 136.000_005, 0.0);
 
     println!("Distance between a and b: {:.4}m", pos_a.distance(&pos_b));
 

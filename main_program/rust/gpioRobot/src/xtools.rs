@@ -3,6 +3,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+// colored = "2.0.0"
+extern crate colored;
+use colored::*;
+
 pub struct Benchmark {
     start_time: Instant,
 }
@@ -37,6 +41,11 @@ impl Benchmark {
 pub fn time_sleep(sec: u64, ms: u64) {
     thread::sleep(Duration::from_secs(sec));
     thread::sleep(Duration::from_millis(ms));
+}
+
+#[inline]
+pub fn warning_msg(txt: &str) {
+    println!("{}{}", "Warning: ".red(), txt)
 }
 
 #[inline]
