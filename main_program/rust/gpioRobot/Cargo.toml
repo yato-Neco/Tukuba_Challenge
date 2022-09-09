@@ -12,4 +12,5 @@ serialport = "4.0.0"
 nav-types = "0.5.1"
 getch = "0.3.1"
 clap = { version = "3.2.19", features = ["derive"] }
-colored = "2.0.0"
+yaml-rust = "0.4"
+csv = "1.1"
