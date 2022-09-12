@@ -8,6 +8,7 @@ mod order;
 mod robot;
 mod rthred;
 mod sensor;
+mod mode;
 mod xtools;
 use rthred::{send, Rthd};
 use sensor::gps::GPSmodule;
@@ -51,11 +52,17 @@ fn main() {
         "manual" => manual(),
         "auto" => auto(),
         "key" => key(),
+        "display" => {},
         "k" => key(),
         "m" => manual(),
         "a" => auto(),
+        "d" => {},
         _ => {}
     }
+}
+
+fn display() {
+
 }
 
 fn manual() {
@@ -157,7 +164,7 @@ fn auto() {
     let mut threads: HashMap<&str, fn(Sender<String>, SenderOrders)> = HashMap::new();
 
     threads.insert("gps", gps);
-    //threads.insert("lidar", lidar);
+    threads.insert("lidar", lidar);
 
     let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
         mpsc::channel();
@@ -167,7 +174,9 @@ fn auto() {
     // TODO: 各スレッドに命令を飛ばす。 <- 無理です
     let (sendr_msg1, receiver_msg1): (SenderOrders, ReceiverOrders) = mpsc::channel();
 
-    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);
+    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);     
+
+    let mut pause = false;
 
     loop {
         let result = match receiver_msg.try_recv() {
@@ -186,19 +195,26 @@ fn auto() {
 
         if result != None {
             let order: u32 = result.unwrap();
-
             if ((order & 0xF0000000) >> 28_u8) == 0 {
                 //println!("特権コードー");
                 let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
-                //println!("{}",privileged_instruction);
+                println!("特権コードー　{}",privileged_instruction);
 
                 match privileged_instruction {
-                    1 => panic!("特権命令、パニック‼"),
+                    1 => {
+                        pause = !pause;
+                        
+                        continue;
+                    },
                     3 => break,
                     4 => break,
+                    14 => panic!("特権命令、パニック‼"),
                     _ => {}
                 }
             } else {
+                if pause { 
+                    continue;
+                }
                 analysis(order);
             }
             /*
@@ -210,50 +226,13 @@ fn auto() {
             */
         }
 
-        //ms_sleep(1500);
     }
-    loop{
-        time_sleep(1, 0)
-    }
+   
 }
 
 #[test]
 fn test() {
-    // 0: 権限 0特権 以下...
-    // 1:
-    // 2: rigth motor speed 0 停止 F変更無し
-    // 3: left motor speed ...
-    // 4:
-    // 5:
-    // 6:
-    // 7: 特権系命令 14 panic 1 一時停止 2 再開 3 完全停止 4 break
 
-    let d: u32 = 0x1F994567;
-
-    /*
-    println!("{}", (d & 0xF0000000) >> 28);
-    println!("{}", (d & 0x0F000000) >> 24);
-    println!("{}", (d & 0x00F00000) >> 20);
-    println!("{}", (d & 0x000F0000) >> 16);
-    println!("{}", (d & 0x0000F000) >> 12);
-    println!("{}", (d & 0x00000F00) >> 8);
-    println!("{}", (d & 0x000000F0) >> 4);
-    println!("{}", (d & 0x0000000F) >> 0);
-    */
-    let privileged_instruction: u8;
-
-    if (d & 0xF0000000) >> 28 == 0 {
-        println!("0");
-
-        privileged_instruction = ((d & 0x0000000F) >> 0) as u8;
-        println!("{}", privileged_instruction);
-    } else {
-        analysis(d);
-
-        //println!("1");
-    };
-
-    //fn
 }
 
 fn analysis(order: u32) {
@@ -300,13 +279,16 @@ pub fn Motor() {
 }
 
 fn lidar(panic_msg: Sender<String>, msg: Sender<u32>) {
-    time_sleep(5, 0);
-    msg.send(0x0F00FFFF).unwrap();
+    Rthd::send_panic_msg(panic_msg);
+    time_sleep(0, 5);
+    msg.send(0x0FFFFFF1).unwrap();
+    //time_sleep(0, 1);
+    //msg.send(0x0FFFFFF1).unwrap();
+
 }
 
 fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
-    use std::io::prelude::*;
-    use std::io::Read;
+
     Rthd::send_panic_msg(panic_msg);
 
     let mut is_beginning: bool = true;
@@ -386,7 +368,7 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
             GPSmodule::running_simulater(&mut nlatlot, &flag.2);
         }
 
-        //time_sleep(0, 15);
+        time_sleep(0, 10);
 
         is_beginning = false;
         order_q[1] = order_q[0];
@@ -403,19 +385,6 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
     }
 }
 
-//#[test]
-fn py_test() {
-    /*unwrap()　はResult(型)で包まれた値を元の値へ戻すメゾット
-    ことの時、エラー処理を追加する。
-    unwrap()　だとエラーだった場合システムが止まる。
-
-    例外系は一通りここで学べる
-    https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
-
-    */
-
-    sensor::tflite::python().unwrap();
-}
 
 #[test]
 fn motor_rotate() {
