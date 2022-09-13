@@ -4,14 +4,15 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
-
+mod order;
 mod robot;
 mod rthred;
 mod sensor;
+mod mode;
 mod xtools;
-use rthred::Rthd;
+use rthred::{send, Rthd};
 use sensor::gps::GPSmodule;
-use xtools::{ms_sleep, time_sleep,warning_msg};
+use xtools::{ms_sleep, time_sleep, warning_msg};
 
 type SenderOrders = Sender<u32>;
 type ReceiverOrders = Receiver<u32>;
@@ -51,11 +52,17 @@ fn main() {
         "manual" => manual(),
         "auto" => auto(),
         "key" => key(),
+        "display" => {},
         "k" => key(),
         "m" => manual(),
         "a" => auto(),
+        "d" => {},
         _ => {}
     }
+}
+
+fn display() {
+
 }
 
 fn manual() {
@@ -83,6 +90,21 @@ fn manual() {
         };
 
         println!("0x{};", "-".repeat(2 << 2));
+
+        if ((order & 0xF0000000) >> 28_u8) == 0 {
+            //println!("特権コードー");
+            let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
+            //println!("{}",privileged_instruction);
+
+            match privileged_instruction {
+                1 => panic!("特権命令、パニック‼"),
+                3 => break,
+                4 => break,
+                _ => {}
+            }
+        } else {
+            analysis(order);
+        }
     }
 }
 
@@ -90,26 +112,50 @@ fn key() {
     loop {
         let a = getch::Getch::new();
         let b = a.getch().unwrap();
-        println!("{}", b);
+        //println!("{}", b);
 
-        match b {
+        let order = match b {
             119 => {
                 "w";
+                0x1FAAFFFF
             }
             97 => {
                 "a";
+                0x1F29FFFF
             }
             100 => {
                 "d";
+                0x1F92FFFF
             }
             115 => {
                 "s";
+                0x1F22FFFF
             }
             32 => {
                 "stop";
+                order::STOP
             }
-            3 => break,
-            _ => {}
+            3 => {
+                "break";
+                order::BREAK
+            }
+
+            _ => 0xFFFFFFF,
+        };
+
+        if ((order & 0xF0000000) >> 28_u8) == 0 {
+            //println!("特権コードー");
+            let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
+            //println!("{}",privileged_instruction);
+
+            match privileged_instruction {
+                1 => panic!("特権命令、パニック‼"),
+                3 => break,
+                4 => break,
+                _ => {}
+            }
+        } else {
+            analysis(order);
         }
     }
 }
@@ -118,7 +164,7 @@ fn auto() {
     let mut threads: HashMap<&str, fn(Sender<String>, SenderOrders)> = HashMap::new();
 
     threads.insert("gps", gps);
-    //threads.insert("lidar", lidar);
+    threads.insert("lidar", lidar);
 
     let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
         mpsc::channel();
@@ -128,7 +174,9 @@ fn auto() {
     // TODO: 各スレッドに命令を飛ばす。 <- 無理です
     let (sendr_msg1, receiver_msg1): (SenderOrders, ReceiverOrders) = mpsc::channel();
 
-    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);
+    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);     
+
+    let mut pause = false;
 
     loop {
         let result = match receiver_msg.try_recv() {
@@ -136,11 +184,38 @@ fn auto() {
             Err(_) => None,
         };
 
+        /*
+        match result  {
+            Some(e) => {
+
+            }
+            None => {}
+        }
+        */
+
         if result != None {
             let order: u32 = result.unwrap();
-
             if ((order & 0xF0000000) >> 28_u8) == 0 {
-                println!("特権コードー");
+                //println!("特権コードー");
+                let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
+                println!("特権コードー　{}",privileged_instruction);
+
+                match privileged_instruction {
+                    1 => {
+                        pause = !pause;
+                        
+                        continue;
+                    },
+                    3 => break,
+                    4 => break,
+                    14 => panic!("特権命令、パニック‼"),
+                    _ => {}
+                }
+            } else {
+                if pause { 
+                    continue;
+                }
+                analysis(order);
             }
             /*
             println!(
@@ -149,49 +224,15 @@ fn auto() {
                 (d & 0x000F0000) >> 16
             );
             */
-
-            analysis(order);
         }
 
-        //ms_sleep(1500);
     }
+   
 }
 
 #[test]
 fn test() {
-    // 0: 権限 0特権 以下...
-    // 1:
-    // 2: rigth motor speed 0 停止 F変更無し
-    // 3: left motor speed ...
-    // 4:
-    // 5:
-    // 6: 特権系命令 14 panic 1 一時停止 2 再開 3 完全停止
 
-    let d: u32 = 0x1F994567;
-
-    /*
-    println!("{}", (d & 0xF0000000) >> 28);
-    println!("{}", (d & 0x0F000000) >> 24);
-    println!("{}", (d & 0x00F00000) >> 20);
-    println!("{}", (d & 0x000F0000) >> 16);
-    println!("{}", (d & 0x0000F000) >> 12);
-    println!("{}", (d & 0x00000F00) >> 8);
-    println!("{}", (d & 0x000000F0) >> 4);
-    println!("{}", (d & 0x0000000F) >> 0);
-    */
-    let privileged_instruction: u8;
-
-    if (d & 0xF0000000) >> 28 == 0 {
-        println!("0");
-
-        privileged_instruction = ((d & 0x0000000F) >> 0) as u8;
-    } else {
-        analysis(d);
-
-        //println!("1");
-    };
-
-    //fn
 }
 
 fn analysis(order: u32) {
@@ -201,22 +242,22 @@ fn analysis(order: u32) {
 
     match (rM, lM) {
         (1..=7, 1..=7) => {
-            println!("後進 {} {}", rM, lM);
+            println!("後進 {} {}", -1 * rM as i8, -1 * lM as i8);
         }
         (8..=14, 8..=14) => {
-            println!("前進 {} {}", rM, lM);
+            println!("前進 {} {}", rM - 7, lM - 7);
         }
         (0, 0) => {
             println!("ストップ");
         }
         (1..=7, 8..=14) => {
-            println!("回転 {} {}", rM, lM);
+            println!("回転 {} {}", -1 * rM as i8, lM - 7);
         }
         (8..=14, 1..=7) => {
-            println!("回転 {} {}", rM, lM);
+            println!("回転 {} {}", rM - 7, -1 * lM as i8);
         }
         _ => {
-            println!("その他 {} {}", rM, lM);
+            //println!("その他 {} {}", rM, lM);
         }
     }
 }
@@ -238,92 +279,100 @@ pub fn Motor() {
 }
 
 fn lidar(panic_msg: Sender<String>, msg: Sender<u32>) {
-    time_sleep(5, 0);
-    msg.send(0x0F00FFFF).unwrap();
+    Rthd::send_panic_msg(panic_msg);
+    time_sleep(0, 5);
+    msg.send(0x0FFFFFF1).unwrap();
+    //time_sleep(0, 1);
+    //msg.send(0x0FFFFFF1).unwrap();
+
 }
 
 fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
+
     Rthd::send_panic_msg(panic_msg);
 
-    let c2: f64 = 10.0_f64.powf(2.0);
+    let mut is_beginning: bool = true;
+
+    // nav関数の次のウェイポイントへ行くとき、なぜかズレがあるので、それを修正するフラグ管理
+    // ズレがあると、回転できない。
+    let mut is: bool = false;
 
     let mut latlot: Vec<(f64, f64)> = Vec::new();
     let mut now_azimuth = 0.0;
     let mut nlatlot: (f64, f64) = (36.000_000, 136.000_000);
+    let mut order_q: [u32; 2] = [0xFFFFFFFF_u32; 2];
 
-    println!("初期値 {:?}", nlatlot);
+    println!("初期値-緯度経度 {:?}", nlatlot);
 
-    latlot.push((36.500_000, 136.500_000));
+    //latlot.push((36.000_006, 136.000_003));
 
     let mut tmp = GPSmodule {
         r: 0.0,
         latlot: &mut latlot,
     };
 
-    const STOP: u32 = 0x1F00FFFF;
+    tmp.load_waypoint();
 
     loop {
-        //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff)
-        let flag: (bool, (f64, f64), (f64, f64)) = tmp.nav(nlatlot);
+        //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff, point切り替え)
+        //println!("now_point: {:?}", nlatlot);
 
+        let flag: (bool, (f64, f64), (f64, f64), bool, &mut Vec<(f64, f64)>) = tmp.nav(nlatlot);
+        //println!("{:?}",flag);
+        //waypointが0になったら停止
         if flag.0 {
-            msg.send(STOP).unwrap();
+            send(order::BREAK, &msg);
+
             break;
         } else {
-            let index: usize = (flag.2 .0 + flag.2 .1).abs() as usize;
+            let index: usize = ((flag.2 .0).abs() + (flag.2 .1).abs()) as usize;
 
-            let order: u32 = distance_con(index);
+            let order: u32 = GPSmodule::distance_con(index);
+            order_q[0] = order;
+            //println!("{:x}",order);
 
-            println!("{}", flag.1 .0);
+            if flag.3 {
+                is = true;
+                order_q = [0xFFFFFFFF_u32; 2];
 
-            match msg.send(order) {
-                Ok(_) => {}
-                Err(_) => {
-                    warning_msg("Can not send msg");
-                }
-            };
+                send(order::STOP, &msg);
+                time_sleep(0, 1);
 
-            simulater(&mut nlatlot, &flag.2);
+                continue;
+            }
+
+            if is_beginning || is {
+                println!("{}", "-".repeat(20));
+                println!("ウェイポイント {:?}", flag.4);
+                println!("now_azi {}", now_azimuth);
+                //println!("{:x}", order);
+
+                println!("azimuth: {} ", flag.1 .0);
+                let azimuth = flag.1 .0;
+
+                GPSmodule::rotate(azimuth, &mut now_azimuth, &msg);
+
+                now_azimuth = azimuth;
+                //println!("{:x}",order);
+                //send(order,&msg);
+                is = false;
+
+            }
+            //println!("{:x} {:x}",order_q[0], order_q[1]);
+            if order_q[0] != order_q[1] {
+                send(order, &msg);
+            }
+
+            //
+
+            GPSmodule::running_simulater(&mut nlatlot, &flag.2);
         }
 
-        ms_sleep(25);
+        time_sleep(0, 10);
+
+        is_beginning = false;
+        order_q[1] = order_q[0];
     }
-    ///
-    ///
-    ///
-    fn distance_con(index: usize) -> u32 {
-        let t1: f64 = 10.0_f64.powf(-6.0);
-        //println!("{}", index);
-        match index {
-            000000 => 0x1F00FFFF,
-            100000..=300000 => 0x1F88FFFF,
-            400000..=600000 => 0x1FAAFFFF,
-            700000..=900000 => 0x1FCCFFFF,
-            1000000..=1200000 => 0x1FDDFFFF,
-            1300000.. => 0x1FEEFFFF,
-
-            _ => 0x1FFFFFFF,
-        }
-    }
-
-    #[inline]
-    fn simulater(nlatlot: &mut (f64, f64), diff: &(f64, f64)) {
-        let t1: f64 = 10.0_f64.powf(-6.0);
-
-        if (diff.0 * t1) > 0.0 {
-            nlatlot.0 += 0.1;
-        } else if (diff.0 * t1) < 0.0 {
-            nlatlot.0 -= 0.1;
-        }
-
-        if (diff.1 * t1) > 0.0 {
-            nlatlot.1 += 0.1;
-        } else if (diff.1 * t1) < 0.0 {
-            nlatlot.1 -= 0.1;
-        }
-    }
-
-    fn rotate() {}
 }
 
 fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
@@ -336,16 +385,11 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
     }
 }
 
-//#[test]
-fn py_test() {
-    /*unwrap()　はResult(型)で包まれた値を元の値へ戻すメゾット
-    ことの時、エラー処理を追加する。
-    unwrap()　だとエラーだった場合システムが止まる。
 
-    例外系は一通りここで学べる
-    https://doc.rust-jp.rs/book-ja/ch02-00-guessing-game-tutorial.html
+#[test]
+fn motor_rotate() {
+    let r = 105.0;
+    let cir = ((r / 2.0) * (std::f64::consts::PI * 2.0)) / 4.0;
 
-    */
-
-    sensor::tflite::python().unwrap();
+    println!("{}", cir);
 }

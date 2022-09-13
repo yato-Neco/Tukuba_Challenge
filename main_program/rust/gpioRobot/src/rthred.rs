@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-use std::sync::{mpsc,Mutex};
 use std::sync::mpsc::{Receiver, Sender};
-use std::{thread,panic};
+use std::sync::{mpsc, Mutex};
+use std::{panic, thread};
 
 use crate::SenderOrders;
+use crate::xtools::{warning_msg};
 
 /*
  ┌────────┐    ┌────────┐
@@ -35,6 +36,16 @@ use crate::SenderOrders;
 
 pub struct Rthd {}
 
+pub trait Rthds  {
+    fn thread_generate(
+        threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
+        err_msg: &Sender<String>,
+        msg: &SenderOrders,
+    ); 
+    fn send_panic_msg(panic_msg: Sender<String>) ;
+    fn send(order: u32, msg: &SenderOrders);
+}   
+
 impl Rthd {
     /// スレッドに名前を付けて生成
     ///
@@ -59,8 +70,6 @@ impl Rthd {
         err_msg: &Sender<String>,
         msg: &SenderOrders,
     ) {
-
-        
         for (name, fnc) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
             let sendr_join_handle_msg = mpsc::Sender::clone(msg);
@@ -75,13 +84,13 @@ impl Rthd {
     }
 
     /// 独自panicシステム
-    /// 
-    /// 
-    /// 
+    ///
+    ///
+    ///
     /// ```
     /// send_panic_msg("painc!");
     /// ```
-    /// 
+    ///
     pub fn send_panic_msg(panic_msg: Sender<String>) {
         let default_hook: Box<dyn Fn(&panic::PanicInfo) + Sync + Send> = panic::take_hook();
         let m: Mutex<Sender<String>> = Mutex::new(panic_msg);
@@ -96,7 +105,17 @@ impl Rthd {
             default_hook(panic_info)
         }));
     }
+
+    
 }
+
+#[inline]
+    pub fn send(order: u32, msg: &SenderOrders) {
+        match msg.send(order) {
+            Ok(_) => (),
+            Err(_) => warning_msg("Can not send msg"),
+        };
+    }
 
 /// Deprecated API
 #[macro_export]
