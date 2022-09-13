@@ -35,13 +35,7 @@ pub struct MotorGPIO {
 
 impl MotorGPIO {
 
-    /*
-    構造体には初期時に呼び出される関数がないため、
-    自ら作る必要がある
-
-    new()　は引数のGPIO Pin の初期化を担当。
-    そして return としてMotorGPIOをすることによって main関数の変数 tmp で MotorGPIOのメゾットが呼び出せる。
-    */
+    /// GPIO のピンをセットする関数
     pub fn new(r_pin: [u8; 2], l_pin: [u8; 2]) -> MotorGPIO {
 
         let mut r_pin0: OutputPin = Gpio::new().unwrap().get(r_pin[0]).unwrap().into_output();
@@ -61,124 +55,45 @@ impl MotorGPIO {
 
     }
 
-    /*
-    前進の関数
-    引数にselfがる。
-    ここら辺はPythonとなんら変わりないが、引数の &mut selfは
-    & が値を借りることを意味する(借りることを明示的に宣言している)
-    mut は値を変えることを宣言している
-    // https://doc.rust-jp.rs/book-ja/ch04-02-references-and-borrowing.html
 
-    Rust の基本として必ず値を返す時、型を明示しなければならない。
-    (-> Result<(), Box<dyn Error>>)
-
-    結果をResultで包むことによって try catch を実装しなくてもよくなる
-
-    
-    */
-    pub fn forward(&mut self)  -> Result<(), Box<dyn Error>>  {
-        //rigth motor
-
-        
-        
-        self.r_pin0.set_low();
-        self.r_pin1.set_high();
-        
-        self.l_pin0.set_low();
-        self.l_pin1.set_high();
+  
 
 
 
-        Ok(())
+    /// right モーター 前後
+     /// duty 0.0 ~ 1.0
+     pub fn rfpwm(&mut self, duty: f64) {
+        self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
+        self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
     }
 
-
-    pub fn backward(&mut self) -> Result<(), Box<dyn Error>> {
-
-
-        self.r_pin0.set_high();
-        self.r_pin1.set_low();
-        
-        self.l_pin0.set_high();
-        self.l_pin1.set_low();
-
-
-        Ok(())
-
+    /// right モーター　後進
+    /// duty 0.0 ~ 1.0
+    pub fn rbpwm(&mut self, duty: f64) {
+        self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
+        self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
     }
 
-
-
-
-    pub fn pivotTurnRight(&mut self){
-
-        self.r_pin0.set_high();
-        self.r_pin1.set_high();
-        
-        self.l_pin0.set_high();
-        self.l_pin1.set_low();
-
+    /// left モーター 前後
+    /// duty 0.0 ~ 1.0
+    pub fn lfpwm(&mut self, duty: f64) {
+        self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
+        self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
     }
 
-
-    pub fn pivotTurnLeft(&mut self){
-
-        self.r_pin0.set_high();
-        self.r_pin1.set_low();
-        
-        self.l_pin0.set_high();
-        self.l_pin1.set_high();
-        
+    /// left モーター　後進
+    /// duty 0.0 ~ 1.0
+    pub fn lbpwm(&mut self, duty: f64) {
+        self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
     }
 
-
-    pub fn turnRight(&mut self){
-
-        self.r_pin0.set_low();
-        self.r_pin1.set_high();
-        
-        self.l_pin0.set_high();
-        self.l_pin1.set_low();
-
+    /// PWMのリセット
+    pub fn pwm_all_clean(&mut self) {
+        self.r_pin0.clear_pwm().unwrap();
+        self.r_pin1.clear_pwm().unwrap();
+        self.l_pin0.clear_pwm().unwrap();
+        self.l_pin1.clear_pwm().unwrap();
     }
-
-
-    pub fn turnLeft(&mut self){
-
-        self.r_pin0.set_high();
-        self.r_pin1.set_low();
-        
-        self.l_pin0.set_low();
-        self.l_pin1.set_high();
-        
-    }
-
-
-
-
-    /*
-    pub fn right_motor(&self) -> Result<(), Box<dyn Error>> {
-        let mut pin0: OutputPin = Gpio::new()?.get(self.r_pin[0])?.into_output();
-        let mut pin1: OutputPin = Gpio::new()?.get(self.r_pin[1])?.into_output();
-
-        
-        pin0.set_low();
-        pin1.set_high();
-        
-
-        Ok(())
-    }
-
-    pub fn left_motor(&self) -> Result<(), Box<dyn Error>> {
-        let mut pin0: OutputPin = Gpio::new()?.get(self.l_pin[0])?.into_output();
-        let mut pin1: OutputPin = Gpio::new()?.get(self.l_pin[1])?.into_output();
-
-        pin0.set_low();
-        pin1.set_high();
-
-        Ok(())
-    }
-    
-    */
     
 }
