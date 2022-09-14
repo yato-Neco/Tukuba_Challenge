@@ -60,6 +60,21 @@ impl DisplayMode {
     pub fn start(&self) {
         for i in self.operation.iter() {
             println!("{:?}",*i);
+
+            
+
+            if i.0 >= 0.01 {
+                0x1F88FFFF;
+            }else{
+                "SOTP";
+            }
+
+            if i.1 != 0.0 {
+
+            }
+
+           
+
         }
 
     }
