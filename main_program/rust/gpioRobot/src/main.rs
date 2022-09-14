@@ -1,4 +1,3 @@
-use std::ascii::AsciiExt;
 use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
@@ -12,31 +11,27 @@ mod mode;
 mod xtools;
 use rthred::{send, Rthd};
 use sensor::gps::GPSmodule;
-use xtools::{ms_sleep, time_sleep, warning_msg};
+use xtools::{time_sleep, warning_msg};
+use robot::settings::Settings;
 
 type SenderOrders = Sender<u32>;
 type ReceiverOrders = Receiver<u32>;
-use clap::Parser;
+
+use clap::{Parser};
 use getch;
-enum Order {
-    stop,
-    start,
-}
+use yaml_rust::Yaml;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     #[clap(short, long, value_parser)]
     mode: String,
-    /*
-    #[clap(short, long, value_parser, default_value_t = 1)]
-    count: u8,
-    */
 }
 
 fn main() {
     let args = Args::parse();
 
+    let settings_path:&str = "./settings.yaml";
     const S: &str = r#"
      _____ _             _     _____       _           _   
     / ____| |           | |   |  __ \     | |         | |  
@@ -50,18 +45,18 @@ fn main() {
 
     match args.mode.as_str() {
         "manual" => manual(),
-        "auto" => auto(),
+        "auto" => auto(settings_path),
         "key" => key(),
         "display" => {},
         "k" => key(),
         "m" => manual(),
-        "a" => auto(),
+        "a" => auto(settings_path),
         "d" => {},
         _ => {}
     }
 }
 
-fn display() {
+fn display(settings_path:&str) {
 
 }
 
@@ -110,33 +105,33 @@ fn manual() {
 
 fn key() {
     loop {
-        let a = getch::Getch::new();
-        let b = a.getch().unwrap();
+        let key = getch::Getch::new();
+        let key_order_u8 = key.getch().unwrap();
         //println!("{}", b);
 
-        let order = match b {
+        let order = match key_order_u8 {
             119 => {
-                "w";
-                0x1FAAFFFF
+                // w
+                0x1FBBFFFF
             }
             97 => {
-                "a";
-                0x1F29FFFF
+                // a
+                0x1F48FFFF
             }
             100 => {
-                "d";
-                0x1F92FFFF
+                // d
+                0x1F84FFFF
             }
             115 => {
-                "s";
-                0x1F22FFFF
+                // s
+                0x1F33FFFF
             }
             32 => {
-                "stop";
+                // stop
                 order::STOP
             }
             3 => {
-                "break";
+                // break
                 order::BREAK
             }
 
@@ -144,9 +139,7 @@ fn key() {
         };
 
         if ((order & 0xF0000000) >> 28_u8) == 0 {
-            //println!("特権コードー");
             let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
-            //println!("{}",privileged_instruction);
 
             match privileged_instruction {
                 1 => panic!("特権命令、パニック‼"),
@@ -160,8 +153,11 @@ fn key() {
     }
 }
 
-fn auto() {
-    let mut threads: HashMap<&str, fn(Sender<String>, SenderOrders)> = HashMap::new();
+fn auto(settings_path:&str) {
+    let mut threads: HashMap<&str, fn(Sender<String>, SenderOrders, Yaml)> = HashMap::new();
+
+
+    let settings_yaml = Settings::load_setting(settings_path);
 
     threads.insert("gps", gps);
     threads.insert("lidar", lidar);
@@ -171,10 +167,8 @@ fn auto() {
 
     let (sendr_msg, receiver_msg): (SenderOrders, ReceiverOrders) = mpsc::channel();
 
-    // TODO: 各スレッドに命令を飛ばす。 <- 無理です
-    let (sendr_msg1, receiver_msg1): (SenderOrders, ReceiverOrders) = mpsc::channel();
 
-    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg);     
+    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg, settings_yaml);     
 
     let mut pause = false;
 
@@ -184,19 +178,9 @@ fn auto() {
             Err(_) => None,
         };
 
-        /*
-        match result  {
-            Some(e) => {
-
-            }
-            None => {}
-        }
-        */
-
         if result != None {
             let order: u32 = result.unwrap();
             if ((order & 0xF0000000) >> 28_u8) == 0 {
-                //println!("特権コードー");
                 let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
                 println!("特権コードー　{}",privileged_instruction);
 
@@ -217,13 +201,7 @@ fn auto() {
                 }
                 analysis(order);
             }
-            /*
-            println!(
-                "right {} : left {}",
-                (d & 0x00F00000) >> 20,
-                (d & 0x000F0000) >> 16
-            );
-            */
+ 
         }
 
     }
@@ -236,25 +214,23 @@ fn test() {
 }
 
 fn analysis(order: u32) {
-    let rM: u8 = ((order & 0x00F00000) >> 20) as u8;
-    let lM: u8 = ((order & 0x000F0000) >> 16) as u8;
-    //println!("{} {}",rM,lM);
-
+    let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
+    let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
     match (rM, lM) {
         (1..=7, 1..=7) => {
-            println!("後進 {} {}", -1 * rM as i8, -1 * lM as i8);
+            println!("後進 {} {}", (rM - 8).abs() , (lM - 8).abs());
         }
         (8..=14, 8..=14) => {
-            println!("前進 {} {}", rM - 7, lM - 7);
+            println!("前進 {} {}", rM - 4 , lM - 4);
         }
         (0, 0) => {
             println!("ストップ");
         }
         (1..=7, 8..=14) => {
-            println!("回転 {} {}", -1 * rM as i8, lM - 7);
+            println!("回転 {} {}", (rM - 8).abs(), lM - 4);
         }
         (8..=14, 1..=7) => {
-            println!("回転 {} {}", rM - 7, -1 * lM as i8);
+            println!("回転 {} {}", rM - 4,  (lM - 8).abs());
         }
         _ => {
             //println!("その他 {} {}", rM, lM);
@@ -278,17 +254,17 @@ pub fn Motor() {
     println!("Run");
 }
 
-fn lidar(panic_msg: Sender<String>, msg: Sender<u32>) {
+fn lidar(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
     Rthd::send_panic_msg(panic_msg);
     time_sleep(0, 5);
     msg.send(0x0FFFFFF1).unwrap();
+    //println!("{:?}",settings_yaml["Robot"]["gps"]["waypoint"][0].as_str().unwrap());
     //time_sleep(0, 1);
     //msg.send(0x0FFFFFF1).unwrap();
 
 }
 
-fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
-
+fn gps(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
     Rthd::send_panic_msg(panic_msg);
 
     let mut is_beginning: bool = true;
@@ -311,7 +287,7 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
         latlot: &mut latlot,
     };
 
-    tmp.load_waypoint();
+    tmp.load_waypoint(settings_yaml["Robot"]["gps"]["waypoint"][0].as_str().unwrap());
 
     loop {
         //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff, point切り替え)
@@ -345,8 +321,6 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>) {
                 println!("{}", "-".repeat(20));
                 println!("ウェイポイント {:?}", flag.4);
                 println!("now_azi {}", now_azimuth);
-                //println!("{:x}", order);
-
                 println!("azimuth: {} ", flag.1 .0);
                 let azimuth = flag.1 .0;
 
@@ -381,7 +355,7 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
     loop {
         time_sleep(1, 0);
 
-        msg.send(0x0000).unwrap();
+        msg.send(0x000000000000).unwrap();
     }
 }
 

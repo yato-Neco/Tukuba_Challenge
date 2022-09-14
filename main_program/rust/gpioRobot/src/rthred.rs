@@ -3,6 +3,8 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
+use yaml_rust::Yaml;
+
 use crate::SenderOrders;
 use crate::xtools::{warning_msg};
 
@@ -66,18 +68,19 @@ impl Rthd {
     ///
     /// ```
     pub fn thread_generate(
-        threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
+        threads: HashMap<&str, fn(Sender<String>, SenderOrders, Yaml)>,
         err_msg: &Sender<String>,
         msg: &SenderOrders,
+        settings_yaml: Yaml
     ) {
         for (name, fnc) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
             let sendr_join_handle_msg = mpsc::Sender::clone(msg);
-
+            let s = settings_yaml.clone();
             let _thread = thread::Builder::new()
                 .name(name.to_string())
                 .spawn(move || {
-                    fnc(sendr_join_handle_errmsg, sendr_join_handle_msg);
+                    fnc(sendr_join_handle_errmsg, sendr_join_handle_msg, s);
                 })
                 .unwrap();
         }

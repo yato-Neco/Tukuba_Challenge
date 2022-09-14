@@ -124,7 +124,7 @@ impl GPSmodule<'_> {
         (azimuth, distance)
     }
 
-    /// TODO: 距離も追加
+    /// TODO: 距離も追加</br>
     /// 非推奨
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> f64 {
         let pos_a = WGS84::from_degrees_and_meters(self.latlot[0].0, self.latlot[0].1, 0.0);
@@ -169,11 +169,24 @@ impl GPSmodule<'_> {
         return false;
     }
 
-    pub fn load_waypoint(&mut self) {
+    ///
+    /// load_waypointの引数はファイルパス</br>
+    /// CSVファイルをロード</br>
+    /// ※Excelでcsvファイルを操作するな!
+    /// ```
+    /// let path:&str = "./waypoint";
+    /// 
+    /// let mut gps = GPSmodule{};
+    /// 
+    /// gps.load_waypoint(path);
+    /// 
+    /// ```
+    /// 
+    pub fn load_waypoint(&mut self,path:&str) {
         extern crate csv;
         use std::fs::File;
 
-        let file = File::open("waypoint.csv").unwrap();
+        let file = File::open(path).unwrap();
         let mut rdr = csv::Reader::from_reader(file);
         println!("waypoint");
         for (i, result) in rdr.records().enumerate() {

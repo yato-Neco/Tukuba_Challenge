@@ -3,7 +3,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-
 pub struct Benchmark {
     start_time: Instant,
 }
@@ -11,7 +10,7 @@ pub struct Benchmark {
 /// プログラムの実行スピードを測る
 ///
 /// ```
-/// let mut time =  Benchmark::start();
+/// let mut time = Benchmark::start();
 ///
 /// time.end();
 ///
@@ -41,20 +40,16 @@ pub fn time_sleep(sec: u64, ms: u64) {
 }
 
 #[inline]
-
 pub fn warning_msg(txt: &str) {
     //println!("{}{}", "Warning: ".red(), txt);
-    println!("\x1b[{}mWarning:\x1b[m {}",33, txt)
+    println!("\x1b[{}mWarning:\x1b[m {}", 33, txt)
 }
-
 
 #[inline]
 /// 非推奨
 pub fn ms_sleep(ms: u64) {
     thread::sleep(Duration::from_millis(ms));
 }
-
-
 
 #[test]
 fn test() {

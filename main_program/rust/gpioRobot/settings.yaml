@@ -1,0 +1,18 @@
+Robot:
+  moter:
+    circumference:
+      - 55.0
+  
+    volt:
+      - 0.0
+
+  lidar:
+    threshold:
+      - 3.5
+  
+  gps:
+    waypoint:
+      - "./waypoint.csv"
+
+  
+

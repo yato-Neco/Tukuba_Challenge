@@ -14,3 +14,4 @@ getch = "0.3.1"
 clap = { version = "3.2.19", features = ["derive"] }
 yaml-rust = "0.4"
 csv = "1.1"
+ydlidarx2-rs = { git = "https://github.com/yato-Neco/ydlidarx2-rs.git", branch = "master"}
