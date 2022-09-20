@@ -23,13 +23,18 @@ impl Benchmark {
         }
     }
 
-    pub fn end(&self) {
+    pub fn endprln(&self) {
         let end = self.start_time.elapsed();
         println!(
             "Process {}.{:03} msec",
             end.as_micros() / 1000,
             end.as_micros() % 1000,
         );
+    }
+
+    pub fn end(&self) -> f64 {
+        let end = self.start_time.elapsed();
+        end.as_secs_f64()
     }
 }
 
@@ -39,6 +44,10 @@ pub fn time_sleep(sec: u64, ms: u64) {
     thread::sleep(Duration::from_millis(ms));
 }
 
+
+
+
+/// warning: の部分が黄色になる。
 #[inline]
 pub fn warning_msg(txt: &str) {
     //println!("{}{}", "Warning: ".red(), txt);
@@ -51,7 +60,25 @@ pub fn ms_sleep(ms: u64) {
     thread::sleep(Duration::from_millis(ms));
 }
 
+
 #[test]
 fn test() {
     warning_msg("test");
+
+    let tmp2 = (11.0 - 4.0) * 0.1;
+    println!("{:?}",tmp2);
+
+    let tmp = roundf(tmp2, 10);
+
+
+    println!("{}",tmp);
+
+}
+
+
+///
+/// 四捨五入
+#[inline]
+pub fn roundf(x:f64,square:i32) -> f64 {
+     (x * (square as f64)).round() / (square as f64)
 }

@@ -3,21 +3,21 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
+mod mode;
 mod order;
 mod robot;
 mod rthred;
 mod sensor;
-mod mode;
 mod xtools;
+use robot::settings::Settings;
 use rthred::{send, Rthd};
 use sensor::gps::GPSmodule;
-use xtools::{time_sleep, warning_msg};
-use robot::settings::Settings;
+use xtools::{time_sleep, warning_msg,roundf};
 
 type SenderOrders = Sender<u32>;
 type ReceiverOrders = Receiver<u32>;
 
-use clap::{Parser};
+use clap::Parser;
 use getch;
 use yaml_rust::Yaml;
 
@@ -31,7 +31,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let settings_path:&str = "./settings.yaml";
+    let settings_path: &str = "./settings.yaml";
     const S: &str = r#"
      _____ _             _     _____       _           _   
     / ____| |           | |   |  __ \     | |         | |  
@@ -46,19 +46,17 @@ fn main() {
     match args.mode.as_str() {
         "manual" => manual(),
         "auto" => auto(settings_path),
-        "key" => key(),
-        "display" => {},
-        "k" => key(),
+        "key" => key(settings_path),
+        "display" => {}
+        "k" => key(settings_path),
         "m" => manual(),
         "a" => auto(settings_path),
-        "d" => {},
+        "d" => {}
         _ => {}
     }
 }
 
-fn display(settings_path:&str) {
-
-}
+fn display(settings_path: &str) {}
 
 fn manual() {
     println!("0x{};", "-".repeat(2 << 2));
@@ -98,12 +96,23 @@ fn manual() {
                 _ => {}
             }
         } else {
-            analysis(order);
+            println!("{:?}",analysis(order));
         }
     }
 }
 
-fn key() {
+fn key(settings_path:&str) {
+    let settings_yaml = Settings::load_setting(settings_path);
+    let mut settings_spped_orders = [0_u32;4];
+    
+
+    
+    for i in settings_yaml["Robot"]["Key_mode"]["speed"].clone().into_iter().enumerate(){
+        settings_spped_orders[i.0] = i.1.as_i64().unwrap() as u32;
+    }
+
+    drop(settings_yaml);
+
     loop {
         let key = getch::Getch::new();
         let key_order_u8 = key.getch().unwrap();
@@ -112,19 +121,19 @@ fn key() {
         let order = match key_order_u8 {
             119 => {
                 // w
-                0x1FBBFFFF
+                settings_spped_orders[0]
             }
             97 => {
                 // a
-                0x1F48FFFF
-            }
-            100 => {
-                // d
-                0x1F84FFFF
+                settings_spped_orders[1]
             }
             115 => {
                 // s
-                0x1F33FFFF
+                settings_spped_orders[2]
+            }
+            100 => {
+                // d
+                settings_spped_orders[3]
             }
             32 => {
                 // stop
@@ -148,14 +157,13 @@ fn key() {
                 _ => {}
             }
         } else {
-            analysis(order);
+            println!("{:?}",analysis(order));
         }
     }
 }
 
-fn auto(settings_path:&str) {
+fn auto(settings_path: &str) {
     let mut threads: HashMap<&str, fn(Sender<String>, SenderOrders, Yaml)> = HashMap::new();
-
 
     let settings_yaml = Settings::load_setting(settings_path);
 
@@ -167,8 +175,7 @@ fn auto(settings_path:&str) {
 
     let (sendr_msg, receiver_msg): (SenderOrders, ReceiverOrders) = mpsc::channel();
 
-
-    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg, settings_yaml);     
+    Rthd::thread_generate(threads, &sendr_err_handles, &sendr_msg, settings_yaml);
 
     let mut pause = false;
 
@@ -182,60 +189,68 @@ fn auto(settings_path:&str) {
             let order: u32 = result.unwrap();
             if ((order & 0xF0000000) >> 28_u8) == 0 {
                 let privileged_instruction: u8 = ((order & 0x0000000F) >> 0) as u8;
-                println!("特権コードー　{}",privileged_instruction);
+                println!("特権コードー　{}", privileged_instruction);
 
                 match privileged_instruction {
                     1 => {
                         pause = !pause;
-                        
+
                         continue;
-                    },
+                    }
                     3 => break,
                     4 => break,
                     14 => panic!("特権命令、パニック‼"),
                     _ => {}
                 }
             } else {
-                if pause { 
+                if pause {
                     continue;
                 }
-                analysis(order);
+                
+                println!("{:?}",analysis(order));
             }
- 
         }
-
     }
-   
 }
 
 #[test]
-fn test() {
+fn test() {}
 
-}
-
-fn analysis(order: u32) {
+fn analysis(order: u32) -> ((f64, f64), (f64, f64)) {
     let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
     let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
-    match (rM, lM) {
+     match (rM, lM) {
         (1..=7, 1..=7) => {
-            println!("後進 {} {}", (rM - 8).abs() , (lM - 8).abs());
+            println!("後進 {} {}", (rM - 8).abs(), (lM - 8).abs());
+            ((0.0, roundf((rM - 8).abs() as f64 * 0.1,10)), (0.0, roundf((lM - 8).abs() as f64 * 0.1, 10)))
         }
         (8..=14, 8..=14) => {
-            println!("前進 {} {}", rM - 4 , lM - 4);
+            println!("前進 {} {}", rM - 4, lM - 4);
+            ((roundf(((rM - 4) as f64 * 0.1) * 1.0, 10), 0.0), (roundf((lM - 4) as f64 * 0.1, 10), 0.0))
         }
         (0, 0) => {
             println!("ストップ");
+            ((0.0, 0.0), (0.0, 0.0))
         }
         (1..=7, 8..=14) => {
             println!("回転 {} {}", (rM - 8).abs(), lM - 4);
+            ((0.0, roundf((rM - 8).abs() as f64 * 0.1, 10)), (roundf((lM - 4) as f64 * 0.1, 10), 0.0))
         }
         (8..=14, 1..=7) => {
-            println!("回転 {} {}", rM - 4,  (lM - 8).abs());
+            println!("回転 {} {}", rM - 4, (lM - 8).abs());
+            ((roundf((rM - 4) as f64 * 0.1, 10),0.0), (0.0, roundf((lM - 8).abs() as f64 * 0.1,10)))
         }
         _ => {
             //println!("その他 {} {}", rM, lM);
+            ((0.0, 0.0), (0.0, 0.0))
         }
     }
+
+}
+
+
+fn moter(order: u32){
+
 }
 
 //#[cfg(target_os = "linux")]linux の場合呼び出される関数
@@ -254,17 +269,16 @@ pub fn Motor() {
     println!("Run");
 }
 
-fn lidar(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
+fn lidar(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml: Yaml) {
     Rthd::send_panic_msg(panic_msg);
     time_sleep(0, 5);
     msg.send(0x0FFFFFF1).unwrap();
     //println!("{:?}",settings_yaml["Robot"]["gps"]["waypoint"][0].as_str().unwrap());
     //time_sleep(0, 1);
     //msg.send(0x0FFFFFF1).unwrap();
-
 }
 
-fn gps(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
+fn gps(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml: Yaml) {
     Rthd::send_panic_msg(panic_msg);
 
     let mut is_beginning: bool = true;
@@ -287,7 +301,11 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
         latlot: &mut latlot,
     };
 
-    tmp.load_waypoint(settings_yaml["Robot"]["gps"]["waypoint"][0].as_str().unwrap());
+    tmp.load_waypoint(
+        settings_yaml["Robot"]["Gps"]["waypoint"][0]
+            .as_str()
+            .unwrap(),
+    );
 
     loop {
         //(bool, (f64, f64), (f64, f64)) (false, (azimuth, distance), diff, point切り替え)
@@ -330,7 +348,6 @@ fn gps(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml:Yaml) {
                 //println!("{:x}",order);
                 //send(order,&msg);
                 is = false;
-
             }
             //println!("{:x} {:x}",order_q[0], order_q[1]);
             if order_q[0] != order_q[1] {
@@ -358,7 +375,6 @@ fn s4(panic_msg: Sender<String>, msg: SenderOrders) {
         msg.send(0x000000000000).unwrap();
     }
 }
-
 
 #[test]
 fn motor_rotate() {

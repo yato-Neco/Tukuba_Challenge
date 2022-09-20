@@ -227,7 +227,7 @@ impl GPSmodule<'_> {
         if isr == isl {
             //send(STOP,&msg);
         } else if isr != isl {
-            send(0x1F29FFFF, &msg);
+            send(0x1F2AFFFF, &msg);
             loop {
                 let _now_azimuth = (*now_azimuth * c2).round() / c2;
                 //println!("{}",_now_azimuth);
