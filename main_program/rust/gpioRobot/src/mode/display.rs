@@ -18,11 +18,8 @@ fn test() {
         };
         let s = Benchmark::start();
         //println!("{:X} {}", order.0, order.1);
-<<<<<<< HEAD
-        println!("{:?}",moter_control(order.0,&mut moter));
-=======
+
         MoterGPIO::moter_control(order.0,&mut moter);
->>>>>>> dev
         time_sleep(0, order.1 as u64);
         println!("{}", roundf(s.end(), 100));
     }
@@ -94,46 +91,3 @@ impl DisplayMode {
 }
 
 
-<<<<<<< HEAD
-fn moter_control(order: u32, moter:&mut MoterGPIO)  {
-    let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
-    let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
-     match (rM, lM) {
-        (1..=7, 1..=7) => {
-            println!("後進 {} {}", (rM - 8).abs(), (lM - 8).abs());
-            moter.rbpwm(roundf((rM - 8).abs() as f64 * 0.1,10));
-            moter.lbpwm(roundf((lM - 8).abs() as f64 * 0.1, 10));
-        }
-        (8..=14, 8..=14) => {
-            println!("前進 {} {}", rM - 4, lM - 4);
-            moter.rfpwm(roundf((rM - 4) as f64 * 0.1, 10));
-            moter.lfpwm(roundf((lM - 4) as f64 * 0.1, 10));
-
-        }
-        (0, 0) => {
-            println!("ストップ");
-            moter.pwm_all_clean();
-        }
-        (1..=7, 8..=14) => {
-            println!("回転 {} {}", (rM - 8).abs(), lM - 4);
-            moter.rbpwm(roundf((rM - 8).abs() as f64 * 0.1, 10));
-            moter.lfpwm(roundf((lM - 4) as f64 * 0.1, 10));
-
-        }
-        (8..=14, 1..=7) => {
-            println!("回転 {} {}", rM - 4, (lM - 8).abs());
-            moter.rfpwm(roundf((rM - 4) as f64 * 0.1, 10));
-            moter.lbpwm(roundf((lM - 8).abs() as f64 * 0.1,10));
-      
-        }
-        _ => {
-            //println!("その他 {} {}", rM, lM);
-            moter.pwm_all_clean();
-        }
-    };
-
-}
-
-=======
-
->>>>>>> dev

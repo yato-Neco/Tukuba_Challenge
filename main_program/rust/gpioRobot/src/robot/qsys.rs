@@ -35,9 +35,8 @@ impl Qu for Vec<u32> {
     fn qget(&mut self) -> Option<u32> {
 
         let mut q0:Option<u32> = None;
-
         if self.len() > 0 {
-            q0 = Some(self[0].clone());
+            q0 = Some(self[0]);
             self.remove(0);
         }
 
