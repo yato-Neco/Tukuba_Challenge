@@ -19,7 +19,6 @@ fn test() {
 }
 
 #[derive(Debug)]
-
 struct Queue {
 
     pub q:Vec<u32>,    

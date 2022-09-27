@@ -1,9 +1,12 @@
 use crate::robot::settings::Settings;
+use crate::xtools::{warning_msg};
 use std::time::Duration;
+use yaml_rust::Yaml;
 use ydlidarx2_rs;
 
-fn lidar(path:&str) {
-    let mut port = match serialport::new("COM4", 115200)
+fn lidar(path:&str,settings_yaml:&Yaml ) {
+
+    let mut port = match serialport::new(settings_yaml["Robot"]["Lidar"]["port"][0].as_str().unwrap(), 115200)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Eight)
         .timeout(Duration::from_millis(10))
@@ -13,11 +16,20 @@ fn lidar(path:&str) {
         Err(_) => (panic!()),
     };
 
-    let mut serial_buf: Vec<u8> = vec![0_u8; 300];
+    let mut serial_buf: Vec<u8> = vec![0_u8; 500];
 
     let threshold:f64 = Settings::load_setting(path)["Robot"]["lidar"]["threshold"][0]
         .as_f64()
         .unwrap();
+
+    let mut countt:usize  = 0;
+    
+
+    let mut countt2:usize  = 0;
+
+    let mut flag0 = false;
+    let mut flag1 = false;
+
 
     loop {
         match port.read(serial_buf.as_mut_slice()) {
@@ -26,15 +38,37 @@ fn lidar(path:&str) {
 
 
                 let points =  ydlidarx2_rs::ydlidarx2(&mut data);
-                //println!("{:?}",points);
+                
                 for i in points {
                     if i.0 >= 45.0 && i.0 <= 235.0 && i.1 < threshold {
                         println!("{}度 {}cm", i.0, i.1);
+
+                        countt+=1;
+                        countt2 = 0;
                     }
+
+                    if i.0 >= 45.0 && i.0 <= 235.0 && i.1 >= threshold {
+                        countt2+=1;
+                        countt = 0;
+                    }
+
+                    if countt == 1  || countt2 == 1{
+
+                            
+                    }
+
+                    if countt > 2 || countt2 > 2 {
+                        countt = 2;
+                        countt2 = 2;
+                    }
+
+                    
                 }
             }
 
-            Err(_) => {}
+            Err(_) => {
+                warning_msg("");
+            }
         }
     }
 }

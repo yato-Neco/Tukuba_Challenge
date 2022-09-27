@@ -18,7 +18,11 @@ fn test() {
         };
         let s = Benchmark::start();
         //println!("{:X} {}", order.0, order.1);
+<<<<<<< HEAD
         println!("{:?}",moter_control(order.0,&mut moter));
+=======
+        MoterGPIO::moter_control(order.0,&mut moter);
+>>>>>>> dev
         time_sleep(0, order.1 as u64);
         println!("{}", roundf(s.end(), 100));
     }
@@ -90,6 +94,7 @@ impl DisplayMode {
 }
 
 
+<<<<<<< HEAD
 fn moter_control(order: u32, moter:&mut MoterGPIO)  {
     let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
     let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
@@ -129,3 +134,6 @@ fn moter_control(order: u32, moter:&mut MoterGPIO)  {
 
 }
 
+=======
+
+>>>>>>> dev

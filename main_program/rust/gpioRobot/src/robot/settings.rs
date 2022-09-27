@@ -26,4 +26,20 @@ impl Settings {
     }
 
     
+
+    pub fn load_moter_pin(settings_yaml:&Yaml)-> ([u8; 2], [u8; 2]) {
+
+
+        let r0 = settings_yaml["Robot"]["Moter"]["right_gpio"][0].as_i64().unwrap() as u8;
+        let r1 = settings_yaml["Robot"]["Moter"]["right_gpio"][1].as_i64().unwrap() as u8;
+
+        let l0 = settings_yaml["Robot"]["Moter"]["left_gpio"][0].as_i64().unwrap() as u8;
+        let l1 = settings_yaml["Robot"]["Moter"]["left_gpio"][1].as_i64().unwrap() as u8;
+
+
+        ([r0,r1],[l0,l1])
+
+    }
+
+    
 }
