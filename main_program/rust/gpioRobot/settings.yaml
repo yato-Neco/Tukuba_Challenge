@@ -6,9 +6,19 @@ Robot:
     volt:
       - 0.0
 
+    right_gpio:
+      - 25
+      - 24
+
+    left_gpio:
+     - 23
+     - 22
+
   Lidar:
     threshold:
       - 3.5
+    port:
+      - "COM4"
   
   Gps:
     waypoint:
