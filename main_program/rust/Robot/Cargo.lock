@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "core"
 version = "0.1.0"
+dependencies = [
+ "load-shdlib",
+]
+
+[[package]]
+name = "load-shdlib"
+version = "0.1.0"
