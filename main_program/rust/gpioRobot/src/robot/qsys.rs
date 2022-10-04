@@ -7,12 +7,10 @@ use crate::xtools::{Benchmark,time_sleep};
 #[test]
 fn test() {
 
-
-    
-
-
     let mut t:Vec<u32>= Vec::<u32>::with_capacity(2);
-    t.push(0xfffff);
+    t.push(0xffffffff);
+    t.push(0xffffffff);
+
     println!("{:?}", t.qget());
     println!("{:?}", t);
 
