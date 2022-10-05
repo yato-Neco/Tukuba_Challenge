@@ -1,3 +1,6 @@
+use yaml_rust::Yaml;
+
+use crate::robot::settings::Settings;
 use crate::xtools::{roundf, time_sleep, Benchmark};
 use crate::robot::moter::{MoterGPIO};
 
@@ -7,9 +10,13 @@ pub struct DisplayMode {
 
 #[test]
 fn test() {
+    let settings_path: &str = "./settings.yaml";
+
+    let settings_yaml = Settings::load_setting(settings_path);
+
     let mut tmp = DisplayMode::new();
     let mut moter = MoterGPIO::new([25,24],[22,23]);
-    tmp.load_csv();
+    tmp.load_csv(&settings_yaml);
 
     loop {
         let order = match tmp.start() {
@@ -34,11 +41,13 @@ impl DisplayMode {
     }
     /// ロボットを動かすためのcsvを読み込む
     ///
-    pub fn load_csv(&mut self) {
+    pub fn load_csv(&mut self,settings_yaml: &Yaml) {
         extern crate csv;
         use std::fs::File;
 
-        let file = File::open("order.csv").unwrap();
+
+
+        let file = File::open(settings_yaml["Robot"]["Display_mode"]["order"][0].as_str().unwrap()).unwrap();
         let mut rdr = csv::Reader::from_reader(file);
         for (i, result) in rdr.records().enumerate() {
             let record = result.expect("a CSV record");

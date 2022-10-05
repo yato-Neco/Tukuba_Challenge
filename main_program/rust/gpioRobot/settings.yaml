@@ -17,8 +17,13 @@ Robot:
   Lidar:
     threshold:
       - 3.5
+
     port:
       - "COM4"
+    sr:
+      - 45.0
+    er: 
+      - 235.0
   
   Gps:
     waypoint:

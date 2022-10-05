@@ -297,8 +297,9 @@ pub fn Motor() {
 
 fn lidar(panic_msg: Sender<String>, msg: Sender<u32>, settings_yaml: Yaml) {
     Rthd::send_panic_msg(panic_msg);
-    time_sleep(0, 5);
-    msg.send(0x0FFFFFF1).unwrap();
+    time_sleep(0, 500);
+    sensor::lidar::lidar(msg, &settings_yaml);
+    //msg.send(0x0FFFFFF1).unwrap();
     //println!("{:?}",settings_yaml["Robot"]["gps"]["waypoint"][0].as_str().unwrap());
     //time_sleep(0, 1);
     //msg.send(0x0FFFFFF1).unwrap();
