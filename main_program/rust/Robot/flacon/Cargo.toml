@@ -1,15 +1,10 @@
 [package]
-name = "core"
+name = "flacon"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-load-shdlib = { path = "../load-shdlib" }
-slam = { path = "../slam" }
-flacon = {path = "../flacon"}
-
-yaml-rust = "0.4"
 tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.57"

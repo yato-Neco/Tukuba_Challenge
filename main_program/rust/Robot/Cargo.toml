@@ -3,4 +3,9 @@
 members = [
     "core",
     "load-shdlib",
+    "slam",
+    "gps",
+    "api",
+    "lidar",
+    "flacon",
 ]
