@@ -9,7 +9,10 @@ edition = "2021"
 load-shdlib = { path = "../load-shdlib" }
 slam = { path = "../slam" }
 flacon = {path = "../flacon"}
+robot-gpio = {path = "../robot-gpio"}
+
 
 yaml-rust = "0.4"
 tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.57"
+getch = "0.3.1"

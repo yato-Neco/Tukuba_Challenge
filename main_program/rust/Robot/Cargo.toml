@@ -8,4 +8,7 @@ members = [
     "api",
     "lidar",
     "flacon",
+    "robot-gpio",
+    "robot-serialport"
+
 ]
