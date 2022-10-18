@@ -2,10 +2,6 @@ use std::cell::Cell;
 use std::collections::HashMap;
 
 use robot_gpio::Moter;
-use gps::GPSmodule;
-
-
-
 
 
 
@@ -46,6 +42,7 @@ impl<T,R> Flags<T,R> for FlaCon<T,R> {
     
 
     fn none_fnc(_self: &FlaCon<T,R>) {
+        
     }
 }
 
@@ -66,6 +63,7 @@ impl<T,R> Event for FlaCon<T,R> {
         tmp(self);
     }
 }
+
 
 #[cfg(test)]
 mod tests {

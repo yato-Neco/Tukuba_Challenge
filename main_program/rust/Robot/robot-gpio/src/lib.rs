@@ -1,7 +1,7 @@
 #[derive(PartialEq)]
 pub enum Mode {
     Front,
-    Back
+    Back,
 }
 
 #[cfg(target_os = "linux")]
@@ -52,6 +52,26 @@ impl Moter {
         };
     }
 
+    pub fn right(&mut self, duty: f64, mode: Mode) {
+        if mode == Mode::Front {
+            self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
+            self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+        } else {
+            self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
+            self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
+        }
+    }
+
+    pub fn left(&mut self, duty: f64, mode: Mode) {
+        if mode == Mode::Front {
+            self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
+            self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+        } else {
+            self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
+            self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
+        }
+    }
+
     /// right モーター 前後
     /// duty 0.0 ~ 1.0
     pub fn rfpwm(&mut self, duty: f64) {
@@ -88,28 +108,27 @@ impl Moter {
         self.l_pin1.clear_pwm().unwrap();
     }
 
-    pub fn moter_control(&mut self,order: u32) {
+    pub fn moter_control(&mut self, order: u32) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
-        
+
         match (rM, lM) {
             (1..=7, 1..=7) => {
-                self.right(rM as f64/ 7.0, Mode::Front);
+                self.right(rM as f64 / 7.0, Mode::Front);
                 self.left(lM as f64 / 7.0, Mode::Front);
-            },
+            }
             (8..=14, 8..=14) => {
-                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.right((rM - 7) as f64 / 7.0, Mode::Back);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
-            },
+            }
             (1..=7, 8..=14) => {
-                self.right(rM as f64/ 7.0, Mode::Front);
+                self.right(rM as f64 / 7.0, Mode::Front);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
-            },
+            }
             (8..=14, 1..=7) => {
-                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.right((rM - 7) as f64 / 7.0, Mode::Back);
                 self.left(lM as f64 / 7.0, Mode::Front);
-
-            },
+            }
             _ => {
                 self.pwm_all_clean();
             }
@@ -166,9 +185,7 @@ impl Moter {
     pub fn _right(&mut self, duty: f64) {}
     pub fn right(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
-            
-        }else{
-
+        } else {
         }
     }
 
@@ -181,9 +198,7 @@ impl Moter {
     pub fn _left(&mut self, duty: f64) {}
     pub fn left(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
-            
-        }else{
-            
+        } else {
         }
     }
 
@@ -194,43 +209,42 @@ impl Moter {
     /// PWMのリセット
     pub fn pwm_all_clean(&mut self) {}
 
-    pub fn order_analysis( order: u32)  -> (f64, f64) {
+    pub fn order_analysis(order: u32) -> (f64, f64) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
-        
+
         match (rM, lM) {
-            (1..=7, 1..=7) => {(rM as f64/ 7.0, lM as f64 / 7.0)},
-            (8..=14, 8..=14) => {((rM - 7) as f64/ 7.0, (lM - 7) as f64 / 7.0)},
-            (1..=7, 8..=14) => {(rM as f64/ 7.0, (lM - 7)as f64 / 7.0)},
-            (8..=14, 1..=7) => {((rM - 7) as f64/ 7.0, lM  as f64/ 7.0)},
+            (1..=7, 1..=7) => (rM as f64 / 7.0, lM as f64 / 7.0),
+            (8..=14, 8..=14) => ((rM - 7) as f64 / 7.0, (lM - 7) as f64 / 7.0),
+            (1..=7, 8..=14) => (rM as f64 / 7.0, (lM - 7) as f64 / 7.0),
+            (8..=14, 1..=7) => ((rM - 7) as f64 / 7.0, lM as f64 / 7.0),
             _ => {
                 //self.pwm_all_clean();
                 (0.0, 0.0)
             }
         }
     }
-    pub fn moter_control(&mut self,order: u32) {
+    pub fn moter_control(&mut self, order: u32) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
-        
+
         match (rM, lM) {
             (1..=7, 1..=7) => {
-                self.right(rM as f64/ 7.0, Mode::Front);
+                self.right(rM as f64 / 7.0, Mode::Front);
                 self.left(lM as f64 / 7.0, Mode::Front);
-            },
+            }
             (8..=14, 8..=14) => {
-                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.right((rM - 7) as f64 / 7.0, Mode::Back);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
-            },
+            }
             (1..=7, 8..=14) => {
-                self.right(rM as f64/ 7.0, Mode::Front);
+                self.right(rM as f64 / 7.0, Mode::Front);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
-            },
+            }
             (8..=14, 1..=7) => {
-                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.right((rM - 7) as f64 / 7.0, Mode::Back);
                 self.left(lM as f64 / 7.0, Mode::Front);
-
-            },
+            }
             _ => {
                 self.pwm_all_clean();
             }

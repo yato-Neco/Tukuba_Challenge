@@ -1,15 +1,14 @@
+use crate::xtools::{time_sleep, warning_msg};
 use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::GPSmodule;
 use robot_gpio::Moter;
-use crate::xtools::{warning_msg,time_sleep};
 
 use super::tui;
 use super::{
     config::{self, SenderOrders},
     rthred::Rthd,
     setting::Settings,
-
 };
 
 use std::{
@@ -30,6 +29,7 @@ pub struct AutoModule {
 #[derive(Debug)]
 pub struct AutoEvents {
     pub is_debug: bool,
+    pub is_avoidance:bool,
     pub is_move: Cell<bool>,
     pub is_trune: Cell<bool>,
     pub is_emergency_stop_lv1: Cell<bool>,
@@ -46,6 +46,7 @@ pub struct KeyModule {
 #[derive(Debug)]
 pub struct KeyEvents {
     pub is_debug: bool,
+    pub is_avoidance:bool,
     pub is_move: Cell<bool>,
     pub is_trune: Cell<bool>,
     pub is_emergency_stop_lv1: Cell<bool>,
@@ -97,6 +98,7 @@ impl Mode {
 
         let event = AutoEvents {
             is_debug: true,
+            is_avoidance: true,
             is_move: Cell::new(false),
             is_trune: Cell::new(false),
             is_emergency_stop_lv1: Cell::new(false),
@@ -188,6 +190,7 @@ impl Mode {
 
         let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
             mpsc::channel();
+        
 
         let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
             std::collections::HashMap::new();
@@ -200,19 +203,19 @@ impl Mode {
             }
         });
 
-
         thread.insert("gps", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::send_panic_msg(panic_msg);
-            time_sleep(1,500);
+            time_sleep(1, 500);
             msg.send(0x1FEEFFFF).unwrap();
-
         });
 
         Rthd::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
+
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
+
                     flag_controler.event.order.set(e);
                     flag_controler.load_fnc("set_emergency_stop");
                 }
@@ -270,13 +273,13 @@ impl Mode {
             r: 0.001,
             latlot: latlot,
         };
-
         */
 
         let module = KeyModule { moter_controler };
 
         let event = KeyEvents {
             is_debug: true,
+            is_avoidance: false,
             is_move: Cell::new(false),
             is_trune: Cell::new(false),
             is_emergency_stop_lv1: Cell::new(false),

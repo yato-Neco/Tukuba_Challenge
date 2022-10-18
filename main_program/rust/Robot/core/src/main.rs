@@ -1,13 +1,13 @@
 extern crate flacon;
+extern crate gps;
+extern crate lidar;
 extern crate load_shdlib;
 extern crate slam;
-extern crate gps;
 
 mod robot;
 mod xtools;
-use robot::mode::Mode;
 use clap::Parser;
-
+use robot::mode::Mode;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -15,7 +15,6 @@ struct Args {
     #[clap(short, long, value_parser)]
     mode: String,
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -30,4 +29,3 @@ async fn main() {
         _ => {}
     }
 }
-

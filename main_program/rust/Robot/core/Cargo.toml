@@ -11,6 +11,7 @@ slam = { path = "../slam" }
 flacon = {path = "../flacon"}
 robot-gpio = {path = "../robot-gpio"}
 gps = {path = "../gps"}
+lidar = {path = "../lidar"}
 
 
 yaml-rust = "0.4"
@@ -20,3 +21,4 @@ getch = "0.3.1"
 tui = "0.19.0"
 crossterm = "0.23.2"
 clap = { version = "3.2.19", features = ["derive"] }
+serialport = "4.2.0"
