@@ -13,7 +13,7 @@ robot-gpio = {path = "../robot-gpio"}
 gps = {path = "../gps"}
 lidar = {path = "../lidar"}
 
-
+rppal = { version = "0.13.1", features = ["hal"] }
 yaml-rust = "0.4"
 tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.57"
