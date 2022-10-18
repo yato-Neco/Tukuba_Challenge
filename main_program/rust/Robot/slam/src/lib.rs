@@ -5,7 +5,7 @@ use xtools::time_sleep;
 /// 時間更新
 struct SLAM {
     // (robot_postion[x,y], lider_data [frequency,distance])
-    vec: Box<(Vec<[f64; 2]>, Vec<[u16; 2]>)>,
+    vec: Box<(Vec<[f64; 2]>, Vec<[f64; 2]>)>,
     max: usize,
 }
 
@@ -19,13 +19,10 @@ impl SLAM {
 
     fn push(&mut self) {}
 
-    fn get(&self) {
-        
-        self.vec.0.get(0);
-        self.vec.1.get(0);
-
-
+    fn get(&self) -> (Option<&[f64; 2]>, Option<&[f64; 2]>) {
+        (self.vec.0.get(0), self.vec.1.get(0))
     }
+
     fn del(&mut self) {
         if self.vec.0.len() > self.max {
             self.vec.0.remove(0);

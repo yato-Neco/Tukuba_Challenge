@@ -1,3 +1,9 @@
+#[derive(PartialEq)]
+pub enum Mode {
+    Front,
+    Back
+}
+
 #[cfg(target_os = "linux")]
 use rppal::gpio::{Gpio, OutputPin};
 #[cfg(target_os = "linux")]
@@ -16,16 +22,16 @@ pub struct Moter {
 ///
 /// ```
 /// let mut moter = MoterGPIO::new([25,24], [23,22]);
-/// 
+///
 /// moter.rfpwm();
-/// 
+///
 /// moter.lfpwm();
-/// 
+///
 /// moter.pwm_all_clean();
 /// ```
 impl Moter {
     /// GPIO のピンをセットする関数
-    /// 
+    ///
     /// ```
     /// let mut moter = MoterGPIO::new([25,24], [23,22]);
     /// ```
@@ -81,26 +87,55 @@ impl Moter {
         self.l_pin0.clear_pwm().unwrap();
         self.l_pin1.clear_pwm().unwrap();
     }
+
+    pub fn moter_control(&mut self,order: u32) {
+        let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
+        let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
+        
+        match (rM, lM) {
+            (1..=7, 1..=7) => {
+                self.right(rM as f64/ 7.0, Mode::Front);
+                self.left(lM as f64 / 7.0, Mode::Front);
+            },
+            (8..=14, 8..=14) => {
+                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+            },
+            (1..=7, 8..=14) => {
+                self.right(rM as f64/ 7.0, Mode::Front);
+                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+            },
+            (8..=14, 1..=7) => {
+                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.left(lM as f64 / 7.0, Mode::Front);
+
+            },
+            _ => {
+                self.pwm_all_clean();
+            }
+        }
+    }
 }
 
 #[cfg(target_os = "windows")]
+#[derive(Debug)]
 pub struct Moter {
-     r_pin0: u8,
-     r_pin1: u8,
+    r_pin0: u8,
+    r_pin1: u8,
 
-     l_pin0: u8,
-     l_pin1: u8,
+    l_pin0: u8,
+    l_pin1: u8,
 }
 
 #[cfg(target_os = "windows")]
 ///
 /// ```
 /// let mut moter = MoterGPIO::new([25,24], [23,22]);
-/// 
+///
 /// moter.rfpwm();
-/// 
+///
 /// moter.lfpwm();
-/// 
+///
 /// moter.pwm_all_clean();
 /// ```
 impl Moter {
@@ -128,7 +163,14 @@ impl Moter {
 
     /// right モーター 前後
     /// duty 0.0 ~ 1.0
-    pub fn right(&mut self, duty: f64) {}
+    pub fn _right(&mut self, duty: f64) {}
+    pub fn right(&mut self, duty: f64, mode: Mode) {
+        if mode == Mode::Front {
+            
+        }else{
+
+        }
+    }
 
     /// right モーター　後進
     /// duty 0.0 ~ 1.0
@@ -136,7 +178,14 @@ impl Moter {
 
     /// left モーター 前後
     /// duty 0.0 ~ 1.0
-    pub fn left(&mut self, duty: f64) {}
+    pub fn _left(&mut self, duty: f64) {}
+    pub fn left(&mut self, duty: f64, mode: Mode) {
+        if mode == Mode::Front {
+            
+        }else{
+            
+        }
+    }
 
     /// left モーター　後進
     /// duty 0.0 ~ 1.0
@@ -144,6 +193,50 @@ impl Moter {
 
     /// PWMのリセット
     pub fn pwm_all_clean(&mut self) {}
+
+    pub fn order_analysis( order: u32)  -> (f64, f64) {
+        let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
+        let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
+        
+        match (rM, lM) {
+            (1..=7, 1..=7) => {(rM as f64/ 7.0, lM as f64 / 7.0)},
+            (8..=14, 8..=14) => {((rM - 7) as f64/ 7.0, (lM - 7) as f64 / 7.0)},
+            (1..=7, 8..=14) => {(rM as f64/ 7.0, (lM - 7)as f64 / 7.0)},
+            (8..=14, 1..=7) => {((rM - 7) as f64/ 7.0, lM  as f64/ 7.0)},
+            _ => {
+                //self.pwm_all_clean();
+                (0.0, 0.0)
+            }
+        }
+    }
+    pub fn moter_control(&mut self,order: u32) {
+        let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
+        let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
+        
+        match (rM, lM) {
+            (1..=7, 1..=7) => {
+                self.right(rM as f64/ 7.0, Mode::Front);
+                self.left(lM as f64 / 7.0, Mode::Front);
+            },
+            (8..=14, 8..=14) => {
+                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+            },
+            (1..=7, 8..=14) => {
+                self.right(rM as f64/ 7.0, Mode::Front);
+                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+            },
+            (8..=14, 1..=7) => {
+                self.right((rM - 7) as f64/ 7.0, Mode::Back);
+                self.left(lM as f64 / 7.0, Mode::Front);
+
+            },
+            _ => {
+                self.pwm_all_clean();
+            }
+        }
+    }
+
     /*
 
 
@@ -188,13 +281,10 @@ impl Moter {
     */
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-       
-    }
+    fn it_works() {}
 }

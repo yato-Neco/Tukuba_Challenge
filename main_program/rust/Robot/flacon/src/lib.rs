@@ -2,63 +2,68 @@ use std::cell::Cell;
 use std::collections::HashMap;
 
 use robot_gpio::Moter;
+use gps::GPSmodule;
 
-pub struct Module {
-    pub moter_controler: Moter,
+
+
+
+
+
+/// フラグコントロール関係
+pub struct FlaCon<T,R> {
+    pub event: R,
+    pub module: T,
+    fnc_map: HashMap<String, fn(_self: &mut FlaCon<T,R>)>,
 }
 
-pub struct Events {
-    pub is_debug: bool,
-    pub is_move: Cell<bool>,
-    pub is_trune: Cell<bool>,
-    pub is_emergency_stop_lv1: Cell<bool>,
-    pub is_emergency_stop_lv0: Cell<bool>,
-    pub is_lidar_stop: Cell<bool>,
-    pub order: Cell<u32>,
-}
 
-pub trait Flags {
-    fn new(module: Module, event: Events) -> FlaCon;
-    fn add_fnc(&mut self, name: &str, f: fn(_self: &FlaCon));
-    fn none_fnc(_self: &FlaCon);
+pub trait Flags<T,R> {
+    fn new(module: T, event: R) -> FlaCon<T,R>;
+    fn add_fnc(&mut self, name: &str, f: fn(_self: &mut FlaCon<T,R>));
+    fn none_fnc(_self: &FlaCon<T,R>);
 }
 
 pub trait Event {
-    fn load_fnc(&self, name: &str);
-}
-pub struct FlaCon {
-    pub event: Events,
-    pub model: Module,
-    fnc_map: HashMap<String, fn(_self: &FlaCon)>,
+    fn load_fnc(&mut self, name: &str);
 }
 
-impl Flags for FlaCon {
-    fn new(module: Module, event: Events) -> Self {
+
+
+/// フラグコントロール関係の構造体
+impl<T,R> Flags<T,R> for FlaCon<T,R> {
+    fn new(module: T, event: R) -> Self {
         FlaCon {
             event: event,
-            model: module,
-
+            module: module,
             fnc_map: HashMap::new(),
         }
     }
 
-    fn add_fnc(&mut self, name: &str, fnc_pointer: fn(_self: &Self)) {
+    /// HashMapにフラグの名前と関数ポインタを入れる。
+    fn add_fnc(&mut self, name: &str, fnc_pointer: fn(_self: &mut Self)) {
         self.fnc_map.insert(name.to_owned(), fnc_pointer);
     }
+    
 
-    fn none_fnc(_self: &FlaCon) {
-        panic!("Not Fnc")
+    fn none_fnc(_self: &FlaCon<T,R>) {
     }
 }
 
-impl Event for FlaCon {
-    fn load_fnc(&self, name: &str) {
+
+/// フラグのイベント関係の構造体
+impl<T,R> Event for FlaCon<T,R> {
+
+    /// フラグのイベントを呼び出す関数
+    /// &mut を外したい
+    fn load_fnc(&mut self, name: &str) {
         let tmp = match self.fnc_map.get(name) {
             Some(e) => *e,
-            None => Self::none_fnc,
+            None => {
+                panic!("Not Fnc {}",name);
+            },
         };
 
-        tmp(&self);
+        tmp(self);
     }
 }
 

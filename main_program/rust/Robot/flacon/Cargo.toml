@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 robot-gpio = {path = "../robot-gpio"}
+gps = {path = "../gps"}
+
 
 tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.57"
