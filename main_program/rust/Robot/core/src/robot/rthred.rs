@@ -35,19 +35,22 @@ use crate::robot::config::SenderOrders;
 
 */
 
-pub struct Rthd {}
+pub struct Rthd<T:'static + std::marker::Send> {
+    l:T
+}
 
 pub trait Rthds  {
     fn thread_generate(
         threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
         err_msg: &Sender<String>,
         msg: &SenderOrders,
-    ); 
+    );
+    fn _thread_generate();
     fn send_panic_msg(panic_msg: Sender<String>) ;
     fn send(order: u32, msg: &SenderOrders);
 }   
 
-impl Rthd {
+impl<T: 'static + std::marker::Send> Rthd<T> {
     /// スレッドに名前を付けて生成
     ///
     /// TODO: 後で構造体にする
@@ -74,7 +77,7 @@ impl Rthd {
     ) {
         for (name, fnc) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
-            let sendr_join_handle_msg = mpsc::Sender::clone(&msg.get(name).unwrap().0);
+            let sendr_join_handle_msg = mpsc::Sender::clone(&msg.get(name).expect(name).0);
             let _thread = thread::Builder::new()
                 .name(name.to_string())
                 .spawn(move || {
@@ -82,6 +85,18 @@ impl Rthd {
                 })
                 .unwrap();
         }
+    }
+
+
+    pub fn _thread_generate(name:&str,err_msg: &Sender<String>,sender:Sender<T>,func:fn(Sender<String>,Sender<T>)) {
+        let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
+
+        let _thread = thread::Builder::new()
+        .name(name.to_string())
+        .spawn(move || {
+            func(sendr_join_handle_errmsg,sender);
+        })
+        .unwrap();
     }
 
     /// 独自panicシステム

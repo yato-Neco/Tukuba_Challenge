@@ -58,10 +58,12 @@ pub struct GPS {
     pub port: &'static str,
     buf: Vec<u8>,
     pub nowpotion: Option<(f64, f64)>,
+    pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
     pub azimuth: f64,
     pub distance:f64,
     pub r: f64,
+    
     pub latlot: Vec<(f64, f64)>,
 }
 
@@ -76,8 +78,11 @@ fn test() {
         let result:bool = tmp.nav();
         println!("{}",result);
         if !result {
-            break;
+            //break;
         }
+
+        
+
     }
 
     
@@ -89,6 +94,7 @@ impl GPS {
             port: port_name,
             buf: Vec::with_capacity(buf_size),
             nowpotion: None,
+            original_nowpotion: String::new(),
             noepotion_history: Vec::new(),
             azimuth: 0.0,
             distance: 0.0,
@@ -101,7 +107,8 @@ impl GPS {
         
     }
 
-    pub fn parser(&self) {
+    pub fn parser(&mut self) {
+
         /*
         while self.nowpotion == None {
             match self.nowpotion {
@@ -110,6 +117,8 @@ impl GPS {
             }
         }
         */
+
+        //self.nowpotion = Some((0.0,0.0));
     }
     
     pub fn nav(&mut self) -> bool {
@@ -152,7 +161,7 @@ impl GPS {
             }
         };
 
-        
+        println!("{}",result);
         result
 
     }

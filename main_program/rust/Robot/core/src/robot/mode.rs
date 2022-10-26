@@ -22,7 +22,7 @@ pub struct Mode {}
 
 pub struct AutoModule {
     pub moter_controler: Moter,
-    pub gps: GPSmodule,
+    pub gps: gps::GPS,
     // pub slam: SLAM
 }
 
@@ -185,7 +185,16 @@ impl Mode {
             };
         });
 
-        let order = thread_variable!("key", "lidar", "gps");
+        flag_controler.add_fnc("gps", |flacn| {
+            let mut gps = GPS::new("port_name", 500);
+            gps.nav();
+            // gps
+        });
+
+        
+
+        let (gps_sender,gps_receiver)  = std::sync::mpsc::channel::<String>();
+        let order = thread_variable!("key", "lidar");
 
         let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
             mpsc::channel();
@@ -195,21 +204,31 @@ impl Mode {
             std::collections::HashMap::new();
 
         thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
-            Rthd::send_panic_msg(panic_msg);
+            Rthd::<String>::send_panic_msg(panic_msg);
             loop {
                 let order = Mode::input_key();
                 msg.send(order).unwrap();
             }
         });
 
+        /*
         thread.insert("gps", |panic_msg: Sender<String>, msg: SenderOrders| {
-            Rthd::send_panic_msg(panic_msg);
+            Rthd::<String>::send_panic_msg(panic_msg);
             let order =  GPS::serial();
             time_sleep(1, 500);
+            print!("{}",0x1FEEFFFF);
             msg.send(0x1FEEFFFF).unwrap();
         });
+        */
+        
 
-        Rthd::thread_generate(thread, &sendr_err_handles, &order);
+        Rthd::_thread_generate("gps", &sendr_err_handles, gps_sender, |panic_msg,gps_sender| {
+            Rthd::<String>::send_panic_msg(panic_msg);
+
+            print!("gps");
+
+        });
+        Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
 
@@ -222,15 +241,29 @@ impl Mode {
                 Err(_) => {}
             };
 
+            match gps_receiver.try_recv() {
+                Ok(e) => {
+                    flag_controler.module.gps.original_nowpotion = e;
+                    flag_controler.module.gps.parser();
+
+                }
+                Err(_) => {}
+            }
+            flag_controler.load_fnc("gps");
+
+            /*
             match order.get("gps").unwrap().1.try_recv() {
                 Ok(e) => {
-                    flag_controler.event.order.set(e);
-                    flag_controler.load_fnc("move");
-                    flag_controler.load_fnc("is_stop");
-                    flag_controler.load_fnc("emergency_stop");
+
+                    //flag_controler.event.order.set(e);
+                    //flag_controler.load_fnc("move");
+                    //flag_controler.load_fnc("is_stop");
+                    //flag_controler.load_fnc("emergency_stop");
                 }
                 Err(_) => {}
             };
+            */
+            
 
             match order.get("key").unwrap().1.try_recv() {
                 Ok(e) => {
@@ -375,14 +408,14 @@ impl Mode {
             std::collections::HashMap::new();
 
         thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
-            Rthd::send_panic_msg(panic_msg);
+            Rthd::<String>::send_panic_msg(panic_msg);
             loop {
                 let order = Mode::input_key();
                 msg.send(order).unwrap();
             }
         });
 
-        Rthd::thread_generate(thread, &sendr_err_handles, &order);
+        Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
             match order.get("lidar").unwrap().1.try_recv() {
