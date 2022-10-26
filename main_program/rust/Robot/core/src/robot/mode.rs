@@ -1,7 +1,7 @@
 use crate::xtools::{time_sleep, warning_msg};
 use flacon::{Event, FlaCon, Flags};
 use getch;
-use gps::GPSmodule;
+use gps::{self, GPS};
 use robot_gpio::Moter;
 
 use super::tui;
@@ -36,6 +36,7 @@ pub struct AutoEvents {
     pub is_emergency_stop_lv0: Cell<bool>,
     pub order: Cell<u32>,
     pub order_history: Vec<u32>,
+    pub latlot:(f64,f64)
 }
 
 pub struct KeyModule {
@@ -86,10 +87,7 @@ impl Mode {
 
         let mut latlot: Vec<(f64, f64)> = Vec::new();
 
-        let mut gps = GPSmodule {
-            r: 0.001,
-            latlot: latlot,
-        };
+        let mut gps = gps::GPS::new("port_name", 500);
 
         let module = AutoModule {
             moter_controler,
@@ -105,6 +103,7 @@ impl Mode {
             is_emergency_stop_lv0: Cell::new(false),
             order: Cell::new(0xfffffff),
             order_history: Vec::new(),
+            latlot: (0.0,0.0)
         };
 
         // mut を外したい
@@ -205,6 +204,7 @@ impl Mode {
 
         thread.insert("gps", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::send_panic_msg(panic_msg);
+            let order =  GPS::serial();
             time_sleep(1, 500);
             msg.send(0x1FEEFFFF).unwrap();
         });
@@ -409,6 +409,7 @@ impl Mode {
                 Err(_) => {}
             };
 
+            
             terminal
                 .draw(|f| {
                     tui::key_ui(f, &flag_controler);

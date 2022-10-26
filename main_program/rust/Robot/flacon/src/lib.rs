@@ -9,15 +9,18 @@ use robot_gpio::Moter;
 pub struct FlaCon<T,R> {
     pub event: R,
     pub module: T,
-    fnc_map: HashMap<String, fn(_self: &mut FlaCon<T,R>)>,
+    fnc_map: HashMap<&'static str, fn(_self: &mut FlaCon<T,R>)>,
 }
 
+ 
 
 pub trait Flags<T,R> {
     fn new(module: T, event: R) -> FlaCon<T,R>;
-    fn add_fnc(&mut self, name: &str, f: fn(_self: &mut FlaCon<T,R>));
+    fn add_fnc(&mut self, name: &'static str, f: fn(_self: &mut FlaCon<T,R>));
     fn none_fnc(_self: &FlaCon<T,R>);
 }
+
+
 
 pub trait Event {
     fn load_fnc(&mut self, name: &str);
@@ -36,8 +39,8 @@ impl<T,R> Flags<T,R> for FlaCon<T,R> {
     }
 
     /// HashMapにフラグの名前と関数ポインタを入れる。
-    fn add_fnc(&mut self, name: &str, fnc_pointer: fn(_self: &mut Self)) {
-        self.fnc_map.insert(name.to_owned(), fnc_pointer);
+    fn add_fnc(&mut self, name: &'static str, fnc_pointer: fn(_self: &mut Self)) {
+        self.fnc_map.insert(name, fnc_pointer);
     }
     
 

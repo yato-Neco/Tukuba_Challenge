@@ -23,6 +23,16 @@ fn gps_test() {
     //GPSmodule::eazimuth((36.062024, 136.222473));
     //GPSmodule::eazimuth((36.062024, 50.222473));
 }
+#[test]
+fn gps()
+{
+    let mut gps = GPS::new("port_name", 100);
+
+    let result =  gps.nav();
+
+
+    println!("{}",result);
+}
 
 #[test]
 fn test2() {
@@ -49,6 +59,8 @@ pub struct GPS {
     buf: Vec<u8>,
     pub nowpotion: Option<(f64, f64)>,
     pub noepotion_history: Vec<(f64, f64)>,
+    pub azimuth: f64,
+    pub distance:f64,
     pub r: f64,
     pub latlot: Vec<(f64, f64)>,
 }
@@ -58,22 +70,38 @@ fn test() {
     let mut tmp = GPS::new("", 500);
     tmp.latlot.push((0.001, 0.001));
     tmp.nowpotion = Some((0.001, 0.001));
-    tmp.nav();
+
+    loop{
+        println!("{:?}",tmp.latlot);
+        let result:bool = tmp.nav();
+        println!("{}",result);
+        if !result {
+            break;
+        }
+    }
+
+    
 }
 
 impl GPS {
-    fn new(port_name: &'static str, buf_size: usize) -> Self {
+    pub fn new(port_name: &'static str, buf_size: usize) -> Self {
         Self {
             port: port_name,
             buf: Vec::with_capacity(buf_size),
             nowpotion: None,
             noepotion_history: Vec::new(),
+            azimuth: 0.0,
+            distance: 0.0,
             r: 0.001,
             latlot: Vec::new(),
         }
     }
 
-    fn parser(&self) {
+    pub fn serial() {
+        
+    }
+
+    pub fn parser(&self) {
         /*
         while self.nowpotion == None {
             match self.nowpotion {
@@ -83,8 +111,8 @@ impl GPS {
         }
         */
     }
-
-    fn nav(&mut self) {
+    
+    pub fn nav(&mut self) -> bool {
         /*
         let now_postion_int: (f64, f64) = (
             (self.nowpotion.unwrap().0 * (10.0_f64.powf(6.0))).round(),
@@ -96,25 +124,37 @@ impl GPS {
         println!("{:?} {:?}",now_postion_int,r_int);
         */
 
-        let flag: bool = self.r#box(&(self.latlot[0].0,self.latlot[0].1), &self.nowpotion.unwrap(), self.r);
+        //let len_flag: bool = self.latlot.len() == 0;
 
-        println!("{}",flag);
-
-        let result = match self.latlot.len() {
+        let result = match self.latlot.len()  {
             0 => {
-
+                false
             }
             1.. => {
 
+                let box_flag: bool = self.r#box(&(self.latlot[0].0,self.latlot[0].1), &self.nowpotion.unwrap(), self.r);
+
+                (self.azimuth, self.distance) = self.fm_azimuth(&self.nowpotion.unwrap());
+
+                //println!("{:?} {:?}", azimuth, distance);
+
+                //println!("{}",box_flag);
+                
+                if box_flag {
+                    self.latlot.remove(0);
+                }
+
+                
+                true
             }
             _ => {
-
+                false
             }
         };
 
-        let (azimuth, distance) = self.fm_azimuth(&self.nowpotion.unwrap());
+        
+        result
 
-        println!("{:?} {:?}", azimuth, distance);
     }
 
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> (f64, f64) {
@@ -122,7 +162,7 @@ impl GPS {
         let pos_b = WGS84::from_degrees_and_meters(now_postion.0, now_postion.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
 
-        println!("{}", distance);
+        //println!("{}", distance);
         let vec = pos_b - pos_a;
         let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
 
