@@ -1,3 +1,4 @@
+use core::num;
 use nav_types::{ENU, WGS84};
 use std::sync::mpsc::Sender;
 use std::time::Duration;
@@ -24,14 +25,12 @@ fn gps_test() {
     //GPSmodule::eazimuth((36.062024, 50.222473));
 }
 #[test]
-fn gps()
-{
+fn gps() {
     let mut gps = GPS::new("port_name", 100);
 
-    let result =  gps.nav();
+    let result = gps.nav();
 
-
-    println!("{}",result);
+    println!("{}", result);
 }
 
 #[test]
@@ -53,7 +52,7 @@ pub struct GPSmodule {
     pub r: f64,
     pub latlot: Vec<(f64, f64)>,
 }
-
+#[derive(Debug)]
 pub struct GPS {
     pub port: &'static str,
     buf: Vec<u8>,
@@ -61,9 +60,10 @@ pub struct GPS {
     pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
     pub azimuth: f64,
-    pub distance:f64,
+    pub distance: f64,
     pub r: f64,
-    
+    pub is_fix: Option<bool>,
+    pub num_sat: Option<usize>,
     pub latlot: Vec<(f64, f64)>,
 }
 
@@ -73,19 +73,32 @@ fn test() {
     tmp.latlot.push((0.001, 0.001));
     tmp.nowpotion = Some((0.001, 0.001));
 
-    loop{
-        println!("{:?}",tmp.latlot);
-        let result:bool = tmp.nav();
-        println!("{}",result);
+    loop {
+        println!("{:?}", tmp.latlot);
+        let result: bool = tmp.nav();
+        println!("{}", result);
         if !result {
             //break;
         }
-
-        
-
     }
+}
 
-    
+#[test]
+fn test3() {
+    let mut tmp = GPS::new("", 500);
+    let mut gps_format = Vec::new();
+
+    gps_format.push("SpGnss : begin in".to_owned());
+    gps_format.push("SpGnss : begin out".to_owned());
+    gps_format.push("SpGnss : begin out".to_owned());
+    gps_format.push("mode = HOT_START".to_owned());
+    gps_format.push("SpGnss : start out".to_owned());
+    gps_format.push("Gnss setup OK".to_owned());
+    gps_format.push("1980/01/06 00:00:03.000626, numSat: 0, No-Fix, 0.0, 0.0,".to_owned());
+
+    for v in gps_format {
+        tmp.parser(v);
+    }
 }
 
 impl GPS {
@@ -99,28 +112,160 @@ impl GPS {
             azimuth: 0.0,
             distance: 0.0,
             r: 0.001,
+            is_fix: None,
+            num_sat: None,
             latlot: Vec::new(),
         }
     }
 
-    pub fn serial() {
-        
-    }
+    pub fn serial() {}
 
-    pub fn parser(&mut self) {
+    ///
+    /// 
+    pub fn parser(&mut self, gps_data: String) {
+        let gps_format = gps_data.replace(' ', "");
+
+        let vec: Vec<&str> = gps_format.split(&[':', '=', ','][..]).collect();
+        //print!("{:?}",v);
+        //println!("{:?}",vec.iter().find(|&&num_sat| num_sat == " numSat"),);
+        let gps_format = match vec.iter().find(|&&num_sat| num_sat == "numSat") {
+            Some(_) => {
+                //println!("{} {:?}",i,gps_format[i].split(',').collect::<Vec<&str>>());
+
+                gps_format.split(',').collect::<Vec<&str>>()
+            }
+            None => [].to_vec(),
+        };
 
         /*
-        while self.nowpotion == None {
-            match self.nowpotion {
-                Some(e) => (),
-                None => (),
-            }
-        }
+        println!("{:?}",gps_format);
+        println!("{:?}", gps_format.get(1));
+        println!("{:?}", gps_format.get(2));
+        println!("{:?}", gps_format.get(3));
+        println!("{:?}", gps_format.get(4));        
         */
 
-        //self.nowpotion = Some((0.0,0.0));
+
+        match gps_format.get(1) {
+            Some(e) => {
+                let num_sat = e.split_at(7);
+                self.num_sat = num_sat.1.parse::<usize>().ok();
+            }
+            None => {}
+        }
+
+        match gps_format.get(2) {
+            Some(e) => {
+                if *e == "No-Fix" {
+                    self.is_fix = Some(false);
+                } else if *e == "Fix" {
+                    self.is_fix = Some(true);
+                }
+            }
+            None => {}
+        };
+
+        match gps_format.get(3) {
+            Some(lat) => {
+                let lot = gps_format.get(4).unwrap();
+
+                self.nowpotion = Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap()))
+            }
+            None => {}
+        }
+
+        println!("{:?}", self);
     }
-    
+
+
+    /// 古い方のparser
+    /// 
+    pub fn _parser(&mut self, gps_data: String) {
+        let a = "
+        SpGnss : begin in
+        SpGnss : begin out
+        SpGnss : begin out
+        mode = HOT_START
+        SpGnss : start out
+        Gnss setup OK
+        1980/01/06 00:00:03.000626, numSat: 0, No-Fix, 0.0, 0.0,
+
+        1980/01/06 00:00:04.000625, numSat: 0, No-Fix, 0.0, 0.0,
+
+        1980/01/06 00:00:05.000619, numSat: 0, No-Fix, 0.0, 0.0,
+
+        1980/01/06 00:00:06.000617, numSat: 0, No-Fix, 0.0, 0.0,";
+
+        let mut gps_format = Vec::new();
+
+        gps_format.push("SpGnss : begin in".to_owned());
+        gps_format.push("SpGnss : begin out".to_owned());
+        gps_format.push("SpGnss : begin out".to_owned());
+        gps_format.push("mode = HOT_START".to_owned());
+        gps_format.push("SpGnss : start out".to_owned());
+        gps_format.push("Gnss setup OK".to_owned());
+        gps_format.push("1980/01/06 00:00:03.000626, numSat: 0, No-Fix, 0.0, 0.0,".to_owned());
+
+        let gps_format = gps_format
+            .iter_mut()
+            .map(|n| n.replace(' ', ""))
+            .collect::<Vec<String>>();
+
+        for (i, v) in gps_format.iter().enumerate() {
+            let vec: Vec<&str> = v.split(&[':', '=', ','][..]).collect();
+            //print!("{:?}",v);
+            //println!("{:?}",vec.iter().find(|&&num_sat| num_sat == " numSat"),);
+            let gps_format = match vec.iter().find(|&&num_sat| num_sat == "numSat") {
+                Some(_) => {
+                    //println!("{} {:?}",i,gps_format[i].split(',').collect::<Vec<&str>>());
+
+                    gps_format[i].split(',').collect::<Vec<&str>>()
+                }
+                None => [].to_vec(),
+            };
+
+            //println!("{:?}",gps_format);
+            println!("{:?}", gps_format.get(1));
+            println!("{:?}", gps_format.get(2));
+            println!("{:?}", gps_format.get(3));
+            println!("{:?}", gps_format.get(4));
+
+            // retrun gps_format
+            // ↓　別
+
+            match gps_format.get(1) {
+                Some(e) => {
+                    let num_sat = e.split_at(7);
+                    self.num_sat = num_sat.1.parse::<usize>().ok();
+                }
+                None => {}
+            }
+
+            match gps_format.get(2) {
+                Some(e) => {
+                    if *e == "No-Fix" {
+                        self.is_fix = Some(false);
+                    } else if *e == "Fix" {
+                        self.is_fix = Some(true);
+                    }
+                }
+                None => {}
+            };
+
+            match gps_format.get(3) {
+                Some(lat) => {
+                    let lot = gps_format.get(4).unwrap();
+
+                    self.nowpotion =
+                        Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap()))
+                }
+                None => {}
+            }
+
+            println!("{:?}", self);
+        }
+    }
+
     pub fn nav(&mut self) -> bool {
         /*
         let now_postion_int: (f64, f64) = (
@@ -135,35 +280,32 @@ impl GPS {
 
         //let len_flag: bool = self.latlot.len() == 0;
 
-        let result = match self.latlot.len()  {
-            0 => {
-                false
-            }
+        let result = match self.latlot.len() {
+            0 => false,
             1.. => {
-
-                let box_flag: bool = self.r#box(&(self.latlot[0].0,self.latlot[0].1), &self.nowpotion.unwrap(), self.r);
+                let box_flag: bool = self.r#box(
+                    &(self.latlot[0].0, self.latlot[0].1),
+                    &self.nowpotion.unwrap(),
+                    self.r,
+                );
 
                 (self.azimuth, self.distance) = self.fm_azimuth(&self.nowpotion.unwrap());
 
                 //println!("{:?} {:?}", azimuth, distance);
 
                 //println!("{}",box_flag);
-                
+
                 if box_flag {
                     self.latlot.remove(0);
                 }
 
-                
                 true
             }
-            _ => {
-                false
-            }
+            _ => false,
         };
 
-        println!("{}",result);
+        //println!("{}",result);
         result
-
     }
 
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> (f64, f64) {

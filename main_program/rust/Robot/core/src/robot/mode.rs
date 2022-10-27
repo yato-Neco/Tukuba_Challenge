@@ -30,6 +30,7 @@ pub struct AutoModule {
 pub struct AutoEvents {
     pub is_debug: bool,
     pub is_avoidance:bool,
+    pub is_break:bool,
     pub is_move: Cell<bool>,
     pub is_trune: Cell<bool>,
     pub is_emergency_stop_lv1: Cell<bool>,
@@ -97,6 +98,7 @@ impl Mode {
         let event = AutoEvents {
             is_debug: true,
             is_avoidance: true,
+            is_break: false,
             is_move: Cell::new(false),
             is_trune: Cell::new(false),
             is_emergency_stop_lv1: Cell::new(false),
@@ -185,9 +187,12 @@ impl Mode {
             };
         });
 
-        flag_controler.add_fnc("gps", |flacn| {
+        flag_controler.add_fnc("gps_nav", |flacn| {
             let mut gps = GPS::new("port_name", 500);
-            gps.nav();
+            //let isend =  !gps.nav();
+            //flacn.event.is_break = isend;
+
+            
             // gps
         });
 
@@ -244,12 +249,13 @@ impl Mode {
             match gps_receiver.try_recv() {
                 Ok(e) => {
                     flag_controler.module.gps.original_nowpotion = e;
-                    flag_controler.module.gps.parser();
+                    flag_controler.module.gps.parser("".to_owned());
 
                 }
                 Err(_) => {}
             }
-            flag_controler.load_fnc("gps");
+
+            flag_controler.load_fnc("gps_nav");
 
             /*
             match order.get("gps").unwrap().1.try_recv() {
@@ -285,9 +291,15 @@ impl Mode {
                 })
                 .unwrap();
             //flag_controler.load_fnc("debug");
+
+            if flag_controler.event.is_break {
+                break;
+            }
+            
+            time_sleep(0, 1);
         }
 
-        tui::end();
+        //tui::end();
     }
 
     pub fn key() {
@@ -449,9 +461,11 @@ impl Mode {
                 })
                 .unwrap();
             //flag_controler.load_fnc("debug");
+
+            time_sleep(0, 60);
         }
 
-        tui::end();
+        //tui::end();
     }
 
     /// キー入力
