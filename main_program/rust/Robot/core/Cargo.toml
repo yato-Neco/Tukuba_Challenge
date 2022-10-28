@@ -1,0 +1,25 @@
+[package]
+name = "core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+load-shdlib = { path = "../load-shdlib" }
+slam = { path = "../slam" }
+flacon = {path = "../flacon"}
+robot-gpio = {path = "../robot-gpio"}
+gps = {path = "../gps"}
+lidar = {path = "../lidar"}
+
+
+#rppal = { version = "0.13.1", features = ["hal"] }
+yaml-rust = "0.4"
+tokio = { version = "1.21.2", features = ["full"] }
+async-trait = "0.1.57"
+getch = "0.3.1"
+tui = "0.19.0"
+crossterm = "0.23.2"
+clap = { version = "3.2.19", features = ["derive"] }
+serialport = "4.2.0"

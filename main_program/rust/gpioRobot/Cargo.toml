@@ -1,0 +1,17 @@
+[package]
+name = "gpioRobot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#rppal = { version = "0.13.1", features = ["hal"] }
+pyo3 = { version = "0.16.5", features = ["auto-initialize"] }
+serialport = "4.0.0"
+nav-types = "0.5.1"
+getch = "0.3.1"
+clap = { version = "3.2.19", features = ["derive"] }
+yaml-rust = "0.4"
+csv = "1.1"
+ydlidarx2-rs = { git = "https://github.com/yato-Neco/ydlidarx2-rs.git", branch = "master"}
