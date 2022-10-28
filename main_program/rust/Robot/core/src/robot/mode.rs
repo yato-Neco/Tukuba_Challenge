@@ -22,7 +22,7 @@ pub struct Mode {}
 
 pub struct AutoModule {
     pub moter_controler: Moter,
-    pub gps: gps::GPS,
+    pub gps: GPS,
     // pub slam: SLAM
 }
 
@@ -88,7 +88,7 @@ impl Mode {
 
         let mut latlot: Vec<(f64, f64)> = Vec::new();
 
-        let mut gps = gps::GPS::new("port_name", 500);
+        let mut gps = GPS::new();
 
         let module = AutoModule {
             moter_controler,
@@ -188,13 +188,16 @@ impl Mode {
         });
 
         flag_controler.add_fnc("gps_nav", |flacn| {
-            let mut gps = GPS::new("port_name", 500);
-            //let isend =  !gps.nav();
-            //flacn.event.is_break = isend;
+            let mut gps = &mut flacn.module.gps;
+            let isend =  gps.nav();
+            //print!("{}",isend);
+            flacn.event.is_break = !isend;
 
             
             // gps
         });
+
+        
 
         
 
@@ -229,7 +232,7 @@ impl Mode {
 
         Rthd::_thread_generate("gps", &sendr_err_handles, gps_sender, |panic_msg,gps_sender| {
             Rthd::<String>::send_panic_msg(panic_msg);
-
+            let mut gps_data = GPS::serial();
             print!("gps");
 
         });

@@ -26,7 +26,7 @@ fn gps_test() {
 }
 #[test]
 fn gps() {
-    let mut gps = GPS::new("port_name", 100);
+    let mut gps = GPS::new();
 
     let result = gps.nav();
 
@@ -52,10 +52,8 @@ pub struct GPSmodule {
     pub r: f64,
     pub latlot: Vec<(f64, f64)>,
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct GPS {
-    pub port: &'static str,
-    buf: Vec<u8>,
     pub nowpotion: Option<(f64, f64)>,
     pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
@@ -69,7 +67,7 @@ pub struct GPS {
 
 #[test]
 fn test() {
-    let mut tmp = GPS::new("", 500);
+    let mut tmp = GPS::new();
     tmp.latlot.push((0.001, 0.001));
     tmp.nowpotion = Some((0.001, 0.001));
 
@@ -85,7 +83,7 @@ fn test() {
 
 #[test]
 fn test3() {
-    let mut tmp = GPS::new("", 500);
+    let mut tmp = GPS::new();
     let mut gps_format = Vec::new();
 
     gps_format.push("SpGnss : begin in".to_owned());
@@ -102,10 +100,8 @@ fn test3() {
 }
 
 impl GPS {
-    pub fn new(port_name: &'static str, buf_size: usize) -> Self {
+    pub fn new() -> Self {
         Self {
-            port: port_name,
-            buf: Vec::with_capacity(buf_size),
             nowpotion: None,
             original_nowpotion: String::new(),
             noepotion_history: Vec::new(),
