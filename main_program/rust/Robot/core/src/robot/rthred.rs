@@ -88,6 +88,7 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
     }
 
 
+    /// ジェネリック型　thread_generater
     pub fn _thread_generate(name:&str,err_msg: &Sender<String>,sender:Sender<T>,func:fn(Sender<String>,Sender<T>)) {
         let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
 
@@ -97,8 +98,10 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
             func(sendr_join_handle_errmsg,sender);
         })
         .unwrap();
+        
     }
 
+    
     /// 独自panicシステム
     ///
     ///
@@ -121,8 +124,30 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
             default_hook(panic_info)
         }));
     }
+}
 
-    
+
+/// 必要ないしｓ
+pub struct RthdG<T: 'static + std::marker::Send,R:>{
+    t:T,
+    r:R
+}
+
+impl<T: 'static + std::marker::Send,R: 'static + std::marker::Send> RthdG<T,R> {
+    /// senderをreturnするthread_generater
+    pub fn _thread_generate_return_sender(name:&str,err_msg: &Sender<String>,sender:Sender<T>,arg:R,func:fn(Sender<String>,Sender<T>,R))  {
+        let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
+        //let return_sender;
+        let _thread = thread::Builder::new()
+        .name(name.to_string())
+        .spawn(move || {
+            func(sendr_join_handle_errmsg,sender,arg);
+        })
+        .unwrap();
+
+
+        //return return_sender;
+    }
 }
 
 #[inline]

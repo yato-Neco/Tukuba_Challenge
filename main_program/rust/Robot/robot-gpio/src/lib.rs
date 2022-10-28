@@ -137,7 +137,7 @@ impl Moter {
 }
 
 #[cfg(target_os = "windows")]
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Moter {
     r_pin0: u8,
     r_pin1: u8,

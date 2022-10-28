@@ -26,7 +26,7 @@ fn gps_test() {
 }
 #[test]
 fn gps() {
-    let mut gps = GPS::new();
+    let mut gps = GPS::new("COM4", 115200, 500);
 
     let result = gps.nav();
 
@@ -52,8 +52,11 @@ pub struct GPSmodule {
     pub r: f64,
     pub latlot: Vec<(f64, f64)>,
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct GPS {
+    pub port: String,
+    pub rate: u32,
+    pub buf_size: usize,
     pub nowpotion: Option<(f64, f64)>,
     pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
@@ -67,7 +70,7 @@ pub struct GPS {
 
 #[test]
 fn test() {
-    let mut tmp = GPS::new();
+    let mut tmp = GPS::new("COM4", 115200, 500);
     tmp.latlot.push((0.001, 0.001));
     tmp.nowpotion = Some((0.001, 0.001));
 
@@ -83,7 +86,7 @@ fn test() {
 
 #[test]
 fn test3() {
-    let mut tmp = GPS::new();
+    let mut tmp = GPS::new("COM4", 115200, 500);
     let mut gps_format = Vec::new();
 
     gps_format.push("SpGnss : begin in".to_owned());
@@ -100,8 +103,11 @@ fn test3() {
 }
 
 impl GPS {
-    pub fn new() -> Self {
+    pub fn new(port: &str, rate: u32, buf_size: usize) -> Self {
         Self {
+            port: port.to_string(),
+            rate: rate,
+            buf_size: buf_size,
             nowpotion: None,
             original_nowpotion: String::new(),
             noepotion_history: Vec::new(),
@@ -114,10 +120,34 @@ impl GPS {
         }
     }
 
-    pub fn serial() {}
+    /// Serialからデータを受け取って、main スレッドに送る。
+    pub fn serial(port: &str, rate: u32, buf_size: usize, msg: Sender<String>) {
+        let mut port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => (p),
+            Err(_) => (panic!()),
+        };
+
+        let mut serial_buf: Vec<u8> = vec![0; buf_size];
+        loop {
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //serial_buf[..t].to_vec();
+                    let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
+
+                    msg.send(gps_data).unwrap();
+                }
+                Err(_) => {}
+            }
+        }
+    }
 
     ///
-    /// 
+    ///
     pub fn parser(&mut self, gps_data: String) {
         let gps_format = gps_data.replace(' ', "");
 
@@ -138,9 +168,8 @@ impl GPS {
         println!("{:?}", gps_format.get(1));
         println!("{:?}", gps_format.get(2));
         println!("{:?}", gps_format.get(3));
-        println!("{:?}", gps_format.get(4));        
+        println!("{:?}", gps_format.get(4));
         */
-
 
         match gps_format.get(1) {
             Some(e) => {
@@ -173,9 +202,8 @@ impl GPS {
         println!("{:?}", self);
     }
 
-
     /// 古い方のparser
-    /// 
+    ///
     pub fn _parser(&mut self, gps_data: String) {
         let a = "
         SpGnss : begin in

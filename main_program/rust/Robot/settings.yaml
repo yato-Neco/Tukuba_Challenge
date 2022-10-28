@@ -18,14 +18,20 @@ Robot:
     threshold:
       - 3.5
 
-    port:
-      - "COM4"
-    sr:
-      - 45.0
-    er: 
-      - 235.0
+    Serial:
+      port:
+        - "COM4"
+
   
-  Gps:
+  GPS:
+    Serial:
+      port:
+        - "COM4"
+      rate:
+        - 500
+      buf_size:
+        - 115200
+      
     waypoint:
       - "./waypoint.csv" #Excelで編集厳禁
 
@@ -35,6 +41,9 @@ Robot:
       - 0x1F48FFFF # A
       - 0x1F33FFFF # S
       - 0x1F84FFFF # D
+
+  Test_mode:
+    - "./move.txt"
 
   Display_mode:
     order:

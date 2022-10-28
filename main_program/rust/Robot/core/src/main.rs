@@ -22,6 +22,7 @@ async fn main() {
     match args.mode.as_str() {
         "auto" => Mode::auto(),
         "key" => Mode::key(),
+        "test" => Mode::test(),
         "display" => {}
         "k" => Mode::key(),
         "a" => Mode::auto(),
