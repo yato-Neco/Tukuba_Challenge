@@ -1,9 +1,9 @@
-use crate::xtools::{time_sleep, warning_msg};
+use crate::xtools::{time_sleep, warning_msg, Benchmark};
 use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
 use robot_gpio::Moter;
-use rthred::{Rthd, RthdG,send,sendG};
+use rthred::{send, sendG, Rthd, RthdG};
 
 use super::tui;
 use super::{
@@ -288,11 +288,14 @@ impl Mode {
                 Err(_) => {}
             };
 
+            /*
             terminal
                 .draw(|f| {
                     tui::auto_ui(f, &flag_controler);
                 })
                 .unwrap();
+            */
+            
             //flag_controler.load_fnc("debug");
 
             if flag_controler.event.is_break {
@@ -402,7 +405,7 @@ impl Mode {
             std::collections::HashMap::new();
 
         let (main_sender, main_receiver) = std::sync::mpsc::channel::<(u32)>();
-        let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(u32,u32)>();
+        let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(u32, u32)>();
 
         RthdG::_thread_generate_return_sender(
             "name",
@@ -411,47 +414,117 @@ impl Mode {
             moter_controler_clone,
             |panic_msg, moter_receiver, moter_controler| {
                 Rthd::<String>::send_panic_msg(panic_msg);
-                let mut isexecution = false;
-                
+                #[derive(Debug)]
+                pub struct TestOderEvents {
+                    pub is_emergency_stop_lv0: bool,
+                    pub order: (u32,u32),
+                    pub is_interruption: bool,
+                    pub order1_vec: Vec<(u32, u32)>,
+                    pub order0_vec: Vec<(u32, u32)>,
+                }
+                //let mut isexecution = false;
+                let time = Benchmark::start();
+
+
+                let event = TestOderEvents {
+                    is_emergency_stop_lv0: false,
+                    order: (config::STOP,0),
+                    is_interruption: false,
+                    order1_vec: Vec::<(u32, u32)>::new(),
+                    order0_vec: Vec::<(u32, u32)>::new(),
+                };
+
+                struct Test {}
+                let module = Test {};
+
+                let mut order_controler = FlaCon::new(module, event);
+                ////order_vec.push((0xffffffff,0));
+                let mut stoptime: i128 = 0;
+
+                order_controler.add_fnc("emergency_stop", |flacn| {
+                    if flacn.event.order.0 == config::EMERGENCY_STOP {
+                        flacn.event.is_emergency_stop_lv0 = !flacn.event.is_emergency_stop_lv0;
+                    }
+                });
+
+                order_controler.add_fnc("order", |flacn| {
+                    let order_28 = (flacn.event.order.0 & 0xF0000000) >> 28_u8;
+                    match order_28 {
+                        0 => flacn.event.order0_vec.push(flacn.event.order),
+                        1 => flacn.event.order1_vec.push(flacn.event.order),
+                        _ => {}
+                    }
+                });
+
                 loop {
+                    let nowtime = time.endu32();
                     match moter_receiver.try_recv() {
                         Ok(e) => {
-                            
-                            
-                            println!("{:x} {}",e.0, e.1);
-                            time_sleep(0,e.1 as u64);
+                            order_controler.event.order = e;
+                            order_controler.load_fnc("emergency_stop");
+                            order_controler.load_fnc("order");
 
+                          
                         }
                         Err(_) => {}
                     };
 
-                    time_sleep(0, 6)
+
+                    let tmp =  order_controler.event.order0_vec.len();
+                    
+                    
+                    if tmp > 1 {
+                        println!("{}",nowtime);
+                        
+                        order_controler.event.is_interruption = !order_controler.event.is_interruption;
+                        //stoptime = stoptime - stoptime;
+                        order_controler.event.order0_vec.remove(0);
+                    }
+
+                    if !order_controler.event.is_interruption {
+                        match order_controler.event.order1_vec.get(0) {
+                            Some(e) => {
+                                // 誤差 ±10ms
+                                if nowtime - 5 >= stoptime && stoptime <= nowtime + 5 {
+                                    stoptime = stoptime + e.1 as i128;
+                                    
+                                    println!("{:x} {}", e.0, e.1);
+    
+    
+                                    order_controler.event.order1_vec.remove(0);
+                                }
+                            }
+                            None => {}
+                        }
+                    }
+                    
+                    //println!("{:?}",order);
+                    //time.endprln();
+                    time_sleep(0, 1);
                 }
-                
             },
         );
 
         // time_sleep があると、その他のモジュールに影響を与えるのでモーター制御は別制御で
         for i in 0..operation.len() {
             //println!("{} {:x}", i, operation[i].0);
-
             let order = operation[i].0;
             flag_controler.event.order = order;
-
-            sendG(operation[i],&moter_sender);
-            //time_sleep(0, operation[i].1 as u64);
+            sendG(operation[i], &moter_sender);
         }
 
         loop {
             let key_order = Mode::input_key();
-
             if key_order == config::BREAK {
                 break;
             }
-            if key_order == config::STOP {
-                //moter_sender.send(123456_u32).unwrap();
-                
+
+            if key_order == config::EMERGENCY_STOP {
+                moter_sender.send((config::EMERGENCY_STOP, 0)).unwrap();
             }
+
+            //time_sleep(3, 0);
+
             time_sleep(0, 6)
         }
     }
@@ -568,7 +641,7 @@ impl Mode {
             Rthd::<String>::send_panic_msg(panic_msg);
             loop {
                 let order = Mode::input_key();
-                send(order,&msg);
+                send(order, &msg);
             }
         });
 
@@ -599,11 +672,14 @@ impl Mode {
                 Err(_) => {}
             };
 
+            /*
             terminal
                 .draw(|f| {
                     tui::key_ui(f, &flag_controler);
                 })
                 .unwrap();
+            */
+            
             //flag_controler.load_fnc("debug");
 
             time_sleep(0, 60);
