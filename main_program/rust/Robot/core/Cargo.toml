@@ -12,6 +12,7 @@ flacon = {path = "../flacon"}
 robot-gpio = {path = "../robot-gpio"}
 gps = {path = "../gps"}
 lidar = {path = "../lidar"}
+rthred = {path = "../rthred"}
 
 
 #rppal = { version = "0.13.1", features = ["hal"] }

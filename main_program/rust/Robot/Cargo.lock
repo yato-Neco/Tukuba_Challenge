@@ -162,6 +162,7 @@ dependencies = [
  "lidar",
  "load-shdlib",
  "robot-gpio",
+ "rthred",
  "serialport",
  "slam",
  "tokio",
@@ -729,6 +730,10 @@ version = "0.1.0"
 
 [[package]]
 name = "robot-serialport"
+version = "0.1.0"
+
+[[package]]
+name = "rthred"
 version = "0.1.0"
 
 [[package]]

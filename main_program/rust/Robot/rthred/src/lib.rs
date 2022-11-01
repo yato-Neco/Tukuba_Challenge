@@ -3,9 +3,9 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
-
-use crate::xtools::{warning_msg};
-use crate::robot::config::SenderOrders;
+mod xtools;
+use xtools::warning_msg;
+pub type SenderOrders = std::sync::mpsc::Sender<u32>;
 
 /*
  ┌────────┐    ┌────────┐
@@ -35,20 +35,20 @@ use crate::robot::config::SenderOrders;
 
 */
 
-pub struct Rthd<T:'static + std::marker::Send> {
-    l:T
+pub struct Rthd<T: 'static + std::marker::Send> {
+    l: T,
 }
 
-pub trait Rthds  {
+pub trait Rthds {
     fn thread_generate(
         threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
         err_msg: &Sender<String>,
         msg: &SenderOrders,
     );
     fn _thread_generate();
-    fn send_panic_msg(panic_msg: Sender<String>) ;
+    fn send_panic_msg(panic_msg: Sender<String>);
     fn send(order: u32, msg: &SenderOrders);
-}   
+}
 
 impl<T: 'static + std::marker::Send> Rthd<T> {
     /// スレッドに名前を付けて生成
@@ -70,10 +70,9 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
     ///
     /// ```
     pub fn thread_generate(
-        threads: HashMap<&str, fn(Sender<String>, SenderOrders,)>,
+        threads: HashMap<&str, fn(Sender<String>, SenderOrders)>,
         err_msg: &Sender<String>,
-        msg: &HashMap<&str, (Sender<u32>, Receiver<u32>)>
-        ,
+        msg: &HashMap<&str, (Sender<u32>, Receiver<u32>)>,
     ) {
         for (name, fnc) in threads {
             let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
@@ -81,27 +80,29 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
             let _thread = thread::Builder::new()
                 .name(name.to_string())
                 .spawn(move || {
-                    fnc(sendr_join_handle_errmsg, sendr_join_handle_msg, );
+                    fnc(sendr_join_handle_errmsg, sendr_join_handle_msg);
                 })
                 .unwrap();
         }
     }
 
-
     /// ジェネリック型　thread_generater
-    pub fn _thread_generate(name:&str,err_msg: &Sender<String>,sender:Sender<T>,func:fn(Sender<String>,Sender<T>)) {
+    pub fn _thread_generate(
+        name: &str,
+        err_msg: &Sender<String>,
+        sender: Sender<T>,
+        func: fn(Sender<String>, Sender<T>),
+    ) {
         let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
 
         let _thread = thread::Builder::new()
-        .name(name.to_string())
-        .spawn(move || {
-            func(sendr_join_handle_errmsg,sender);
-        })
-        .unwrap();
-        
+            .name(name.to_string())
+            .spawn(move || {
+                func(sendr_join_handle_errmsg, sender);
+            })
+            .unwrap();
     }
 
-    
     /// 独自panicシステム
     ///
     ///
@@ -126,35 +127,47 @@ impl<T: 'static + std::marker::Send> Rthd<T> {
     }
 }
 
-
 /// 必要ないしｓ
-pub struct RthdG<T: 'static + std::marker::Send,R:>{
-    t:T,
-    r:R
+pub struct RthdG<T: 'static + std::marker::Send, R> {
+    t: T,
+    r: R,
 }
 
-impl<T: 'static + std::marker::Send,R: 'static + std::marker::Send> RthdG<T,R> {
+impl<T: 'static + std::marker::Send, R: 'static + std::marker::Send> RthdG<T, R> {
     /// senderをreturnするthread_generater
-    pub fn _thread_generate_return_sender(name:&str,err_msg: &Sender<String>,sender:Sender<T>,arg:R,func:fn(Sender<String>,Sender<T>,R))  {
+    pub fn _thread_generate_return_sender(
+        name: &str,
+        err_msg: &Sender<String>,
+        receiver: Receiver<T>,
+        arg: R,
+        func: fn(Sender<String>, Receiver<T>, R),
+    ) {
         let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
         //let return_sender;
         let _thread = thread::Builder::new()
-        .name(name.to_string())
-        .spawn(move || {
-            func(sendr_join_handle_errmsg,sender,arg);
-        })
-        .unwrap();
-
+            .name(name.to_string())
+            .spawn(move || {
+                func(sendr_join_handle_errmsg, receiver, arg);
+            })
+            .unwrap();
 
         //return return_sender;
     }
 }
 
 #[inline]
-    pub fn send(order: u32, msg: &SenderOrders) {
-        match msg.send(order) {
-            Ok(_) => (),
-            Err(_) => warning_msg("Can not send msg"),
-        };
-    }
+pub fn send(order: u32, msg: &SenderOrders) {
+    match msg.send(order) {
+        Ok(_) => (),
+        Err(_) => warning_msg("Can not send msg"),
+    };
+}
 
+
+#[inline]
+pub fn sendG<T>(order: T, msg: &std::sync::mpsc::Sender<T>) {
+    match msg.send(order) {
+        Ok(_) => (),
+        Err(_) => warning_msg("Can not send msg"),
+    };
+}

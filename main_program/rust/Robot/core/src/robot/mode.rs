@@ -3,11 +3,11 @@ use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
 use robot_gpio::Moter;
+use rthred::{Rthd, RthdG,send,sendG};
 
 use super::tui;
 use super::{
     config::{self, SenderOrders},
-    rthred::{Rthd, RthdG},
     setting::Settings,
 };
 
@@ -402,26 +402,44 @@ impl Mode {
             std::collections::HashMap::new();
 
         let (main_sender, main_receiver) = std::sync::mpsc::channel::<(u32)>();
-        let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(Sender<u32>)>();
+        let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(u32,u32)>();
+
         RthdG::_thread_generate_return_sender(
             "name",
             &sendr_err_handles,
-            moter_sender,
+            moter_receiver,
             moter_controler_clone,
-            |panic_msg, moter_sender, moter_controler| {
+            |panic_msg, moter_receiver, moter_controler| {
                 Rthd::<String>::send_panic_msg(panic_msg);
+                let mut isexecution = false;
+                
+                loop {
+                    match moter_receiver.try_recv() {
+                        Ok(e) => {
+                            
+                            
+                            println!("{:x} {}",e.0, e.1);
+                            time_sleep(0,e.1 as u64);
+
+                        }
+                        Err(_) => {}
+                    };
+
+                    time_sleep(0, 6)
+                }
+                
             },
         );
 
         // time_sleep があると、その他のモジュールに影響を与えるのでモーター制御は別制御で
         for i in 0..operation.len() {
-            println!("{} {:x}", i, operation[i].0);
+            //println!("{} {:x}", i, operation[i].0);
 
             let order = operation[i].0;
-
             flag_controler.event.order = order;
 
-            time_sleep(0, operation[i].1 as u64);
+            sendG(operation[i],&moter_sender);
+            //time_sleep(0, operation[i].1 as u64);
         }
 
         loop {
@@ -429,6 +447,10 @@ impl Mode {
 
             if key_order == config::BREAK {
                 break;
+            }
+            if key_order == config::STOP {
+                //moter_sender.send(123456_u32).unwrap();
+                
             }
             time_sleep(0, 6)
         }
@@ -546,7 +568,7 @@ impl Mode {
             Rthd::<String>::send_panic_msg(panic_msg);
             loop {
                 let order = Mode::input_key();
-                msg.send(order).unwrap();
+                send(order,&msg);
             }
         });
 

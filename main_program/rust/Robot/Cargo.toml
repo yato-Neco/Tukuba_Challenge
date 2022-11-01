@@ -9,6 +9,6 @@ members = [
     "lidar",
     "flacon",
     "robot-gpio",
-    "robot-serialport"
-
+    "robot-serialport",
+    "rthred"
 ]

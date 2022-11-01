@@ -3,6 +3,7 @@ extern crate gps;
 extern crate lidar;
 extern crate load_shdlib;
 extern crate slam;
+extern crate rthred;
 
 mod robot;
 mod xtools;
