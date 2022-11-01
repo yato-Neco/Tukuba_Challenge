@@ -462,21 +462,30 @@ impl Mode {
                         Ok(e) => {
                             order_controler.event.order = e;
                             order_controler.load_fnc("emergency_stop");
-                            order_controler.load_fnc("order");
-
-                          
+                            order_controler.load_fnc("order"); 
                         }
                         Err(_) => {}
                     };
 
-
+                    // order0_vec の配列の長さを
                     let tmp =  order_controler.event.order0_vec.len();
-                    
-                    
+
                     if tmp > 1 {
+                        let time_interruption;
                         println!("{}",nowtime);
+
+                        
                         
                         order_controler.event.is_interruption = !order_controler.event.is_interruption;
+
+
+                        if order_controler.event.is_interruption {
+                            time_interruption = Benchmark::start();
+                        }
+
+                        
+
+
                         //stoptime = stoptime - stoptime;
                         order_controler.event.order0_vec.remove(0);
                     }
