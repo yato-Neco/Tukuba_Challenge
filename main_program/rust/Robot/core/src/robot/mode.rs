@@ -203,6 +203,14 @@ impl Mode {
             };
         });
 
+
+
+        flag_controler.module.gps.latlot.push((0.001, 0.001));
+        flag_controler.module.gps.latlot.push((1.000, 1.000));
+        flag_controler.module.gps.latlot.push((1.000, 2.000));
+
+        flag_controler.module.gps.nowpotion = Some((0.001, 0.001));
+
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
             let mut gps = &mut flacn.module.gps;
@@ -212,6 +220,23 @@ impl Mode {
 
             // gps
         });
+
+        flag_controler.add_fnc("gps_Fix", |flacn| {
+            
+            //flacn.module.gps.is_fix;
+
+
+
+            if !flacn.module.gps.is_fix.unwrap_or(false) {
+                flacn.event.order.set(config::EMERGENCY_STOP);
+                flacn.load_fnc("set_emergency_stop");
+                flacn.load_fnc("is_emergency_stop");
+
+            }
+
+            // gps
+        });
+
 
         let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
         let order = thread_variable!("key", "lidar");
@@ -246,7 +271,7 @@ impl Mode {
             gps_sender,
             |panic_msg, gps_sender| {
                 Rthd::<String>::send_panic_msg(panic_msg);
-                GPS::serial("COM4", 115200, 500, gps_sender);
+                //GPS::serial("COM4", 115200, 1000, gps_sender);
                 //print!("gps");
             },
         );
@@ -256,22 +281,31 @@ impl Mode {
             // Lidar 後に SLAM
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
+
                     flag_controler.event.order.set(e);
                     flag_controler.load_fnc("set_emergency_stop");
+                    flag_controler.load_fnc("is_emergency_stop");
+
                 }
                 Err(_) => {}
             };
 
+
+            flag_controler.load_fnc("gps_nav");
+            //flag_controler.load_fnc("gps_Fix");
+
             // GPS
             match gps_receiver.try_recv() {
                 Ok(e) => {
-                    flag_controler.module.gps.original_nowpotion = e;
-                    flag_controler.module.gps.parser("".to_owned());
+
+                    flag_controler.module.gps.original_nowpotion = e.clone();
+                    flag_controler.module.gps.parser(e);
+                    flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
+
                 }
                 Err(_) => {}
             }
 
-            flag_controler.load_fnc("gps_nav");
 
             // Key
             match order.get("key").unwrap().1.try_recv() {
@@ -288,19 +322,24 @@ impl Mode {
                 Err(_) => {}
             };
 
-            /*
+            
             terminal
                 .draw(|f| {
                     tui::auto_ui(f, &flag_controler);
                 })
                 .unwrap();
-            */
+            
             
             //flag_controler.load_fnc("debug");
 
             if flag_controler.event.is_break {
                 break;
             }
+
+            //let (lat,lot) = flag_controler.module.gps.nowpotion.unwrap();
+
+            
+
 
             time_sleep(0, 1);
         }

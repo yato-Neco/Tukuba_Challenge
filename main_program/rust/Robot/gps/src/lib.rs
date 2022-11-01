@@ -61,11 +61,13 @@ pub struct GPS {
     pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
     pub azimuth: f64,
+    pub now_azimuth: Option<f64>,
     pub distance: f64,
     pub r: f64,
     pub is_fix: Option<bool>,
     pub num_sat: Option<usize>,
     pub latlot: Vec<(f64, f64)>,
+    pub next_latlot: Option<(f64, f64)>,
 }
 
 #[test]
@@ -79,7 +81,7 @@ fn test() {
         let result: bool = tmp.nav();
         println!("{}", result);
         if !result {
-            //break;
+            break;
         }
     }
 }
@@ -99,6 +101,7 @@ fn test3() {
 
     for v in gps_format {
         tmp.parser(v);
+        println!("{:?}", tmp);
     }
 }
 
@@ -112,11 +115,13 @@ impl GPS {
             original_nowpotion: String::new(),
             noepotion_history: Vec::new(),
             azimuth: 0.0,
+            now_azimuth: None,
             distance: 0.0,
             r: 0.001,
             is_fix: None,
             num_sat: None,
             latlot: Vec::new(),
+            next_latlot: None,
         }
     }
 
@@ -199,7 +204,7 @@ impl GPS {
             None => {}
         }
 
-        println!("{:?}", self);
+        //println!("{:?}", self);
     }
 
     /// 古い方のparser
@@ -290,6 +295,35 @@ impl GPS {
         }
     }
 
+    pub fn running_simulater(&mut self,arg:bool) {
+        if arg {
+            //println!("{:?}",self.latlot[0].0 > self.nowpotion.unwrap().0);
+            if self.latlot[0].0 > self.nowpotion.unwrap().0 {
+                //self.nowpotion.unwrap().0 -= 0.001;
+                self.nowpotion = Some((
+                    roundf(self.nowpotion.unwrap().0 + 0.001, 1000),
+                    self.nowpotion.unwrap().1,
+                ));
+            } else if self.latlot[0].0 < self.nowpotion.unwrap().0 {
+                self.nowpotion = Some((
+                    roundf(self.nowpotion.unwrap().0 - 0.001, 1000),
+                    self.nowpotion.unwrap().1,
+                ));
+            }
+            if self.latlot[0].1 > self.nowpotion.unwrap().1 {
+                self.nowpotion = Some((
+                    self.nowpotion.unwrap().0,
+                    roundf(self.nowpotion.unwrap().1 + 0.001, 1000),
+                ));
+            } else if self.latlot[0].1 < self.nowpotion.unwrap().1 {
+                self.nowpotion = Some((
+                    self.nowpotion.unwrap().0,
+                    roundf(self.nowpotion.unwrap().1 - 0.001, 1000),
+                ));
+            }
+        }
+    }
+
     pub fn nav(&mut self) -> bool {
         /*
         let now_postion_int: (f64, f64) = (
@@ -319,9 +353,15 @@ impl GPS {
 
                 //println!("{}",box_flag);
 
+
+                self.running_simulater(true);
+
                 if box_flag {
                     self.latlot.remove(0);
+                    //self.next_latlot = Some((self.latlot[0].0, self.latlot[0].1));
                 }
+
+                
 
                 true
             }
@@ -644,6 +684,11 @@ impl GPSmodule {
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
+}
+
+#[inline]
+pub fn roundf(x: f64, square: i32) -> f64 {
+    (x * (square as f64)).round() / (square as f64)
 }
 
 #[cfg(test)]

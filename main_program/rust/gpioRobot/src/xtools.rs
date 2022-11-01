@@ -66,9 +66,9 @@ fn test() {
     warning_msg("test");
 
     let tmp2 = (11.0 - 4.0) * 0.1;
-    println!("{:?}",tmp2);
+    //println!("{:?}",tmp2);
 
-    let tmp = roundf(tmp2, 10);
+    let tmp = roundf(0.0015, 1000);
 
 
     println!("{}",tmp);
