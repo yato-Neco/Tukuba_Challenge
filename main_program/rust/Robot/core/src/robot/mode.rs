@@ -29,7 +29,7 @@ pub struct KeyModule {
     pub moter_controler: Moter,
 }
 pub struct TestModule {
-    pub moter_controler: Moter,
+    //pub moter_controler: Moter,
     pub gps: GPS,
 }
 
@@ -45,6 +45,7 @@ pub struct AutoEvents {
     pub order: Cell<u32>,
     pub order_history: Vec<u32>,
     pub latlot: (f64, f64),
+    pub first_time: bool,
 }
 
 /// フラグのイベント一覧
@@ -122,6 +123,7 @@ impl Mode {
             order: Cell::new(0xfffffff),
             order_history: Vec::new(),
             latlot: (0.0, 0.0),
+            first_time: true,
         };
 
         // mut を外したい
@@ -278,6 +280,9 @@ impl Mode {
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
+
+            
+
             // Lidar 後に SLAM
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
@@ -300,10 +305,16 @@ impl Mode {
 
                     flag_controler.module.gps.original_nowpotion = e.clone();
                     flag_controler.module.gps.parser(e);
-                    flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
+                    let _ = flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
 
                 }
                 Err(_) => {}
+            }
+
+            if !flag_controler.module.gps.is_fix.unwrap_or(false) && flag_controler.event.first_time {
+                time_sleep(0, 500);
+                continue;
+
             }
 
 
@@ -340,7 +351,7 @@ impl Mode {
 
             
 
-
+            flag_controler.event.first_time = false;
             time_sleep(0, 1);
         }
 
@@ -356,11 +367,13 @@ impl Mode {
         let (port, rate, buf_size) = setting_file.load_gps_serial();
         let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
         let mut gps = GPS::new(port.as_str(), rate, buf_size);
+
+        //TODO: Linuxじゃ動かない
         let moter_controler_clone = moter_controler.clone();
 
         // Lidar も
         let module = TestModule {
-            moter_controler,
+           //moter_controler,
             gps,
         };
         let event = TestEvents {
@@ -383,7 +396,7 @@ impl Mode {
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
             if order != config::None {
-                flacn.module.moter_controler.moter_control(order);
+                //flacn.module.moter_controler.moter_control(order);
             }
         });
         flag_controler.add_fnc("move", |flacn| {
@@ -411,13 +424,13 @@ impl Mode {
             // is_stop が false の時、呼び出す
             if !flacn.event.is_move {
                 //println!("stop");
-                flacn.module.moter_controler.pwm_all_clean();
+                //flacn.module.moter_controler.pwm_all_clean();
             };
         });
         flag_controler.add_fnc("is_emergency_stop", |flacn| {
             // is_emergency_stop_lv0 が true の時、呼び出す
             if flacn.event.is_emergency_stop_lv0 {
-                flacn.module.moter_controler.pwm_all_clean();
+                //flacn.module.moter_controler.pwm_all_clean();
             };
         });
         flag_controler.add_fnc("emergency_stop", |flacn| {

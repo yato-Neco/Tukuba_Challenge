@@ -26,11 +26,13 @@ fn gps_test() {
 }
 #[test]
 fn gps() {
-    let mut gps = GPS::new("COM4", 115200, 500);
+    let mut gps = GPS::new("COM4", 115200, 1000);
 
     let result = gps.nav();
 
     println!("{}", result);
+
+    GPS::_serial("COM5", 115200, 1000);
 }
 
 #[test]
@@ -145,6 +147,36 @@ impl GPS {
                     let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
 
                     msg.send(gps_data).unwrap();
+                }
+                Err(_) => {}
+            }
+        }
+    }
+
+
+    pub fn _serial(port: &str, rate: u32, buf_size: usize) {
+        let mut port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => (p),
+            Err(_) => (panic!()),
+        };
+
+        let mut serial_buf: Vec<u8> = vec![0; buf_size];
+        loop {
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //serial_buf[..t].to_vec();
+                    let mut tmp = GPS::new("COM4", 115200, 500);
+
+                    let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
+                    println!("{}",gps_data);
+                    tmp.parser(gps_data);
+                    println!("{:?} {:?} {:?} {:?}",tmp.nowpotion, tmp.is_fix, tmp.num_sat ,tmp.original_nowpotion);
+                    //msg.send(gps_data).unwrap();
                 }
                 Err(_) => {}
             }
