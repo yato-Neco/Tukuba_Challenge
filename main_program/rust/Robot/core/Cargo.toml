@@ -13,7 +13,7 @@ robot-gpio = {path = "../robot-gpio"}
 gps = {path = "../gps"}
 lidar = {path = "../lidar"}
 rthred = {path = "../rthred"}
-
+scheduler = {path = "../scheduler"}
 
 #rppal = { version = "0.13.1", features = ["hal"] }
 yaml-rust = "0.4"

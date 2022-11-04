@@ -4,6 +4,7 @@ extern crate lidar;
 extern crate load_shdlib;
 extern crate slam;
 extern crate rthred;
+extern crate scheduler;
 
 mod robot;
 mod xtools;

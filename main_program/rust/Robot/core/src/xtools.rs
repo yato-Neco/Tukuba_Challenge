@@ -4,7 +4,7 @@ use std::{
 };
 
 pub struct Benchmark {
-    start_time: Instant,
+    pub start_time: Instant,
 }
 
 /// プログラムの実行スピードを測る

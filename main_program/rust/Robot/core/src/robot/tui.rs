@@ -102,12 +102,14 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvent
         .split(f.size());
 
     let left_block = Paragraph::new(format!(
-        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}",
+        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {}",
         flacn.event.is_move.get(),
         flacn.event.is_emergency_stop_lv0.get(),
         flacn.event.order.get(),
         flacn.event.is_break,
-        flacn.module.gps.azimuth
+        flacn.module.gps.azimuth,
+        flacn.event.first_time,
+        flacn.module.gps.in_waypoint
 
     ))
     .block(Block::default().borders(Borders::ALL))

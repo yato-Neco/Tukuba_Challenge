@@ -69,6 +69,7 @@ pub struct GPS {
     pub is_fix: Option<bool>,
     pub num_sat: Option<usize>,
     pub latlot: Vec<(f64, f64)>,
+    pub in_waypoint: bool,
     pub next_latlot: Option<(f64, f64)>,
 }
 
@@ -124,6 +125,7 @@ impl GPS {
             num_sat: None,
             latlot: Vec::new(),
             next_latlot: None,
+            in_waypoint:false,
         }
     }
 
@@ -385,15 +387,15 @@ impl GPS {
 
                 //println!("{}",box_flag);
 
-
                 self.running_simulater(true);
+
+                self.in_waypoint = box_flag;
 
                 if box_flag {
                     self.latlot.remove(0);
                     //self.next_latlot = Some((self.latlot[0].0, self.latlot[0].1));
                 }
 
-                
 
                 true
             }

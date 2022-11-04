@@ -10,5 +10,6 @@ members = [
     "flacon",
     "robot-gpio",
     "robot-serialport",
-    "rthred"
+    "rthred",
+    "scheduler"
 ]
