@@ -6,6 +6,24 @@ use robot_gpio::Moter;
 
 
 /// フラグコントロール関係
+/// 
+/// 
+/// ```
+/// struct Module {}
+/// let module = Module {};
+/// 
+/// strct Event {}
+/// let event = Event {}
+/// 
+/// let mut controler = FlaCon::new(module, event);
+/// 
+/// controler.add_fnc("test", |flacn| {
+///  flacn.module;
+///  flacn.event;
+///  println!("test");
+/// });
+/// ```
+/// 
 pub struct FlaCon<T,R> {
     pub event: R,
     pub module: T,
@@ -54,7 +72,6 @@ impl<T,R> Flags<T,R> for FlaCon<T,R> {
 impl<T,R> Event for FlaCon<T,R> {
 
     /// フラグのイベントを呼び出す関数
-    /// &mut を外したい
     fn load_fnc(&mut self, name: &str) {
         let tmp = match self.fnc_map.get(name) {
             Some(e) => *e,
@@ -68,10 +85,3 @@ impl<T,R> Event for FlaCon<T,R> {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {}
-}
