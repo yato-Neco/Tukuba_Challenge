@@ -41,10 +41,10 @@ pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>)
         .split(f.size());
 
     let left_block = Paragraph::new(format!(
-        "is_move:{}\n\nis_emergency_stop: {}\n\norder: {:x}",
+        "is_move:{}\n\nis_emergency_stop: {}\n\norder: {:x}\n ",
         flacn.event.is_move.get(),
         flacn.event.is_emergency_stop_lv0.get(),
-        flacn.event.order.get()
+        flacn.event.order.get(),
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Left);
@@ -102,10 +102,15 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvent
         .split(f.size());
 
     let left_block = Paragraph::new(format!(
-        "is_move:{}\n\nis_emergency_stop: {}\n\norder: {:x}",
+        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {}",
         flacn.event.is_move.get(),
         flacn.event.is_emergency_stop_lv0.get(),
-        flacn.event.order.get()
+        flacn.event.order.get(),
+        flacn.event.is_break,
+        flacn.module.gps.azimuth,
+        flacn.event.first_time,
+        flacn.module.gps.in_waypoint
+
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Left);
@@ -139,9 +144,12 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvent
 
     
     let right_block = Paragraph::new(
-        format!("{:?}\n",
+        format!("{:?}\n{:?} {:?} {:?} {:?}",
         flacn.module.moter_controler,
-        //flacn.module
+        flacn.module.gps.nowpotion,
+        flacn.module.gps.is_fix,
+        flacn.module.gps.latlot,
+        flacn.module.gps.next_latlot,
     ))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);

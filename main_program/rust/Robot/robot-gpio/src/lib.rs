@@ -10,6 +10,7 @@ use rppal::gpio::{Gpio, OutputPin};
 use rppal::system::DeviceInfo;
 
 #[cfg(target_os = "linux")]
+#[derive(Debug)]
 pub struct Moter {
     pub r_pin0: OutputPin,
     pub r_pin1: OutputPin,
@@ -137,7 +138,7 @@ impl Moter {
 }
 
 #[cfg(target_os = "windows")]
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Moter {
     r_pin0: u8,
     r_pin1: u8,

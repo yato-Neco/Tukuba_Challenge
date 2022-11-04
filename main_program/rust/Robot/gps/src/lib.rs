@@ -26,11 +26,13 @@ fn gps_test() {
 }
 #[test]
 fn gps() {
-    let mut gps = GPS::new();
+    let mut gps = GPS::new("COM4", 115200, 1000);
 
     let result = gps.nav();
 
     println!("{}", result);
+
+    GPS::_serial("COM5", 115200, 1000);
 }
 
 #[test]
@@ -52,22 +54,28 @@ pub struct GPSmodule {
     pub r: f64,
     pub latlot: Vec<(f64, f64)>,
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct GPS {
+    pub port: String,
+    pub rate: u32,
+    pub buf_size: usize,
     pub nowpotion: Option<(f64, f64)>,
     pub original_nowpotion: String,
     pub noepotion_history: Vec<(f64, f64)>,
     pub azimuth: f64,
+    pub now_azimuth: Option<f64>,
     pub distance: f64,
     pub r: f64,
     pub is_fix: Option<bool>,
     pub num_sat: Option<usize>,
     pub latlot: Vec<(f64, f64)>,
+    pub in_waypoint: bool,
+    pub next_latlot: Option<(f64, f64)>,
 }
 
 #[test]
 fn test() {
-    let mut tmp = GPS::new();
+    let mut tmp = GPS::new("COM4", 115200, 500);
     tmp.latlot.push((0.001, 0.001));
     tmp.nowpotion = Some((0.001, 0.001));
 
@@ -76,14 +84,14 @@ fn test() {
         let result: bool = tmp.nav();
         println!("{}", result);
         if !result {
-            //break;
+            break;
         }
     }
 }
 
 #[test]
 fn test3() {
-    let mut tmp = GPS::new();
+    let mut tmp = GPS::new("COM4", 115200, 500);
     let mut gps_format = Vec::new();
 
     gps_format.push("SpGnss : begin in".to_owned());
@@ -96,28 +104,89 @@ fn test3() {
 
     for v in gps_format {
         tmp.parser(v);
+        println!("{:?}", tmp);
     }
 }
 
 impl GPS {
-    pub fn new() -> Self {
+    pub fn new(port: &str, rate: u32, buf_size: usize) -> Self {
         Self {
+            port: port.to_string(),
+            rate: rate,
+            buf_size: buf_size,
             nowpotion: None,
             original_nowpotion: String::new(),
             noepotion_history: Vec::new(),
             azimuth: 0.0,
+            now_azimuth: None,
             distance: 0.0,
             r: 0.001,
             is_fix: None,
             num_sat: None,
             latlot: Vec::new(),
+            next_latlot: None,
+            in_waypoint:false,
         }
     }
 
-    pub fn serial() {}
+    /// Serialからデータを受け取って、main スレッドに送る。
+    pub fn serial(port: &str, rate: u32, buf_size: usize, msg: Sender<String>) {
+        let mut port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => (p),
+            Err(_) => (panic!()),
+        };
+
+        let mut serial_buf: Vec<u8> = vec![0; buf_size];
+        loop {
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //serial_buf[..t].to_vec();
+                    let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
+
+                    msg.send(gps_data).unwrap();
+                }
+                Err(_) => {}
+            }
+        }
+    }
+
+
+    pub fn _serial(port: &str, rate: u32, buf_size: usize) {
+        let mut port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => (p),
+            Err(_) => (panic!()),
+        };
+
+        let mut serial_buf: Vec<u8> = vec![0; buf_size];
+        loop {
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //serial_buf[..t].to_vec();
+                    let mut tmp = GPS::new("COM4", 115200, 500);
+
+                    let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
+                    println!("{}",gps_data);
+                    tmp.parser(gps_data);
+                    println!("{:?} {:?} {:?} {:?}",tmp.nowpotion, tmp.is_fix, tmp.num_sat ,tmp.original_nowpotion);
+                    //msg.send(gps_data).unwrap();
+                }
+                Err(_) => {}
+            }
+        }
+    }
 
     ///
-    /// 
+    ///
     pub fn parser(&mut self, gps_data: String) {
         let gps_format = gps_data.replace(' ', "");
 
@@ -138,9 +207,8 @@ impl GPS {
         println!("{:?}", gps_format.get(1));
         println!("{:?}", gps_format.get(2));
         println!("{:?}", gps_format.get(3));
-        println!("{:?}", gps_format.get(4));        
+        println!("{:?}", gps_format.get(4));
         */
-
 
         match gps_format.get(1) {
             Some(e) => {
@@ -170,12 +238,11 @@ impl GPS {
             None => {}
         }
 
-        println!("{:?}", self);
+        //println!("{:?}", self);
     }
 
-
     /// 古い方のparser
-    /// 
+    ///
     pub fn _parser(&mut self, gps_data: String) {
         let a = "
         SpGnss : begin in
@@ -262,6 +329,35 @@ impl GPS {
         }
     }
 
+    pub fn running_simulater(&mut self,arg:bool) {
+        if arg {
+            //println!("{:?}",self.latlot[0].0 > self.nowpotion.unwrap().0);
+            if self.latlot[0].0 > self.nowpotion.unwrap().0 {
+                //self.nowpotion.unwrap().0 -= 0.001;
+                self.nowpotion = Some((
+                    roundf(self.nowpotion.unwrap().0 + 0.001, 1000),
+                    self.nowpotion.unwrap().1,
+                ));
+            } else if self.latlot[0].0 < self.nowpotion.unwrap().0 {
+                self.nowpotion = Some((
+                    roundf(self.nowpotion.unwrap().0 - 0.001, 1000),
+                    self.nowpotion.unwrap().1,
+                ));
+            }
+            if self.latlot[0].1 > self.nowpotion.unwrap().1 {
+                self.nowpotion = Some((
+                    self.nowpotion.unwrap().0,
+                    roundf(self.nowpotion.unwrap().1 + 0.001, 1000),
+                ));
+            } else if self.latlot[0].1 < self.nowpotion.unwrap().1 {
+                self.nowpotion = Some((
+                    self.nowpotion.unwrap().0,
+                    roundf(self.nowpotion.unwrap().1 - 0.001, 1000),
+                ));
+            }
+        }
+    }
+
     pub fn nav(&mut self) -> bool {
         /*
         let now_postion_int: (f64, f64) = (
@@ -291,9 +387,15 @@ impl GPS {
 
                 //println!("{}",box_flag);
 
+                self.running_simulater(true);
+
+                self.in_waypoint = box_flag;
+
                 if box_flag {
                     self.latlot.remove(0);
+                    //self.next_latlot = Some((self.latlot[0].0, self.latlot[0].1));
                 }
+
 
                 true
             }
@@ -616,6 +718,11 @@ impl GPSmodule {
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
+}
+
+#[inline]
+pub fn roundf(x: f64, square: i32) -> f64 {
+    (x * (square as f64)).round() / (square as f64)
 }
 
 #[cfg(test)]

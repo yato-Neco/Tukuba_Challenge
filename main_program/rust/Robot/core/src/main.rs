@@ -3,6 +3,8 @@ extern crate gps;
 extern crate lidar;
 extern crate load_shdlib;
 extern crate slam;
+extern crate rthred;
+extern crate scheduler;
 
 mod robot;
 mod xtools;
@@ -22,6 +24,7 @@ async fn main() {
     match args.mode.as_str() {
         "auto" => Mode::auto(),
         "key" => Mode::key(),
+        "test" => Mode::test(),
         "display" => {}
         "k" => Mode::key(),
         "a" => Mode::auto(),

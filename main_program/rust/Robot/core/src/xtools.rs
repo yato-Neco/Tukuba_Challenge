@@ -4,7 +4,7 @@ use std::{
 };
 
 pub struct Benchmark {
-    start_time: Instant,
+    pub start_time: Instant,
 }
 
 /// プログラムの実行スピードを測る
@@ -32,9 +32,14 @@ impl Benchmark {
         );
     }
 
-    pub fn end(&self) -> f64 {
+    pub fn endf64(&self) -> f64 {
         let end = self.start_time.elapsed();
         end.as_secs_f64()
+    }
+
+    pub fn endu32(&self) -> i128 {
+        let end = self.start_time.elapsed();
+        end.as_millis() as i128
     }
 }
 
