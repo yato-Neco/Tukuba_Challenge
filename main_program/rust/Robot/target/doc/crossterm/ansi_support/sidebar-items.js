@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["supports_ansi","Checks if the current terminal supports ANSI escape sequences"]]});

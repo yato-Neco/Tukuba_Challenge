@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["NamedPipe","Non-blocking windows named pipe."]]});

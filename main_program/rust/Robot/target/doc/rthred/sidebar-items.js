@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["send",""],["sendG","ロボットの命令以外用"]],"struct":[["Rthd",""],["RthdG","必要ないしｓ"]],"trait":[["Rthds",""]],"type":[["SenderOrders",""]]});
