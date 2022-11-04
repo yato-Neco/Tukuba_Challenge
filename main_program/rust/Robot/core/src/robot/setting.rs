@@ -13,6 +13,7 @@ pub struct Settings {
     setting_yaml: Yaml,
 }
 
+/// 設定ファイル関係
 impl Settings {
     pub fn _load_setting(path: &str) -> Yaml {
         let f = std::fs::read_to_string(path);
@@ -43,7 +44,7 @@ impl Settings {
         ([r0, r1], [l0, l1])
     }
 
-    // Yaml 読み込み
+    /// Yaml 読み込み
     pub fn load_setting(path: &str) -> Self {
         let f = std::fs::read_to_string(path);
         let s = f.unwrap().to_string();
@@ -57,7 +58,7 @@ impl Settings {
         }
     }
 
-    // Moter の GPIO の設定ファイルを読み込み
+    /// Moter の GPIO の設定ファイルを読み込み
     pub fn load_moter_pins(&self) -> ([u8; 2], [u8; 2]) {
         let r0 = self.setting_yaml["Robot"]["Moter"]["right_gpio"][0]
             .as_i64()
@@ -76,7 +77,7 @@ impl Settings {
         ([r0, r1], [l0, l1])
     }
 
-    // GPS のシリアル通信系の設定を読み込み
+    /// GPS のシリアル通信系の設定を読み込み
     pub fn load_gps_serial(&self) -> (String, u32, usize) {
         let port = self.setting_yaml["Robot"]["GPS"]["Serial"]["port"][0]
             .as_str()

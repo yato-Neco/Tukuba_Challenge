@@ -23,11 +23,8 @@ pub struct Moter {
 ///
 /// ```
 /// let mut moter = MoterGPIO::new([25,24], [23,22]);
-///
-/// moter.rfpwm();
-///
-/// moter.lfpwm();
-///
+/// moter.right(1.0,Mode::Front);
+/// moter.left(1.0,Mode::Front);
 /// moter.pwm_all_clean();
 /// ```
 impl Moter {
@@ -35,6 +32,7 @@ impl Moter {
     ///
     /// ```
     /// let mut moter = MoterGPIO::new([25,24], [23,22]);
+    /// 
     /// ```
     ///
     pub fn new(r_pin: [u8; 2], l_pin: [u8; 2]) -> Self {
@@ -53,6 +51,7 @@ impl Moter {
         };
     }
 
+    /// 右モーター制御
     pub fn right(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
             self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
@@ -62,7 +61,7 @@ impl Moter {
             self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
         }
     }
-
+    /// 左モーター制御
     pub fn left(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
             self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
@@ -75,6 +74,7 @@ impl Moter {
 
     /// right モーター 前後
     /// duty 0.0 ~ 1.0
+    ///  非推奨
     pub fn rfpwm(&mut self, duty: f64) {
         self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
         self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
@@ -82,6 +82,7 @@ impl Moter {
 
     /// right モーター　後進
     /// duty 0.0 ~ 1.0
+    /// 非推奨
     pub fn rbpwm(&mut self, duty: f64) {
         self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
         self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
@@ -89,6 +90,7 @@ impl Moter {
 
     /// left モーター 前後
     /// duty 0.0 ~ 1.0
+    /// 非推奨
     pub fn lfpwm(&mut self, duty: f64) {
         self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
         self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
@@ -96,6 +98,7 @@ impl Moter {
 
     /// left モーター　後進
     /// duty 0.0 ~ 1.0
+    /// 非推奨
     pub fn lbpwm(&mut self, duty: f64) {
         self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
@@ -109,6 +112,7 @@ impl Moter {
         self.l_pin1.clear_pwm().unwrap();
     }
 
+    /// ロボットの命令をモーターに伝える。
     pub fn moter_control(&mut self, order: u32) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
@@ -148,7 +152,7 @@ pub struct Moter {
 }
 
 #[cfg(target_os = "windows")]
-///
+///　windows実行環境はgpioないから以下プログラムはダミー
 /// ```
 /// let mut moter = MoterGPIO::new([25,24], [23,22]);
 ///
@@ -296,10 +300,3 @@ impl Moter {
     */
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {}
-}

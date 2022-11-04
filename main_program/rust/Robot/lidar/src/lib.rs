@@ -1,4 +1,5 @@
-///
+///　詳しくは以下
+/// https://www.robotshop.com/media/files/content/y/ydl/pdf/ydlidar-x2-360-laser-scanner-datasheet.pdf
 /// ```
 /// let mut port = match serialport::new("COM4", 115200)
 ///         .stop_bits(serialport::StopBits::One)

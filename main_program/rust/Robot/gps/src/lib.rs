@@ -4,26 +4,7 @@ use std::sync::mpsc::Sender;
 use std::time::Duration;
 use std::{thread, vec};
 
-#[test]
-fn gps_test() {
-    let mut latlot: Vec<(f64, f64)> = Vec::new();
 
-    latlot.push((36.061899, 136.222481));
-
-    //latlot.push((36.061899, 137.222481));
-
-    let mut tmp = GPSmodule {
-        r: 0.001,
-        latlot: latlot,
-    };
-
-    loop {
-        tmp.nav((36.062024, 136.222473));
-    }
-
-    //GPSmodule::eazimuth((36.062024, 136.222473));
-    //GPSmodule::eazimuth((36.062024, 50.222473));
-}
 #[test]
 fn gps() {
     let mut gps = GPS::new("COM4", 115200, 1000);
@@ -36,18 +17,21 @@ fn gps() {
 }
 
 #[test]
-fn test2() {
-    let pos_a = WGS84::from_degrees_and_meters(36.000_006, 136.000_006, 0.0);
-    let pos_b = WGS84::from_degrees_and_meters(36.000_000, 136.000_000, 0.0);
+fn test() {
+    let mut tmp = GPS::new("COM4", 115200, 500);
+    tmp.latlot.push((0.001, 0.001));
+    tmp.nowpotion = Some((0.001, 0.001));
 
-    println!("Distance between a and b: {:.4}m", pos_a.distance(&pos_b));
-
-    let vec = pos_b - pos_a;
-
-    let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
-
-    println!("{}", azimuth);
+    loop {
+        println!("{:?}", tmp.latlot);
+        let result: bool = tmp.nav();
+        println!("{}", result);
+        if !result {
+            break;
+        }
+    }
 }
+
 
 #[derive(Debug)]
 pub struct GPSmodule {
@@ -73,40 +57,7 @@ pub struct GPS {
     pub next_latlot: Option<(f64, f64)>,
 }
 
-#[test]
-fn test() {
-    let mut tmp = GPS::new("COM4", 115200, 500);
-    tmp.latlot.push((0.001, 0.001));
-    tmp.nowpotion = Some((0.001, 0.001));
 
-    loop {
-        println!("{:?}", tmp.latlot);
-        let result: bool = tmp.nav();
-        println!("{}", result);
-        if !result {
-            break;
-        }
-    }
-}
-
-#[test]
-fn test3() {
-    let mut tmp = GPS::new("COM4", 115200, 500);
-    let mut gps_format = Vec::new();
-
-    gps_format.push("SpGnss : begin in".to_owned());
-    gps_format.push("SpGnss : begin out".to_owned());
-    gps_format.push("SpGnss : begin out".to_owned());
-    gps_format.push("mode = HOT_START".to_owned());
-    gps_format.push("SpGnss : start out".to_owned());
-    gps_format.push("Gnss setup OK".to_owned());
-    gps_format.push("1980/01/06 00:00:03.000626, numSat: 0, No-Fix, 0.0, 0.0,".to_owned());
-
-    for v in gps_format {
-        tmp.parser(v);
-        println!("{:?}", tmp);
-    }
-}
 
 impl GPS {
     pub fn new(port: &str, rate: u32, buf_size: usize) -> Self {
@@ -155,7 +106,7 @@ impl GPS {
         }
     }
 
-
+    /// 非推奨
     pub fn _serial(port: &str, rate: u32, buf_size: usize) {
         let mut port = match serialport::new(port, rate)
             .stop_bits(serialport::StopBits::One)
@@ -186,7 +137,7 @@ impl GPS {
     }
 
     ///
-    ///
+    /// シリアル通信から来るデータ扱いやすく、パースする。
     pub fn parser(&mut self, gps_data: String) {
         let gps_format = gps_data.replace(' ', "");
 
@@ -244,20 +195,6 @@ impl GPS {
     /// 古い方のparser
     ///
     pub fn _parser(&mut self, gps_data: String) {
-        let a = "
-        SpGnss : begin in
-        SpGnss : begin out
-        SpGnss : begin out
-        mode = HOT_START
-        SpGnss : start out
-        Gnss setup OK
-        1980/01/06 00:00:03.000626, numSat: 0, No-Fix, 0.0, 0.0,
-
-        1980/01/06 00:00:04.000625, numSat: 0, No-Fix, 0.0, 0.0,
-
-        1980/01/06 00:00:05.000619, numSat: 0, No-Fix, 0.0, 0.0,
-
-        1980/01/06 00:00:06.000617, numSat: 0, No-Fix, 0.0, 0.0,";
 
         let mut gps_format = Vec::new();
 
@@ -329,6 +266,7 @@ impl GPS {
         }
     }
 
+    /// ロボットが実際に動くことをシミュレートする
     pub fn running_simulater(&mut self,arg:bool) {
         if arg {
             //println!("{:?}",self.latlot[0].0 > self.nowpotion.unwrap().0);
@@ -358,6 +296,8 @@ impl GPS {
         }
     }
 
+    /// nav システム
+    /// 戻り値は終了時のbool
     pub fn nav(&mut self) -> bool {
         /*
         let now_postion_int: (f64, f64) = (
@@ -406,6 +346,7 @@ impl GPS {
         result
     }
 
+    /// 二地点間の角度(度数法)
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> (f64, f64) {
         let pos_a = WGS84::from_degrees_and_meters(self.latlot[0].0, self.latlot[0].1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(now_postion.0, now_postion.1, 0.0);
@@ -418,6 +359,8 @@ impl GPS {
         (azimuth, distance)
     }
 
+
+    /// 設定したlatlotに半径(box状だけど)r に入った true 以外 false
     fn r#box(&self, latlon: &(f64, f64), now_p: &(f64, f64), r: f64) -> bool {
         if *latlon == (0.0, 0.0) {
             panic!("緯度経度設定しろ！")
@@ -440,7 +383,7 @@ impl GPS {
 }
 
 ///
-///
+/// 旧GPS
 impl GPSmodule {
     /// ナビの機能
     /// 小数点で計算すると誤差があるので整数にしてる
@@ -716,22 +659,9 @@ impl GPSmodule {
     }
 }
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
 
+/// 小数点切り捨て
 #[inline]
 pub fn roundf(x: f64, square: i32) -> f64 {
     (x * (square as f64)).round() / (square as f64)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }

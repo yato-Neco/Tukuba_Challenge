@@ -163,7 +163,7 @@ pub fn send(order: u32, msg: &SenderOrders) {
     };
 }
 
-
+/// ロボットの命令以外用
 #[inline]
 pub fn sendG<T>(order: T, msg: &std::sync::mpsc::Sender<T>) {
     match msg.send(order) {
