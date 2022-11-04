@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["GUID",""]],"type":[["HRESULT",""],["HSTRING",""],["IInspectable",""],["IUnknown",""],["PCSTR",""],["PCWSTR",""],["PSTR",""],["PWSTR",""]]});

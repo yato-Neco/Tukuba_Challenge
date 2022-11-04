@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["core"] = [{"text":"impl <a class=\"trait\" href=\"clap/derive/trait.Parser.html\" title=\"trait clap::derive::Parser\">Parser</a> for <a class=\"struct\" href=\"core/struct.Args.html\" title=\"struct core::Args\">Args</a>","synthetic":false,"types":["core::Args"]}];
+implementors["core"] = [{"text":"impl Parser for <a class=\"struct\" href=\"core/struct.Args.html\" title=\"struct core::Args\">Args</a>","synthetic":false,"types":["core::Args"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

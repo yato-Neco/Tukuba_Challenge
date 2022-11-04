@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["in6_addr",""],["in6_addr_u",""]],"type":[["IN6_ADDR",""],["LPIN6_ADDR",""],["PIN6_ADDR",""]]});

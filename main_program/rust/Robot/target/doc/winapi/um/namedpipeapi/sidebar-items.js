@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["CallNamedPipeW",""],["ConnectNamedPipe",""],["CreateNamedPipeW",""],["CreatePipe",""],["DisconnectNamedPipe",""],["GetNamedPipeClientComputerNameW",""],["GetNamedPipeHandleStateW",""],["GetNamedPipeInfo",""],["ImpersonateNamedPipeClient",""],["PeekNamedPipe",""],["SetNamedPipeHandleState",""],["TransactNamedPipe",""],["WaitNamedPipeW",""]]});
