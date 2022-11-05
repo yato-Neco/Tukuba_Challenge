@@ -1356,7 +1356,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">thread</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="kw">fn</span>(<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">SenderOrders</span>)<span class="op">&gt;</span> <span class="op">=</span>
             <span class="ident">std::collections::HashMap::new</span>();
 
-        <span class="kw">let</span> (<span class="ident">main_sender</span>, <span class="ident">main_receiver</span>) <span class="op">=</span> <span class="ident">std::sync::mpsc::channel</span>::<span class="op">&lt;</span>(<span class="ident">u32</span>)<span class="op">&gt;</span>();
+        <span class="kw">let</span> (<span class="ident">main_sender</span>, <span class="ident">main_receiver</span>) <span class="op">=</span> <span class="ident">std::sync::mpsc::channel</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>();
         <span class="kw">let</span> (<span class="ident">moter_sender</span>, <span class="ident">moter_receiver</span>) <span class="op">=</span> <span class="ident">std::sync::mpsc::channel</span>::<span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span>();
 
         <span class="ident">RthdG::_thread_generate_return_sender</span>(

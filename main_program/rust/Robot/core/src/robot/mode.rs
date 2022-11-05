@@ -498,7 +498,7 @@ impl Mode {
         let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
             std::collections::HashMap::new();
 
-        let (main_sender, main_receiver) = std::sync::mpsc::channel::<(u32)>();
+        let (main_sender, main_receiver) = std::sync::mpsc::channel::<u32>();
         let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(u32, u32)>();
 
         RthdG::_thread_generate_return_sender(
