@@ -1,7 +1,6 @@
-mod xtools;
 
 use std::collections::HashMap;
-use xtools::time_sleep;
+use mytools::time_sleep;
 
 
 
@@ -63,7 +62,7 @@ impl SLAM {
 
 #[cfg(test)]
 mod tests {
-    use crate::{xtools::time_sleep, SLAM};
+    use crate::{time_sleep, SLAM};
 
     #[test]
     fn it_works() {

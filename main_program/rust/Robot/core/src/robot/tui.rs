@@ -5,6 +5,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use flacon::{FlaCon};
+use gps::GPS;
+use robot_gpio::Moter;
 use super::mode::{AutoModule,KeyModule,KeyEvents,AutoEvents};
 use std::{error::Error, io};
 use tui::widgets::Paragraph;
@@ -88,7 +90,7 @@ pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>)
 }
 
 
-pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvents>) {
+pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:(GPS, Moter)) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
@@ -103,13 +105,13 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvent
 
     let left_block = Paragraph::new(format!(
         "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {}",
-        flacn.event.is_move.get(),
-        flacn.event.is_emergency_stop_lv0.get(),
-        flacn.event.order.get(),
-        flacn.event.is_break,
-        flacn.module.gps.azimuth,
-        flacn.event.first_time,
-        flacn.module.gps.in_waypoint
+        flacn.is_move.get(),
+        flacn.is_emergency_stop_lv0.get(),
+        flacn.order.get(),
+        flacn.is_break,
+        module.0.azimuth,
+        flacn.first_time,
+        module.0.in_waypoint
 
     ))
     .block(Block::default().borders(Borders::ALL))
@@ -145,11 +147,11 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<AutoModule,AutoEvent
     
     let right_block = Paragraph::new(
         format!("{:?}\n{:?} {:?} {:?} {:?}",
-        flacn.module.moter_controler,
-        flacn.module.gps.nowpotion,
-        flacn.module.gps.is_fix,
-        flacn.module.gps.latlot,
-        flacn.module.gps.next_latlot,
+        module.1,
+        module.0.nowpotion,
+        module.0.is_fix,
+        module.0.latlot,
+        module.0.next_latlot,
     ))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);

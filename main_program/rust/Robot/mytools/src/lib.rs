@@ -87,3 +87,16 @@ fn test() {
 pub fn roundf(x:f64,square:i32) -> f64 {
      (x * (square as f64)).round() / (square as f64)
 }
+
+pub trait  Xtools {
+
+    fn roundf(&self,square:i32) -> f64;
+}
+
+impl Xtools for f64 {
+    fn roundf(&self,square:i32) -> f64 {
+        (self * (square as f64)).round() / (square as f64)
+   }
+   
+}
+

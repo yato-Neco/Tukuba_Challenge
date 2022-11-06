@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["api","core","flacon","gps","lidar","load_shdlib","robot_gpio","robot_serialport","rthred","scheduler","slam"];
+window.ALL_CRATES = ["api","camera","core","flacon","gps","lidar","load_shdlib","mytools","robot_gpio","robot_serialport","rthred","scheduler","slam"];

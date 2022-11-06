@@ -23,7 +23,7 @@ use robot_gpio::Moter;
 ///  println!("test");
 /// });
 /// ```
-/// 
+#[derive(Clone)]
 pub struct FlaCon<T,R> {
     pub event: R,
     pub module: T,

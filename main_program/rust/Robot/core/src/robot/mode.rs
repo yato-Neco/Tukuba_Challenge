@@ -1,10 +1,12 @@
-use crate::xtools::{time_sleep, warning_msg, Benchmark};
 use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
+use mytools::time_sleep;
 use robot_gpio::Moter;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
+use ::tui::Terminal;
+use ::tui::backend::CrosstermBackend;
 
 use super::tui;
 use super::{
@@ -12,6 +14,7 @@ use super::{
     setting::Settings,
 };
 
+use std::io::Stdout;
 use std::{
     cell::Cell,
     collections::HashMap,
@@ -22,6 +25,7 @@ use std::{
 pub struct Mode {}
 
 pub struct AutoModule {
+    pub terminal: Terminal<CrosstermBackend<Stdout>>,
     pub moter_controler: Moter,
     pub gps: GPS,
     // pub slam: SLAM
@@ -34,7 +38,7 @@ pub struct TestModule {
     pub gps: GPS,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct AutoEvents {
     pub is_debug: bool,
     pub is_avoidance: bool,
@@ -48,7 +52,6 @@ pub struct AutoEvents {
     pub latlot: (f64, f64),
     pub first_time: bool,
     pub trun_azimuth: f64,
-    
 }
 
 /// フラグのイベント一覧
@@ -103,12 +106,15 @@ impl Mode {
 
         let (port, rate, buf_size) = setting_file.load_gps_serial();
 
+        let gps_setting = setting_file.load_gps_serial();
+
         let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut gps = GPS::new(port.as_str(), rate, buf_size);
+        let mut gps = GPS::new(true);
 
         //モジュールをflag内で扱うための構造体
-        let module = AutoModule {
+        let mut module = AutoModule {
+            terminal,
             moter_controler,
             gps,
         };
@@ -208,8 +214,6 @@ impl Mode {
             };
         });
 
-
-
         //flag_controler.module.gps.latlot.push((0.001, 0.001));
         flag_controler.module.gps.latlot.push((1.000, 1.000));
         flag_controler.module.gps.latlot.push((1.000, 2.000));
@@ -227,50 +231,81 @@ impl Mode {
         });
 
         flag_controler.add_fnc("gps_Fix", |flacn| {
+            //flacn.module.gps.is_fix;
+            // gps 受信フラグ 
+
+            if flacn.module.gps.is_fix.unwrap_or(false) {
+                flacn.module.gps.nowpotion_history.push(flacn.module.gps.nowpotion.unwrap());
+            }else{
+                //flacn.event.order.set(config::EMERGENCY_STOP);
+                //flacn.load_fnc("set_emergency_stop");
+                //flacn.load_fnc("is_emergency_stop");
+            }
             
+            time_sleep(0, 5);
+            
+
+        });
+
+        
+
+        flag_controler.add_fnc("first_time", |flacn| {
             //flacn.module.gps.is_fix;
 
-            if !flacn.module.gps.is_fix.unwrap_or(false) {
-                flacn.event.order.set(config::EMERGENCY_STOP);
-                flacn.load_fnc("set_emergency_stop");
-                flacn.load_fnc("is_emergency_stop");
+            // 
+            if !flacn.module.gps.is_fix.unwrap_or(false)
+                && flacn.event.first_time
+            {
 
+                let mut count = 0;
+                loop {
+                    flacn.load_fnc("tui");
+                    if count > 5 {
+                        flacn.module.gps.is_fix = Some(true);
+                    }
+
+                    if flacn.module.gps.is_fix.unwrap_or(false) {
+                        break;
+                    }
+
+                    time_sleep(0, 1);
+                    time_sleep(1, 0);
+                    count+=1;
+                }
             }
 
             // gps
         });
 
-
         flag_controler.add_fnc("in_waypoint", |flacn| {
-
             // waypoint到着処理(初回は無視)
             if flacn.module.gps.in_waypoint && !flacn.event.first_time {
-                
                 //println!("{}",flacn.module.gps.azimuth);
                 //loop{time_sleep(0, 1);}
                 //println!("waypoint");
                 // break;
 
-                flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
-                
+                //flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
 
                 loop {
-
-
                     /*
                     if trun_azimuth == 0.0 {
                         break;
                     }
                     */
 
-                    
-                        
-
                     time_sleep(0, 1);
                 }
             }
-            
+        });
 
+        flag_controler.add_fnc("tui", |flacn| {
+            let event = flacn.event.clone();
+            let module = (flacn.module.gps.clone(),flacn.module.moter_controler.clone());
+            flacn.module.terminal.draw(|f| {
+                tui::auto_ui(f, event,module);
+            })
+            .unwrap();
         });
 
         let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
@@ -291,46 +326,34 @@ impl Mode {
             }
         });
 
-        /*
-        thread.insert("gps", |panic_msg: Sender<String>, msg: SenderOrders| {
-            Rthd::<String>::send_panic_msg(panic_msg);
-            let order =  GPS::serial();
-            time_sleep(1, 500);
-            print!("{}",0x1FEEFFFF);
-            msg.send(0x1FEEFFFF).unwrap();
-        });
-        */
+       
 
-        Rthd::_thread_generate(
+        RthdG::_thread_generate(
             "gps",
             &sendr_err_handles,
             gps_sender,
-            |panic_msg, gps_sender| {
+            gps_setting,
+            |panic_msg, gps_sender, gps_setting| {
                 Rthd::<String>::send_panic_msg(panic_msg);
-                //GPS::serial("COM4", 115200, 1000, gps_sender);
-                //print!("gps");
+                //GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
             },
         );
 
-
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
-
         loop {
+
+
             
-            terminal
-                .draw(|f| {
-                    tui::auto_ui(f, &flag_controler);
-                })
-                .unwrap();
+            flag_controler.load_fnc("tui");
+
+            flag_controler.load_fnc("first_time");
+
+            flag_controler.load_fnc("gps_Fix");
+
             
 
-        
-            
-
-            flag_controler.load_fnc("in_waypoint");
-
-
+            //flag_controler.load_fnc("in_waypoint");
 
             // Key
             match order.get("key").unwrap().1.try_recv() {
@@ -348,9 +371,11 @@ impl Mode {
             };
 
 
-            
+
             // GPSの信号が途切れたら。(初回は無視)
-            if !flag_controler.module.gps.is_fix.unwrap_or(false) && !flag_controler.event.first_time {
+            if !flag_controler.module.gps.is_fix.unwrap_or(false)
+                && !flag_controler.event.first_time
+            {
                 //time_sleep(0, 10);
                 //continue;
             }
@@ -358,11 +383,9 @@ impl Mode {
             // Lidar 後に SLAM
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
-
                     flag_controler.event.order.set(e);
                     flag_controler.load_fnc("set_emergency_stop");
                     flag_controler.load_fnc("is_emergency_stop");
-                    
                 }
                 Err(_) => {}
             };
@@ -370,19 +393,15 @@ impl Mode {
             flag_controler.load_fnc("gps_nav");
             //flag_controler.load_fnc("gps_Fix");
 
-
             // GPS
             match gps_receiver.try_recv() {
                 Ok(e) => {
-
                     flag_controler.module.gps.original_nowpotion = e.clone();
                     flag_controler.module.gps.parser(e);
                     //let _ = flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
-
                 }
                 Err(_) => {}
             }
-
 
             //flag_controler.load_fnc("debug");
 
@@ -392,7 +411,6 @@ impl Mode {
 
             //let (lat,lot) = flag_controler.module.gps.nowpotion.unwrap();
 
-            
             flag_controler.event.first_time = false;
             time_sleep(0, 1);
         }
@@ -408,14 +426,14 @@ impl Mode {
         let mut operation = setting_file.load_move_csv();
         let (port, rate, buf_size) = setting_file.load_gps_serial();
         let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
-        let mut gps = GPS::new(port.as_str(), rate, buf_size);
+        let mut gps = GPS::new(true);
 
         //TODO: Linuxじゃ動かない
         let moter_controler_clone = moter_controler.clone();
 
         // Lidar も
         let module = TestModule {
-           //moter_controler,
+            //moter_controler,
             gps,
         };
         let event = TestEvents {
@@ -511,17 +529,16 @@ impl Mode {
                 #[derive(Debug)]
                 pub struct TestOderEvents {
                     pub is_emergency_stop_lv0: bool,
-                    pub order: (u32,u32),
+                    pub order: (u32, u32),
                     pub is_interruption: bool,
                     pub order1_vec: Vec<(u32, u32)>,
                     pub order0_vec: Vec<(u32, u32)>,
                 }
                 //let mut isexecution = false;
 
-
                 let event = TestOderEvents {
                     is_emergency_stop_lv0: false,
-                    order: (config::STOP,0),
+                    order: (config::STOP, 0),
                     is_interruption: false,
                     order1_vec: Vec::<(u32, u32)>::new(),
                     order0_vec: Vec::<(u32, u32)>::new(),
@@ -529,8 +546,10 @@ impl Mode {
 
                 let mut scheduler = Scheduler::start();
 
-                struct Test {scheduler:Scheduler}
-                let  module = Test {scheduler};
+                struct Test {
+                    scheduler: Scheduler,
+                }
+                let module = Test { scheduler };
 
                 let mut order_controler = FlaCon::new(module, event);
                 ////order_vec.push((0xffffffff,0));
@@ -560,68 +579,55 @@ impl Mode {
                         flacn.event.is_interruption = !flacn.event.is_interruption;
 
                         if flacn.event.is_interruption {
-                            flacn.module.scheduler.add();
-
-                        }else{
-                            flacn.module.scheduler.checked_sub();
+                            flacn.module.scheduler.add_time_counter();
+                        } else {
+                            flacn.module.scheduler.end();
                         }
-                        println!("{}",flacn.module.scheduler.end());
+                        println!("{}", flacn.module.scheduler.nowtime());
 
                         flacn.event.order0_vec.remove(0);
                     }
-
                 });
 
-                
-                let mut nowtime= 0;
-
+                let mut nowtime = 0;
 
                 loop {
-
                     match moter_receiver.try_recv() {
                         Ok(e) => {
                             order_controler.event.order = e;
                             order_controler.load_fnc("emergency_stop");
-                            order_controler.load_fnc("order"); 
+                            order_controler.load_fnc("order");
                         }
                         Err(_) => {}
                     };
 
-
                     order_controler.load_fnc("order0_vec");
 
-                    
-                    
-                    nowtime = order_controler.module.scheduler.end();
-
+                    /*
                     if order_controler.event.is_interruption {
-                        //https://docs.rs/quanta/latest/quanta/ 使用検討
                         continue;
                     }
 
-
-
-
+                    */
 
                     if !order_controler.event.is_interruption {
                         match order_controler.event.order1_vec.get(0) {
                             Some(e) => {
                                 // 誤差 ±10ms
+                                nowtime = order_controler.module.scheduler.nowtime();
+
                                 if nowtime - 2 >= stoptime && stoptime <= nowtime + 2 {
                                     stoptime = stoptime + e.1 as i128;
-                                    
+
                                     println!("{:x} {}", e.0, e.1);
-    
-    
+
                                     order_controler.event.order1_vec.remove(0);
                                 }
                             }
                             None => {}
                         }
                     }
-                    
-                    //println!("{:?}",order);
-                    //time.endprln();
+
                     time_sleep(0, 1);
                 }
             },
@@ -795,14 +801,12 @@ impl Mode {
                 Err(_) => {}
             };
 
-            
             terminal
                 .draw(|f| {
                     tui::key_ui(f, &flag_controler);
                 })
                 .unwrap();
-            
-            
+
             //flag_controler.load_fnc("debug");
 
             time_sleep(0, 1);

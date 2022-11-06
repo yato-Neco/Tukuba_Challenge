@@ -3,9 +3,9 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+//https://docs.rs/quanta/latest/quanta/ 使用検討
 
 pub struct Scheduler {
-    pub time: i128,
     start_time: Instant,
     next_start_time: Option<Instant>,
 }
@@ -17,67 +17,48 @@ impl Scheduler {
         let now_time = Instant::now();
 
         Scheduler {
-            time: 0_i128,
             start_time: now_time,
             next_start_time: None,
         }
     }
 
-    /// i128 に変換して返す。
-    pub fn end(&mut self) -> i128 {
-        let end = self.start_time.elapsed();
-        self.time = end.as_millis() as i128;
 
-        self.time
-    }
 
-    /// もう一つのカウントの ms を i128で返す。
-    pub fn end2(&mut self) -> i128 {
-        let end = self.next_start_time.unwrap().elapsed();
-        self.time = end.as_millis() as i128;
 
-        self.time
-    }
+    
 
-    pub fn int_time() {}
 
     /// もう一つのカウントを開始する
-    pub fn add(&mut self) {
+    pub fn add_time_counter(&mut self) {
         self.next_start_time = Some(Instant::now());
     }
 
-    /// 非推奨
-    fn _checked_sub(&self) -> i128 {
-        let a = self.start_time.add(self.next_start_time.unwrap().elapsed());
-
-        //let a = self.start_time.checked_add(self.next_start_time.unwrap().elapsed()).unwrap();
-        a.elapsed().as_millis() as i128
+    /// start_time の ms i128
+    pub fn nowtime(&mut self) -> i128 {
+        let end = self.start_time.elapsed();
+        end.as_millis() as i128
     }
 
     /// 一つ目のカウントと二つ目のカウントの終わりの差を一つ目のカウントにセット
-    pub fn checked_sub(&mut self) {
+    pub fn end(&mut self) {
         // 二つ目のカウントが始まって終わった時の時間を、一つ目のカウントでは無かったことにする。
-        let a = self.start_time.add(self.next_start_time.unwrap().elapsed());
-        self.start_time = a;
+        self.start_time = self.start_time.add(self.next_start_time.unwrap().elapsed());
 
-        //let a = self.start_time.checked_add(self.next_start_time.unwrap().elapsed()).unwrap();
     }
 }
-
-
 
 #[test]
 fn test() {
     let mut tmp = Scheduler::start();
     thread::sleep(Duration::from_millis(300));
 
-    tmp.add();
+    tmp.add_time_counter();
 
     thread::sleep(Duration::from_millis(300));
 
-    tmp.checked_sub();
+    tmp.end();
 
-    println!("{} ", tmp.end());
+    println!("{} ", tmp.nowtime());
 
     /*
     loop {

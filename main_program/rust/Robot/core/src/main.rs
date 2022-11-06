@@ -5,9 +5,9 @@ extern crate load_shdlib;
 extern crate slam;
 extern crate rthred;
 extern crate scheduler;
+extern crate mytools;
 
 mod robot;
-mod xtools;
 use clap::Parser;
 use robot::mode::Mode;
 
@@ -31,4 +31,12 @@ async fn main() {
         "d" => {}
         _ => {}
     }
+}
+
+
+#[test]
+fn test() {
+   
+
+    //println!("{}", (((i128::MAX / 1000) / 120) / 24) / 365);
 }

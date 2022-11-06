@@ -856,13 +856,19 @@
 <span id="851">851</span>
 <span id="852">852</span>
 <span id="853">853</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::xtools</span>::{<span class="ident">time_sleep</span>, <span class="ident">warning_msg</span>, <span class="ident">Benchmark</span>};
-<span class="kw">use</span> <span class="ident">flacon</span>::{<span class="ident">Event</span>, <span class="ident">FlaCon</span>, <span class="ident">Flags</span>};
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">flacon</span>::{<span class="ident">Event</span>, <span class="ident">FlaCon</span>, <span class="ident">Flags</span>};
 <span class="kw">use</span> <span class="ident">getch</span>;
 <span class="kw">use</span> <span class="ident">gps</span>::{<span class="self">self</span>, <span class="ident">GPS</span>};
+<span class="kw">use</span> <span class="ident">mytools::time_sleep</span>;
 <span class="kw">use</span> <span class="ident">robot_gpio::Moter</span>;
 <span class="kw">use</span> <span class="ident">rthred</span>::{<span class="ident">send</span>, <span class="ident">sendG</span>, <span class="ident">Rthd</span>, <span class="ident">RthdG</span>};
 <span class="kw">use</span> <span class="ident">scheduler::Scheduler</span>;
+<span class="kw">use</span> <span class="ident">::tui::Terminal</span>;
+<span class="kw">use</span> <span class="ident">::tui::backend::CrosstermBackend</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::tui</span>;
 <span class="kw">use</span> <span class="kw">super</span>::{
@@ -870,6 +876,7 @@
     <span class="ident">setting::Settings</span>,
 };
 
+<span class="kw">use</span> <span class="ident">std::io::Stdout</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cell::Cell</span>,
     <span class="ident">collections::HashMap</span>,
@@ -880,6 +887,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Mode</span> {}
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AutoModule</span> {
+    <span class="kw">pub</span> <span class="ident">terminal</span>: <span class="ident">Terminal</span><span class="op">&lt;</span><span class="ident">CrosstermBackend</span><span class="op">&lt;</span><span class="ident">Stdout</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">moter_controler</span>: <span class="ident">Moter</span>,
     <span class="kw">pub</span> <span class="ident">gps</span>: <span class="ident">GPS</span>,
     <span class="comment">// pub slam: SLAM</span>
@@ -892,7 +900,7 @@
     <span class="kw">pub</span> <span class="ident">gps</span>: <span class="ident">GPS</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>,<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AutoEvents</span> {
     <span class="kw">pub</span> <span class="ident">is_debug</span>: <span class="ident">bool</span>,
     <span class="kw">pub</span> <span class="ident">is_avoidance</span>: <span class="ident">bool</span>,
@@ -906,7 +914,6 @@
     <span class="kw">pub</span> <span class="ident">latlot</span>: (<span class="ident">f64</span>, <span class="ident">f64</span>),
     <span class="kw">pub</span> <span class="ident">first_time</span>: <span class="ident">bool</span>,
     <span class="kw">pub</span> <span class="ident">trun_azimuth</span>: <span class="ident">f64</span>,
-    
 }
 
 <span class="doccomment">/// フラグのイベント一覧</span>
@@ -961,12 +968,15 @@
 
         <span class="kw">let</span> (<span class="ident">port</span>, <span class="ident">rate</span>, <span class="ident">buf_size</span>) <span class="op">=</span> <span class="ident">setting_file</span>.<span class="ident">load_gps_serial</span>();
 
+        <span class="kw">let</span> <span class="ident">gps_setting</span> <span class="op">=</span> <span class="ident">setting_file</span>.<span class="ident">load_gps_serial</span>();
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">moter_controler</span> <span class="op">=</span> <span class="ident">Moter::new</span>(<span class="ident">right_moter_pin</span>, <span class="ident">left_moter_pin</span>);
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gps</span> <span class="op">=</span> <span class="ident">GPS::new</span>(<span class="ident">port</span>.<span class="ident">as_str</span>(), <span class="ident">rate</span>, <span class="ident">buf_size</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gps</span> <span class="op">=</span> <span class="ident">GPS::new</span>(<span class="bool-val">true</span>);
 
         <span class="comment">//モジュールをflag内で扱うための構造体</span>
-        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">AutoModule</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">AutoModule</span> {
+            <span class="ident">terminal</span>,
             <span class="ident">moter_controler</span>,
             <span class="ident">gps</span>,
         };
@@ -1066,8 +1076,6 @@
             };
         });
 
-
-
         <span class="comment">//flag_controler.module.gps.latlot.push((0.001, 0.001));</span>
         <span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">latlot</span>.<span class="ident">push</span>((<span class="number">1.000</span>, <span class="number">1.000</span>));
         <span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">latlot</span>.<span class="ident">push</span>((<span class="number">1.000</span>, <span class="number">2.000</span>));
@@ -1085,50 +1093,81 @@
         });
 
         <span class="ident">flag_controler</span>.<span class="ident">add_fnc</span>(<span class="string">&quot;gps_Fix&quot;</span>, <span class="op">|</span><span class="ident">flacn</span><span class="op">|</span> {
+            <span class="comment">//flacn.module.gps.is_fix;</span>
+            <span class="comment">// gps 受信フラグ </span>
+
+            <span class="kw">if</span> <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">nowpotion_history</span>.<span class="ident">push</span>(<span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">nowpotion</span>.<span class="ident">unwrap</span>());
+            }<span class="kw">else</span>{
+                <span class="comment">//flacn.event.order.set(config::EMERGENCY_STOP);</span>
+                <span class="comment">//flacn.load_fnc(&quot;set_emergency_stop&quot;);</span>
+                <span class="comment">//flacn.load_fnc(&quot;is_emergency_stop&quot;);</span>
+            }
             
+            <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">5</span>);
+            
+
+        });
+
+        
+
+        <span class="ident">flag_controler</span>.<span class="ident">add_fnc</span>(<span class="string">&quot;first_time&quot;</span>, <span class="op">|</span><span class="ident">flacn</span><span class="op">|</span> {
             <span class="comment">//flacn.module.gps.is_fix;</span>
 
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
-                <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">order</span>.<span class="ident">set</span>(<span class="ident">config::EMERGENCY_STOP</span>);
-                <span class="ident">flacn</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;set_emergency_stop&quot;</span>);
-                <span class="ident">flacn</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;is_emergency_stop&quot;</span>);
+            <span class="comment">// </span>
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                <span class="op">&amp;&amp;</span> <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">first_time</span>
+            {
 
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
+                <span class="kw">loop</span> {
+                    <span class="ident">flacn</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;tui&quot;</span>);
+                    <span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span> <span class="number">5</span> {
+                        <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="bool-val">true</span>);
+                    }
+
+                    <span class="kw">if</span> <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+                        <span class="kw">break</span>;
+                    }
+
+                    <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">1</span>);
+                    <span class="ident">time_sleep</span>(<span class="number">1</span>, <span class="number">0</span>);
+                    <span class="ident">count</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
+                }
             }
 
             <span class="comment">// gps</span>
         });
 
-
         <span class="ident">flag_controler</span>.<span class="ident">add_fnc</span>(<span class="string">&quot;in_waypoint&quot;</span>, <span class="op">|</span><span class="ident">flacn</span><span class="op">|</span> {
-
             <span class="comment">// waypoint到着処理(初回は無視)</span>
             <span class="kw">if</span> <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">in_waypoint</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">first_time</span> {
-                
                 <span class="comment">//println!(&quot;{}&quot;,flacn.module.gps.azimuth);</span>
                 <span class="comment">//loop{time_sleep(0, 1);}</span>
                 <span class="comment">//println!(&quot;waypoint&quot;);</span>
                 <span class="comment">// break;</span>
 
-                <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">trun_azimuth</span> <span class="op">=</span> <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">azimuth</span> <span class="op">-</span> <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">now_azimuth</span>.<span class="ident">unwrap</span>();
-                
+                <span class="comment">//flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();</span>
 
                 <span class="kw">loop</span> {
-
-
                     <span class="comment">/*
                     if trun_azimuth == 0.0 {
                         break;
                     }
                     */</span>
 
-                    
-                        
-
                     <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">1</span>);
                 }
             }
-            
+        });
 
+        <span class="ident">flag_controler</span>.<span class="ident">add_fnc</span>(<span class="string">&quot;tui&quot;</span>, <span class="op">|</span><span class="ident">flacn</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">clone</span>();
+            <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> (<span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">clone</span>(),<span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">moter_controler</span>.<span class="ident">clone</span>());
+            <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">terminal</span>.<span class="ident">draw</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> {
+                <span class="ident">tui::auto_ui</span>(<span class="ident">f</span>, <span class="ident">event</span>,<span class="ident">module</span>);
+            })
+            .<span class="ident">unwrap</span>();
         });
 
         <span class="kw">let</span> (<span class="ident">gps_sender</span>, <span class="ident">gps_receiver</span>) <span class="op">=</span> <span class="ident">std::sync::mpsc::channel</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>();
@@ -1149,46 +1188,34 @@
             }
         });
 
-        <span class="comment">/*
-        thread.insert(&quot;gps&quot;, |panic_msg: Sender&lt;String&gt;, msg: SenderOrders| {
-            Rthd::&lt;String&gt;::send_panic_msg(panic_msg);
-            let order =  GPS::serial();
-            time_sleep(1, 500);
-            print!(&quot;{}&quot;,0x1FEEFFFF);
-            msg.send(0x1FEEFFFF).unwrap();
-        });
-        */</span>
+       
 
-        <span class="ident">Rthd::_thread_generate</span>(
+        <span class="ident">RthdG::_thread_generate</span>(
             <span class="string">&quot;gps&quot;</span>,
             <span class="kw-2">&amp;</span><span class="ident">sendr_err_handles</span>,
             <span class="ident">gps_sender</span>,
-            <span class="op">|</span><span class="ident">panic_msg</span>, <span class="ident">gps_sender</span><span class="op">|</span> {
+            <span class="ident">gps_setting</span>,
+            <span class="op">|</span><span class="ident">panic_msg</span>, <span class="ident">gps_sender</span>, <span class="ident">gps_setting</span><span class="op">|</span> {
                 <span class="ident">Rthd</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="ident">::send_panic_msg</span>(<span class="ident">panic_msg</span>);
-                <span class="comment">//GPS::serial(&quot;COM4&quot;, 115200, 1000, gps_sender);</span>
-                <span class="comment">//print!(&quot;gps&quot;);</span>
+                <span class="comment">//GPS::serial(&amp;gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);</span>
             },
         );
 
-
         <span class="ident">Rthd</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="ident">::thread_generate</span>(<span class="ident">thread</span>, <span class="kw-2">&amp;</span><span class="ident">sendr_err_handles</span>, <span class="kw-2">&amp;</span><span class="ident">order</span>);
 
-
         <span class="kw">loop</span> {
+
+
             
-            <span class="ident">terminal</span>
-                .<span class="ident">draw</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> {
-                    <span class="ident">tui::auto_ui</span>(<span class="ident">f</span>, <span class="kw-2">&amp;</span><span class="ident">flag_controler</span>);
-                })
-                .<span class="ident">unwrap</span>();
+            <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;tui&quot;</span>);
+
+            <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;first_time&quot;</span>);
+
+            <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;gps_Fix&quot;</span>);
+
             
 
-        
-            
-
-            <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;in_waypoint&quot;</span>);
-
-
+            <span class="comment">//flag_controler.load_fnc(&quot;in_waypoint&quot;);</span>
 
             <span class="comment">// Key</span>
             <span class="kw">match</span> <span class="ident">order</span>.<span class="ident">get</span>(<span class="string">&quot;key&quot;</span>).<span class="ident">unwrap</span>().<span class="number">1</span>.<span class="ident">try_recv</span>() {
@@ -1206,9 +1233,11 @@
             };
 
 
-            
+
             <span class="comment">// GPSの信号が途切れたら。(初回は無視)</span>
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">flag_controler</span>.<span class="ident">event</span>.<span class="ident">first_time</span> {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">is_fix</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
+                <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">flag_controler</span>.<span class="ident">event</span>.<span class="ident">first_time</span>
+            {
                 <span class="comment">//time_sleep(0, 10);</span>
                 <span class="comment">//continue;</span>
             }
@@ -1216,11 +1245,9 @@
             <span class="comment">// Lidar 後に SLAM</span>
             <span class="kw">match</span> <span class="ident">order</span>.<span class="ident">get</span>(<span class="string">&quot;lidar&quot;</span>).<span class="ident">unwrap</span>().<span class="number">1</span>.<span class="ident">try_recv</span>() {
                 <span class="prelude-val">Ok</span>(<span class="ident">e</span>) =&gt; {
-
                     <span class="ident">flag_controler</span>.<span class="ident">event</span>.<span class="ident">order</span>.<span class="ident">set</span>(<span class="ident">e</span>);
                     <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;set_emergency_stop&quot;</span>);
                     <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;is_emergency_stop&quot;</span>);
-                    
                 }
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
             };
@@ -1228,19 +1255,15 @@
             <span class="ident">flag_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;gps_nav&quot;</span>);
             <span class="comment">//flag_controler.load_fnc(&quot;gps_Fix&quot;);</span>
 
-
             <span class="comment">// GPS</span>
             <span class="kw">match</span> <span class="ident">gps_receiver</span>.<span class="ident">try_recv</span>() {
                 <span class="prelude-val">Ok</span>(<span class="ident">e</span>) =&gt; {
-
                     <span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">original_nowpotion</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">clone</span>();
                     <span class="ident">flag_controler</span>.<span class="ident">module</span>.<span class="ident">gps</span>.<span class="ident">parser</span>(<span class="ident">e</span>);
                     <span class="comment">//let _ = flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;</span>
-
                 }
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
             }
-
 
             <span class="comment">//flag_controler.load_fnc(&quot;debug&quot;);</span>
 
@@ -1250,7 +1273,6 @@
 
             <span class="comment">//let (lat,lot) = flag_controler.module.gps.nowpotion.unwrap();</span>
 
-            
             <span class="ident">flag_controler</span>.<span class="ident">event</span>.<span class="ident">first_time</span> <span class="op">=</span> <span class="bool-val">false</span>;
             <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">1</span>);
         }
@@ -1266,14 +1288,14 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">operation</span> <span class="op">=</span> <span class="ident">setting_file</span>.<span class="ident">load_move_csv</span>();
         <span class="kw">let</span> (<span class="ident">port</span>, <span class="ident">rate</span>, <span class="ident">buf_size</span>) <span class="op">=</span> <span class="ident">setting_file</span>.<span class="ident">load_gps_serial</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">moter_controler</span> <span class="op">=</span> <span class="ident">Moter::new</span>(<span class="ident">right_moter_pin</span>, <span class="ident">left_moter_pin</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gps</span> <span class="op">=</span> <span class="ident">GPS::new</span>(<span class="ident">port</span>.<span class="ident">as_str</span>(), <span class="ident">rate</span>, <span class="ident">buf_size</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gps</span> <span class="op">=</span> <span class="ident">GPS::new</span>(<span class="bool-val">true</span>);
 
         <span class="comment">//TODO: Linuxじゃ動かない</span>
         <span class="kw">let</span> <span class="ident">moter_controler_clone</span> <span class="op">=</span> <span class="ident">moter_controler</span>.<span class="ident">clone</span>();
 
         <span class="comment">// Lidar も</span>
         <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">TestModule</span> {
-           <span class="comment">//moter_controler,</span>
+            <span class="comment">//moter_controler,</span>
             <span class="ident">gps</span>,
         };
         <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="ident">TestEvents</span> {
@@ -1369,17 +1391,16 @@
                 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
                 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestOderEvents</span> {
                     <span class="kw">pub</span> <span class="ident">is_emergency_stop_lv0</span>: <span class="ident">bool</span>,
-                    <span class="kw">pub</span> <span class="ident">order</span>: (<span class="ident">u32</span>,<span class="ident">u32</span>),
+                    <span class="kw">pub</span> <span class="ident">order</span>: (<span class="ident">u32</span>, <span class="ident">u32</span>),
                     <span class="kw">pub</span> <span class="ident">is_interruption</span>: <span class="ident">bool</span>,
                     <span class="kw">pub</span> <span class="ident">order1_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span>,
                     <span class="kw">pub</span> <span class="ident">order0_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span>,
                 }
                 <span class="comment">//let mut isexecution = false;</span>
 
-
                 <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="ident">TestOderEvents</span> {
                     <span class="ident">is_emergency_stop_lv0</span>: <span class="bool-val">false</span>,
-                    <span class="ident">order</span>: (<span class="ident">config::STOP</span>,<span class="number">0</span>),
+                    <span class="ident">order</span>: (<span class="ident">config::STOP</span>, <span class="number">0</span>),
                     <span class="ident">is_interruption</span>: <span class="bool-val">false</span>,
                     <span class="ident">order1_vec</span>: <span class="ident">Vec</span>::<span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span><span class="ident">::new</span>(),
                     <span class="ident">order0_vec</span>: <span class="ident">Vec</span>::<span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span><span class="ident">::new</span>(),
@@ -1387,8 +1408,10 @@
 
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">scheduler</span> <span class="op">=</span> <span class="ident">Scheduler::start</span>();
 
-                <span class="kw">struct</span> <span class="ident">Test</span> {<span class="ident">scheduler</span>:<span class="ident">Scheduler</span>}
-                <span class="kw">let</span>  <span class="ident">module</span> <span class="op">=</span> <span class="ident">Test</span> {<span class="ident">scheduler</span>};
+                <span class="kw">struct</span> <span class="ident">Test</span> {
+                    <span class="ident">scheduler</span>: <span class="ident">Scheduler</span>,
+                }
+                <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">Test</span> { <span class="ident">scheduler</span> };
 
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">order_controler</span> <span class="op">=</span> <span class="ident">FlaCon::new</span>(<span class="ident">module</span>, <span class="ident">event</span>);
                 <span class="comment">////order_vec.push((0xffffffff,0));</span>
@@ -1418,68 +1441,55 @@
                         <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">is_interruption</span> <span class="op">=</span> <span class="op">!</span><span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">is_interruption</span>;
 
                         <span class="kw">if</span> <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">is_interruption</span> {
-                            <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">add</span>();
-
-                        }<span class="kw">else</span>{
-                            <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">checked_sub</span>();
+                            <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">add_time_counter</span>();
+                        } <span class="kw">else</span> {
+                            <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">end</span>();
                         }
-                        <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>,<span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">end</span>());
+                        <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">flacn</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">nowtime</span>());
 
                         <span class="ident">flacn</span>.<span class="ident">event</span>.<span class="ident">order0_vec</span>.<span class="ident">remove</span>(<span class="number">0</span>);
                     }
-
                 });
 
-                
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">nowtime</span><span class="op">=</span> <span class="number">0</span>;
-
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">nowtime</span> <span class="op">=</span> <span class="number">0</span>;
 
                 <span class="kw">loop</span> {
-
                     <span class="kw">match</span> <span class="ident">moter_receiver</span>.<span class="ident">try_recv</span>() {
                         <span class="prelude-val">Ok</span>(<span class="ident">e</span>) =&gt; {
                             <span class="ident">order_controler</span>.<span class="ident">event</span>.<span class="ident">order</span> <span class="op">=</span> <span class="ident">e</span>;
                             <span class="ident">order_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;emergency_stop&quot;</span>);
-                            <span class="ident">order_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;order&quot;</span>); 
+                            <span class="ident">order_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;order&quot;</span>);
                         }
                         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
                     };
 
-
                     <span class="ident">order_controler</span>.<span class="ident">load_fnc</span>(<span class="string">&quot;order0_vec&quot;</span>);
 
-                    
-                    
-                    <span class="ident">nowtime</span> <span class="op">=</span> <span class="ident">order_controler</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">end</span>();
-
-                    <span class="kw">if</span> <span class="ident">order_controler</span>.<span class="ident">event</span>.<span class="ident">is_interruption</span> {
-                        <span class="comment">//https://docs.rs/quanta/latest/quanta/ 使用検討</span>
-                        <span class="kw">continue</span>;
+                    <span class="comment">/*
+                    if order_controler.event.is_interruption {
+                        continue;
                     }
 
-
-
-
+                    */</span>
 
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">order_controler</span>.<span class="ident">event</span>.<span class="ident">is_interruption</span> {
                         <span class="kw">match</span> <span class="ident">order_controler</span>.<span class="ident">event</span>.<span class="ident">order1_vec</span>.<span class="ident">get</span>(<span class="number">0</span>) {
                             <span class="prelude-val">Some</span>(<span class="ident">e</span>) =&gt; {
                                 <span class="comment">// 誤差 ±10ms</span>
+                                <span class="ident">nowtime</span> <span class="op">=</span> <span class="ident">order_controler</span>.<span class="ident">module</span>.<span class="ident">scheduler</span>.<span class="ident">nowtime</span>();
+
                                 <span class="kw">if</span> <span class="ident">nowtime</span> <span class="op">-</span> <span class="number">2</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">stoptime</span> <span class="op">&amp;&amp;</span> <span class="ident">stoptime</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">nowtime</span> <span class="op">+</span> <span class="number">2</span> {
                                     <span class="ident">stoptime</span> <span class="op">=</span> <span class="ident">stoptime</span> <span class="op">+</span> <span class="ident">e</span>.<span class="number">1</span> <span class="kw">as</span> <span class="ident">i128</span>;
-                                    
+
                                     <span class="macro">println!</span>(<span class="string">&quot;{:x} {}&quot;</span>, <span class="ident">e</span>.<span class="number">0</span>, <span class="ident">e</span>.<span class="number">1</span>);
-    
-    
+
                                     <span class="ident">order_controler</span>.<span class="ident">event</span>.<span class="ident">order1_vec</span>.<span class="ident">remove</span>(<span class="number">0</span>);
                                 }
                             }
                             <span class="prelude-val">None</span> =&gt; {}
                         }
                     }
-                    
-                    <span class="comment">//println!(&quot;{:?}&quot;,order);</span>
-                    <span class="comment">//time.endprln();</span>
+
                     <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">1</span>);
                 }
             },
@@ -1653,14 +1663,12 @@
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
             };
 
-            
             <span class="ident">terminal</span>
                 .<span class="ident">draw</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> {
                     <span class="ident">tui::key_ui</span>(<span class="ident">f</span>, <span class="kw-2">&amp;</span><span class="ident">flag_controler</span>);
                 })
                 .<span class="ident">unwrap</span>();
-            
-            
+
             <span class="comment">//flag_controler.load_fnc(&quot;debug&quot;);</span>
 
             <span class="ident">time_sleep</span>(<span class="number">0</span>, <span class="number">1</span>);

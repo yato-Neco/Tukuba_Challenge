@@ -1,13 +1,15 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["api"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["core"] = {"name":"","dirs":[{"name":"robot","files":["config.rs","mod.rs","mode.rs","serial.rs","setting.rs","tui.rs"]}],"files":["main.rs","xtools.rs"]};
+sourcesIndex["camera"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["core"] = {"name":"","dirs":[{"name":"robot","files":["config.rs","mod.rs","mode.rs","serial.rs","setting.rs","tui.rs"]}],"files":["main.rs"]};
 sourcesIndex["flacon"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["gps"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["lidar"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["load_shdlib"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["mytools"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["robot_gpio"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["robot_serialport"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["rthred"] = {"name":"","files":["lib.rs","xtools.rs"]};
+sourcesIndex["rthred"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["scheduler"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["slam"] = {"name":"","files":["lib.rs","xtools.rs"]};
+sourcesIndex["slam"] = {"name":"","files":["lib.rs"]};
 createSourceSidebar();

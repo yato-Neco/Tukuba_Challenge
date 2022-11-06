@@ -98,6 +98,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
 
 [[package]]
+name = "camera"
+version = "0.1.0"
+
+[[package]]
 name = "cassowary"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -161,6 +165,7 @@ dependencies = [
  "gps",
  "lidar",
  "load-shdlib",
+ "mytools",
  "robot-gpio",
  "rthred",
  "scheduler",
@@ -236,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "flacon"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "async-trait",
  "gps",
@@ -276,9 +281,11 @@ dependencies = [
 
 [[package]]
 name = "gps"
-version = "1.0.0"
+version = "1.1.1"
 dependencies = [
+ "mytools",
  "nav-types",
+ "rthred",
  "serialport",
 ]
 
@@ -373,7 +380,7 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "load-shdlib"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "libloading",
 ]
@@ -441,6 +448,10 @@ dependencies = [
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
 ]
+
+[[package]]
+name = "mytools"
+version = "0.1.0"
 
 [[package]]
 name = "nalgebra"
@@ -748,7 +759,10 @@ version = "0.1.0"
 
 [[package]]
 name = "rthred"
-version = "1.0.0"
+version = "1.1.1"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "ryu"
@@ -758,7 +772,7 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
 name = "scheduler"
-version = "1.0.0"
+version = "2.0.0"
 
 [[package]]
 name = "scopeguard"
@@ -833,7 +847,10 @@ dependencies = [
 
 [[package]]
 name = "slam"
-version = "0.1.0"
+version = "0.1.1"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "smallvec"
