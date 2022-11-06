@@ -29,6 +29,8 @@ main_program/rust/Robot/target/debug
 main_program/rust/Robot/target/armv7-unknown-linux-musleabihf
 main_program/rust/Robot/target/release
 main_program/rust/Robot/.cargo
+main_program/rust/Robot/robot-gpio/Cargo.toml
+main_program/rust/Robot/Cargo.lock
 
 main_program/rust/Robot/target/release
 main_program/rust/Robot/target/.rustc_info.json
