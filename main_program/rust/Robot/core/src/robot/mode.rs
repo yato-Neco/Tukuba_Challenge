@@ -301,7 +301,7 @@ impl Mode {
 
         flag_controler.add_fnc("tui", |flacn| {
             let event = flacn.event.clone();
-            let module = (flacn.module.gps.clone(),flacn.module.moter_controler.clone());
+            let module = flacn.module.gps.clone();
             flacn.module.terminal.draw(|f| {
                 tui::auto_ui(f, event,module);
             })
@@ -429,7 +429,7 @@ impl Mode {
         let mut gps = GPS::new(true);
 
         //TODO: Linuxじゃ動かない
-        let moter_controler_clone = moter_controler.clone();
+        let moter_controler_clone = moter_controler;
 
         // Lidar も
         let module = TestModule {
@@ -812,7 +812,8 @@ impl Mode {
             time_sleep(0, 1);
         }
 
-        //tui::end();
+        terminal.clear().unwrap();
+
     }
 
     /// キー入力

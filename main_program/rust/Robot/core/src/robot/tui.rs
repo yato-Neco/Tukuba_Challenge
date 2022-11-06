@@ -90,7 +90,7 @@ pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>)
 }
 
 
-pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:(GPS, Moter)) {
+pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
@@ -109,9 +109,9 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:(GPS, Mote
         flacn.is_emergency_stop_lv0.get(),
         flacn.order.get(),
         flacn.is_break,
-        module.0.azimuth,
+        module.azimuth,
         flacn.first_time,
-        module.0.in_waypoint
+        module.in_waypoint
 
     ))
     .block(Block::default().borders(Borders::ALL))
@@ -146,12 +146,11 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:(GPS, Mote
 
     
     let right_block = Paragraph::new(
-        format!("{:?}\n{:?} {:?} {:?} {:?}",
-        module.1,
-        module.0.nowpotion,
-        module.0.is_fix,
-        module.0.latlot,
-        module.0.next_latlot,
+        format!("{:?} {:?} {:?} {:?}",
+        module.nowpotion,
+        module.is_fix,
+        module.latlot,
+        module.next_latlot,
     ))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);
@@ -165,4 +164,8 @@ pub fn end() {
     print!("\x1b[2J");
 }
 
-
+#[test]
+fn test() {
+    let mut tmp = start();
+    tmp.clear().unwrap();
+}
