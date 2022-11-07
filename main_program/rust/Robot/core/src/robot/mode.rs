@@ -235,7 +235,12 @@ impl Mode {
             // gps 受信フラグ 
 
             if flacn.module.gps.is_fix.unwrap_or(false) {
-                flacn.module.gps.nowpotion_history.push(flacn.module.gps.nowpotion.unwrap());
+                match flacn.module.gps.nowpotion {
+                    Some(latlot) => {
+                        flacn.module.gps.nowpotion_history.push(latlot);
+                    },
+                    None =>{}
+                };
             }else{
                 //flacn.event.order.set(config::EMERGENCY_STOP);
                 //flacn.load_fnc("set_emergency_stop");
@@ -346,10 +351,10 @@ impl Mode {
 
             
             flag_controler.load_fnc("tui");
+            flag_controler.load_fnc("gps_Fix");
 
             flag_controler.load_fnc("first_time");
 
-            flag_controler.load_fnc("gps_Fix");
 
             
 
@@ -406,6 +411,7 @@ impl Mode {
             //flag_controler.load_fnc("debug");
 
             if flag_controler.event.is_break {
+
                 break;
             }
 
@@ -415,7 +421,9 @@ impl Mode {
             time_sleep(0, 1);
         }
 
+        flag_controler.module.terminal.clear().unwrap();
         //tui::end();
+
     }
 
     /// test mode
