@@ -68,7 +68,7 @@ impl GPS {
             azimuth: 0.0,
             now_azimuth: None,
             distance: 0.0,
-            r: 0.001,
+            r: 0.0002,
             is_fix: None,
             num_sat: None,
             latlot: Vec::new(),
@@ -187,7 +187,7 @@ impl GPS {
             Some(lat) => {
                 let lot = gps_format.get(4).unwrap();
 
-                self.nowpotion = Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap()))
+                self.nowpotion = Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap())); //unwarp err
             }
             None => {}
         }
@@ -369,6 +369,25 @@ impl GPS {
         let vec = pos_b - pos_a;
         let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
         azimuth
+    }
+
+    pub fn nowpotion_history_sub(&self) -> bool {
+        if self.nowpotion_history.len() > 0 {
+
+            let  nowpotion =  self.nowpotion.unwrap();
+            let lat_sub = (nowpotion.0 - self.nowpotion_history[0].0).abs();
+            let lot_sub = (nowpotion.1 - self.nowpotion_history[0].1).abs();
+    
+            //println!("{}",lat_sub);
+    
+            if lat_sub > 0.0001 || lot_sub > 0.00001 {
+                return true; 
+            }
+
+        }
+        
+
+        return false;
     }
 
     /// 任意 二地点間の角度(度数法)

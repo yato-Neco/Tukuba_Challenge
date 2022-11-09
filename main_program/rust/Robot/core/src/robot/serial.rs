@@ -12,7 +12,7 @@ fn lider() {
         Ok(p) => (p),
         Err(_) => (panic!()),
     };
-
+ 
     let mut serial_buf: Vec<u8> = vec![0; 1500];
 
     loop {
@@ -25,6 +25,7 @@ fn lider() {
                     if i.0 >= 165.0 && i.0 <= 195.0 && i.1 < 4.5 {
                         println!("{}度 {}cm", i.0, i.1);
                     }
+
                 }
             }
 
