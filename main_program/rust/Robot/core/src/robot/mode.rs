@@ -461,13 +461,12 @@ impl Mode {
         let mut terminal = tui::start();
         let setting_file = Settings::load_setting("./settings.yaml");
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
-        let mut operation = setting_file.load_move_csv();
+        let operation = setting_file.load_move_csv();
         let (port, rate, buf_size) = setting_file.load_gps_serial();
         let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
         let mut gps = GPS::new(true);
 
         //TODO: Linuxじゃ動かない
-        let moter_controler_clone = moter_controler;
 
         // Lidar も
         let module = TestModule {
@@ -558,10 +557,10 @@ impl Mode {
         let (moter_sender, moter_receiver) = std::sync::mpsc::channel::<(u32, u32)>();
 
         RthdG::_thread_generate_return_sender(
-            "name",
+            "moter",
             &sendr_err_handles,
             moter_receiver,
-            moter_controler_clone,
+            moter_controler,
             |panic_msg, moter_receiver, moter_controler| {
                 Rthd::<String>::send_panic_msg(panic_msg);
                 #[derive(Debug)]
@@ -583,11 +582,11 @@ impl Mode {
                 };
 
                 let mut scheduler = Scheduler::start();
-
                 struct Test {
                     scheduler: Scheduler,
+                    moter_controler: Moter,
                 }
-                let module = Test { scheduler };
+                let module = Test { scheduler, moter_controler};
 
                 let mut order_controler = FlaCon::new(module, event);
                 ////order_vec.push((0xffffffff,0));
@@ -621,7 +620,9 @@ impl Mode {
                         } else {
                             flacn.module.scheduler.end();
                         }
+                        //moter_controler.moter_control(config::EMERGENCY_STOP);
                         println!("{}", flacn.module.scheduler.nowtime());
+                        flacn.module.moter_controler.moter_control(config::EMERGENCY_STOP);
 
                         flacn.event.order0_vec.remove(0);
                     }
@@ -658,10 +659,13 @@ impl Mode {
                                     stoptime = stoptime + e.1 as i128;
 
                                     println!("{:x} {}", e.0, e.1);
+                                    
+                                    order_controler.module.moter_controler.moter_control(e. 0);
 
                                     order_controler.event.order1_vec.remove(0);
                                 }
                             }
+
                             None => {}
                         }
                     }
