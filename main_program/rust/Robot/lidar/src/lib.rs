@@ -45,9 +45,9 @@ pub fn ydlidarx2(data: &mut [u8]) -> Vec<(f64, f64)> {
     let angel_lsn = f[3] as f64 - 1.0;
     let f_len = l.len() - 1;
 
-    let mut angel_fsa = (as_u32_be(&[f[5], f[4]]) >> 1) as f64 / 64.0;
+    let mut angel_fsa:f64 = (as_u32_be(&[f[5], f[4]]) >> 1) as f64 / 64.0;
 
-    let mut angel_lsa = (as_u32_be(&[f[7], f[6]]) >> 1) as f64 / 64.0;
+    let mut angel_lsa:f64 = (as_u32_be(&[f[7], f[6]]) >> 1) as f64 / 64.0;
 
     let distance_1 = as_u32_be(&[l[1], l[0]]) as f64;
 
