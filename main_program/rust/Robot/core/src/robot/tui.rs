@@ -104,14 +104,17 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
         .split(f.size());
 
     let left_block = Paragraph::new(format!(
-        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {}",
+        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {} \nnum_sat: {:?}\ncontinue: {} \nmaneuver: {}",
         flacn.is_move.get(),
         flacn.is_emergency_stop_lv0.get(),
         flacn.order.get(),
         flacn.is_break,
         module.azimuth,
         flacn.first_time,
-        module.in_waypoint
+        module.in_waypoint,
+        module.num_sat,
+        flacn.is_continue,
+        flacn.maneuver,
 
     ))
     .block(Block::default().borders(Borders::ALL))
@@ -146,7 +149,7 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
 
     
     let right_block = Paragraph::new(
-        format!("{:?} {:?} {:?} {:?}",
+        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}",
         module.nowpotion,
         module.is_fix,
         module.latlot,

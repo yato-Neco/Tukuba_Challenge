@@ -26,11 +26,11 @@ Robot:
   GPS:
     Serial:
       port:
-        - "COM4"
+        - "COM5"
       rate:
-        - 500
-      buf_size:
         - 115200
+      buf_size:
+        - 500
       
     waypoint:
       - "./waypoint.csv" #Excelで編集厳禁

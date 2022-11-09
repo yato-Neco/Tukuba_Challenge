@@ -7,14 +7,14 @@ use mytools::time_sleep;
 /// 時間更新
 struct SLAM {
     // (robot_postion[x,y], lider_data [frequency,distance])
-    vec: Box<Vec<((f64, f64), Vec<(f64, f64)>)>>,
+    vec: Vec<((f64, f64), Vec<(f64, f64)>)>,
     max: usize,
 }
 
 impl SLAM {
     fn new(max: usize) -> Self {
         Self {
-            vec: Box::new(Vec::with_capacity(max)),
+            vec: Vec::with_capacity(max),
             max,
         }
     }
