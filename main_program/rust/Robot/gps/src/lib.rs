@@ -1,11 +1,11 @@
 use core::num;
-use std::task::Context;
+use mytools::Xtools;
 use nav_types::{ENU, WGS84};
+use rthred::sendG;
 use std::sync::mpsc::Sender;
+use std::task::Context;
 use std::time::Duration;
 use std::{thread, vec};
-use rthred::{sendG};
-use mytools::Xtools;
 
 #[test]
 fn gps() {
@@ -34,7 +34,6 @@ fn test() {
     }
 }
 
-
 #[derive(Debug)]
 pub struct GPSmodule {
     pub r: f64,
@@ -57,10 +56,8 @@ pub struct GPS {
     pub is_simulater: bool,
 }
 
-
-
 impl GPS {
-    pub fn new(simulater:bool) -> Self {
+    pub fn new(simulater: bool) -> Self {
         Self {
             nowpotion: None,
             original_nowpotion: String::new(),
@@ -73,9 +70,8 @@ impl GPS {
             num_sat: None,
             latlot: Vec::new(),
             next_latlot: None,
-            in_waypoint:false,
-            is_simulater:simulater
-            
+            in_waypoint: false,
+            is_simulater: simulater,
         }
     }
 
@@ -88,10 +84,7 @@ impl GPS {
             .open()
         {
             Ok(p) => (p),
-            Err(_) => (
-                
-                panic!()
-            ),
+            Err(_) => (panic!()),
         };
 
         let mut serial_buf: Vec<u8> = vec![0; buf_size];
@@ -100,9 +93,8 @@ impl GPS {
                 Ok(t) => {
                     //serial_buf[..t].to_vec();
                     let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
-                    sendG(gps_data,&msg);
+                    sendG(gps_data, &msg);
                     //msg.send(gps_data).unwrap();
-
                 }
                 Err(_) => {}
             }
@@ -129,9 +121,12 @@ impl GPS {
                     let mut tmp = GPS::new(false);
 
                     let gps_data = String::from_utf8_lossy(&serial_buf[..t]).to_string();
-                    println!("{}",gps_data);
+                    println!("{}", gps_data);
                     tmp.parser(gps_data);
-                    println!("{:?} {:?} {:?} {:?}",tmp.nowpotion, tmp.is_fix, tmp.num_sat ,tmp.original_nowpotion);
+                    println!(
+                        "{:?} {:?} {:?} {:?}",
+                        tmp.nowpotion, tmp.is_fix, tmp.num_sat, tmp.original_nowpotion
+                    );
                     //msg.send(gps_data).unwrap();
                 }
                 Err(_) => {}
@@ -187,7 +182,23 @@ impl GPS {
             Some(lat) => {
                 let lot = gps_format.get(4).unwrap();
 
-                self.nowpotion = Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap())); //unwarp err
+                self.nowpotion = Some((
+                    lat.parse::<f64>()
+                        .unwrap_or(self.nowpotion_history.last().unwrap().0),
+                    lot.parse::<f64>()
+                        .unwrap_or(self.nowpotion_history.last().unwrap().1),
+                )); //unwarp err 改善
+
+
+                /*
+                self.nowpotion = Some((
+                    lat.parse::<f64>().ok().unwrap(),
+                    lot.parse::<f64>().ok().unwrap(),
+                )); //unwarp err 改善
+                */
+                
+
+
             }
             None => {}
         }
@@ -198,7 +209,6 @@ impl GPS {
     /// 古い方のparser
     ///
     pub fn _parser(&mut self, gps_data: String) {
-
         let mut gps_format = Vec::new();
 
         gps_format.push("SpGnss : begin in".to_owned());
@@ -270,7 +280,7 @@ impl GPS {
     }
 
     /// ロボットが実際に動くことをシミュレートする
-    pub fn running_simulater(&mut self,arg:bool) {
+    pub fn running_simulater(&mut self, arg: bool) {
         if arg {
             if self.latlot[0].0 > self.nowpotion.unwrap().0 {
                 self.nowpotion = Some((
@@ -338,7 +348,6 @@ impl GPS {
                     //self.next_latlot = Some((self.latlot[0].0, self.latlot[0].1));
                 }
 
-
                 true
             }
             _ => false,
@@ -363,8 +372,12 @@ impl GPS {
 
     ///  frist 実行時 二地点間の角度(度数法)
     pub fn frist_calculate_azimuth(&self) -> f64 {
-        let  nowpotion =  self.nowpotion.unwrap();
-        let pos_a = WGS84::from_degrees_and_meters(self.nowpotion_history[0].0,self.nowpotion_history[0].1, 0.0);
+        let nowpotion = self.nowpotion.unwrap();
+        let pos_a = WGS84::from_degrees_and_meters(
+            self.nowpotion_history[0].0,
+            self.nowpotion_history[0].1,
+            0.0,
+        );
         let pos_b = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
         let vec = pos_b - pos_a;
         let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
@@ -373,42 +386,38 @@ impl GPS {
 
     pub fn nowpotion_history_sub(&self) -> bool {
         if self.nowpotion_history.len() > 0 {
-
-            let  nowpotion =  self.nowpotion.unwrap();
+            let nowpotion = self.nowpotion.unwrap();
             let lat_sub = (nowpotion.0 - self.nowpotion_history[0].0).abs();
             let lot_sub = (nowpotion.1 - self.nowpotion_history[0].1).abs();
-    
-            //println!("{}",lat_sub);
-    
-            if lat_sub > 0.0001 || lot_sub > 0.00001 {
-                return true; 
-            }
 
+            //println!("{}",lat_sub);
+
+            if lat_sub > 0.0001 || lot_sub > 0.00001 {
+                return true;
+            }
         }
-        
 
         return false;
     }
 
     /// 任意 二地点間の角度(度数法)
-    pub fn calculate_azimuth(&self,latlot:(f64,f64)) -> f64 {
-        let  nowpotion =  self.nowpotion.unwrap();
-        let pos_a = WGS84::from_degrees_and_meters(nowpotion.0,nowpotion.1, 0.0);
+    pub fn calculate_azimuth(&self, latlot: (f64, f64)) -> f64 {
+        let nowpotion = self.nowpotion.unwrap();
+        let pos_a = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(latlot.0, latlot.1, 0.0);
         let vec = pos_b - pos_a;
         let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
         azimuth
     }
 
-    pub fn distance(&self,a:(f64,f64),b:(f64,f64)) -> f64 {
-        let  nowpotion =  self.nowpotion.unwrap();
-        let pos_a = WGS84::from_degrees_and_meters(a.0,a.1, 0.0);
+    pub fn distance(&self, a: (f64, f64), b: (f64, f64)) -> f64 {
+        let nowpotion = self.nowpotion.unwrap();
+        let pos_a = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(b.0, b.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
 
         distance
     }
-
 
     /// 設定したlatlotに半径(box状だけど)r に入った true 以外 false
     fn r#box(&self, latlon: &(f64, f64), now_p: &(f64, f64), r: f64) -> bool {
@@ -501,9 +510,6 @@ impl GPSmodule {
 
         result
     }
-
-
-    
 
     /// TODO: 距離も追加
     /// int ver
@@ -711,7 +717,6 @@ impl GPSmodule {
         println!("{}", azimuth);
     }
 }
-
 
 /// 小数点切り捨て
 #[inline]
