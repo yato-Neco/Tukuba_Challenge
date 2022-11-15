@@ -53,7 +53,7 @@ impl Moter {
 
     /// 右モーター制御
     pub fn right(&mut self, duty: f64, mode: Mode) {
-        if mode == Mode::Front {
+        if mode == Mode::Back {
             self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
             self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
         } else {
@@ -63,7 +63,7 @@ impl Moter {
     }
     /// 左モーター制御
     pub fn left(&mut self, duty: f64, mode: Mode) {
-        if mode == Mode::Front {
+        if mode == Mode::Back {
             self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
             self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
         } else {
@@ -119,20 +119,20 @@ impl Moter {
 
         match (rM, lM) {
             (1..=7, 1..=7) => {
-                self.right(rM as f64 / 7.0, Mode::Front);
-                self.left(lM as f64 / 7.0, Mode::Front);
+                self.right(rM as f64 / 7.0, Mode::Back);
+                self.left(lM as f64 / 7.0, Mode::Back);
             }
             (8..=14, 8..=14) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Back);
-                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+                self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (1..=7, 8..=14) => {
-                self.right(rM as f64 / 7.0, Mode::Front);
-                self.left((lM - 7) as f64 / 7.0, Mode::Back);
+                self.right(rM as f64 / 7.0, Mode::Back);
+                self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (8..=14, 1..=7) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Back);
-                self.left(lM as f64 / 7.0, Mode::Front);
+                self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                self.left(lM as f64 / 7.0, Mode::Back);
             }
             _ => {
                 self.pwm_all_clean();
