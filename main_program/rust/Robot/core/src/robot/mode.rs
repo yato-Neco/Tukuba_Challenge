@@ -639,7 +639,7 @@ impl Mode {
                     }
                 });
 
-                let mut nowtime = 0;
+                let mut now_time = 0;
 
                 loop {
                     match moter_receiver.try_recv() {
@@ -664,9 +664,9 @@ impl Mode {
                         match order_controler.event.order1_vec.get(0) {
                             Some(e) => {
                                 // 誤差 ±10ms
-                                nowtime = order_controler.module.scheduler.nowtime();
+                                now_time = order_controler.module.scheduler.nowtime();
 
-                                if nowtime - 2 >= stoptime && stoptime <= nowtime + 2 {
+                                if now_time - 2 >= stoptime && stoptime <= now_time + 2 {
                                     stoptime = stoptime + e.1 as i128;
 
                                     println!("{:x} {}", e.0, e.1);
