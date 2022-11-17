@@ -167,6 +167,7 @@ dependencies = [
  "load-shdlib",
  "mytools",
  "robot-gpio",
+ "robot-serialport",
  "rthred",
  "scheduler",
  "serialport",
@@ -756,6 +757,9 @@ version = "1.0.0"
 [[package]]
 name = "robot-serialport"
 version = "0.1.0"
+dependencies = [
+ "serialport",
+]
 
 [[package]]
 name = "rthred"

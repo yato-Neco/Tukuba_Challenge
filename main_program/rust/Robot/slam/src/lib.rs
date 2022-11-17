@@ -5,21 +5,21 @@ use mytools::time_sleep;
 
 
 /// 時間更新
-struct SLAM {
+pub struct SLAM {
     // (robot_postion[x,y], lider_data [frequency,distance])
     vec: Vec<((f64, f64), Vec<(f64, f64)>)>,
     max: usize,
 }
 
 impl SLAM {
-    fn new(max: usize) -> Self {
+    pub fn new(max: usize) -> Self {
         Self {
             vec: Vec::with_capacity(max),
             max,
         }
     }
 
-    fn push(&mut self, value: ((f64, f64), Vec<(f64, f64)>)) {
+    pub fn push(&mut self, value: ((f64, f64), Vec<(f64, f64)>)) {
         self.vec.push(value);
         self.del();
     }
@@ -29,7 +29,7 @@ impl SLAM {
         //(self.vec.0.get(self.max - 1), self.vec.1.get(self.max - 1))
     }
 
-    fn obb(&self){
+    pub fn obb(&self){
 
         let slam_data = self.vec.get(0).unwrap();
 
@@ -49,7 +49,7 @@ impl SLAM {
     }
     
 
-    fn del(&mut self) {
+    pub fn del(&mut self) {
         if self.vec.len() > self.max {
             self.vec.remove(0);
         }
