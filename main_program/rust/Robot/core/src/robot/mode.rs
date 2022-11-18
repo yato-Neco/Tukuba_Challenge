@@ -222,7 +222,17 @@ impl Mode {
         //flag_controler.module.gps.latlot.push((0.001, 0.001));
         flag_controler.module.gps.latlot.push((35.627200,139.340187));
         flag_controler.module.gps.latlot.push((35.627191,139.341463));
+        flag_controler.module.gps.latlot.push((35.627191,139.341763));
         //flag_controler.module.gps.nowpotion = Some((0.001, 0.001));
+
+        
+        
+        flag_controler.module.gps.generate_rome();
+
+
+
+
+        println!("{:?}",flag_controler.module.gps.rome);
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
@@ -300,6 +310,16 @@ impl Mode {
                 flacn.load_fnc("is_stop");
                 time_sleep(2, 0);
 
+                // 右周り左周りを決める。
+                if flacn.event.trun_azimuth > 0.0 {
+
+
+                }else{
+
+
+
+                }
+
                 flacn.event.maneuver = "turn";
                 flacn.event.is_trune.set(true);
                 flacn.event.order.set(config::TRUN);
@@ -325,6 +345,11 @@ impl Mode {
                 
             }
         });
+
+        flag_controler.add_fnc("not_in_waypoint", |flacn| {
+            
+        });
+
 
         flag_controler.add_fnc("tui", |flacn| {
             let event = flacn.event.clone();
@@ -374,12 +399,16 @@ impl Mode {
             gps_setting,
             |panic_msg, gps_sender, gps_setting| {
                 Rthd::<String>::send_panic_msg(panic_msg);
-                GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
+                //GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
             },
         );
 
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
+
+        /*
+        
+        
         loop {
             // GPS
             match gps_receiver.try_recv() {
@@ -465,6 +494,7 @@ impl Mode {
         flag_controler.module.terminal.clear().unwrap();
         //println!("{:?}",flag_controler.module.gps.nowpotion_history);
         //tui::end();
+        // */
     }
 
     /// test mode

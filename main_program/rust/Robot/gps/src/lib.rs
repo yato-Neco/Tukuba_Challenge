@@ -47,13 +47,14 @@ pub struct GPS {
     pub azimuth: f64,
     pub now_azimuth: Option<f64>,
     pub distance: f64,
-    pub r: f64,
+    r: f64,
     pub is_fix: Option<bool>,
     pub num_sat: Option<usize>,
     pub latlot: Vec<(f64, f64)>,
     pub in_waypoint: bool,
     pub next_latlot: Option<(f64, f64)>,
     pub is_simulater: bool,
+    pub rome: Vec<(f64,f64)>
 }
 
 impl GPS {
@@ -72,6 +73,7 @@ impl GPS {
             next_latlot: None,
             in_waypoint: false,
             is_simulater: simulater,
+            rome:Vec::with_capacity(100),
         }
     }
 
@@ -419,6 +421,44 @@ impl GPS {
         distance
     }
 
+
+    pub fn generate_rome(&mut self) {
+        
+        let len = self.latlot.len() - 1;
+
+        println!("{}",self.latlot[0].0 - self.latlot[1].0);
+    
+        for i in 0..len {
+
+            let sub0:f64 = (self.latlot[i].0 - self.latlot[i + 1].0).roundf(1000_000);
+            let sub1:f64 = (self.latlot[i].1 - self.latlot[i + 1].1).roundf(1000_000);
+
+
+            println!("{:?} : {:?}",self.latlot[i],self.latlot[i + 1]);
+            println!("{}",sub0);
+            
+            if sub0.abs()>= 0.000009 || sub1.abs() >= 0.000009 {
+                let x = (self.latlot[i].0 + (sub0 / 2.0)).roundf(1000_000);
+
+                if self.latlot[i] == self.latlot[i + 1] {
+                    let  y = self.latlot[i].1;
+                    self.rome.push((x,y))
+                }else{
+                    let mut y =  (((self.latlot[i + 1].1 - self.latlot[i].1) / (self.latlot[i + 1].0 - self.latlot[i].0)) * (x - self.latlot[i].0)).roundf(1000_000); 
+                    println!("y {y}");
+                    y = (y - self.latlot[i].1).abs();
+                    self.rome.push((x,y));
+                }
+                
+            } 
+
+            
+
+        };
+
+
+    }
+
     /// 設定したlatlotに半径(box状だけど)r に入った true 以外 false
     fn r#box(&self, latlon: &(f64, f64), now_p: &(f64, f64), r: f64) -> bool {
         if *latlon == (0.0, 0.0) {
@@ -718,8 +758,3 @@ impl GPSmodule {
     }
 }
 
-/// 小数点切り捨て
-#[inline]
-pub fn roundf(x: f64, square: i32) -> f64 {
-    (x * (square as f64)).round() / (square as f64)
-}

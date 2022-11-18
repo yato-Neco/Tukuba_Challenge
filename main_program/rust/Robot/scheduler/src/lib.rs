@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 //https://docs.rs/quanta/latest/quanta/ 使用検討
-
+#[derive(Debug,Clone)]
 pub struct Scheduler {
     start_time: Instant,
     next_start_time: Option<Instant>,
