@@ -381,6 +381,17 @@ impl Mode {
             }
         });
 
+        thread.insert("slam", |panic_msg: Sender<String>, msg: SenderOrders| {
+            Rthd::<String>::send_panic_msg(panic_msg);
+            loop {
+                let order:u32 = 0xff;
+                //send(order, msg);
+                msg.send(order).unwrap();
+
+                time_sleep(0, 50);
+            }
+        });
+
         RthdG::_thread_generate(
             "gps",
             &sendr_err_handles,
