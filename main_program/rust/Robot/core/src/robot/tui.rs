@@ -1,4 +1,5 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::terminal::LeaveAlternateScreen;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -6,6 +7,7 @@ use crossterm::{
 };
 use flacon::{FlaCon};
 use gps::GPS;
+use mytools::time_sleep;
 use robot_gpio::Moter;
 use super::mode::{AutoModule,KeyModule,KeyEvents,AutoEvents};
 use std::{error::Error, io};
@@ -163,8 +165,16 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
 
 
 
-pub fn end() {
-    print!("\x1b[2J");
+pub fn end(terminal:&mut Terminal<CrosstermBackend<std::io::Stdout>>) {
+    time_sleep(0, 5000);
+
+    disable_raw_mode().unwrap();
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    ).unwrap();
+    terminal.show_cursor().unwrap();
 }
 
 #[test]

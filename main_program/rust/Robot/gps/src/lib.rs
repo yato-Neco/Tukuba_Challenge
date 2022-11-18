@@ -437,7 +437,7 @@ impl GPS {
             println!("{:?} : {:?}",self.latlot[i],self.latlot[i + 1]);
             println!("{}",sub0);
             
-            if sub0.abs()>= 0.000009 || sub1.abs() >= 0.000009 {0
+            if sub0.abs()>= 0.000009 || sub1.abs() >= 0.000009 {
                 let x = (self.latlot[i].0 + (sub0 / 2.0)).roundf(1000_000);
 
                 if self.latlot[i] == self.latlot[i + 1] {
