@@ -7,3 +7,15 @@ pub const FRONT:u32 = 0x1FEEFFFF;
 pub const TRUN:u32 = 0x1FAEFFFF;
 
 pub type SenderOrders = std::sync::mpsc::Sender<u32>;
+
+/*
+0x1F00FFFF
+
+0x0F00FFF1
+*/
+
+#[test]
+fn test() {
+    let lM = ((0x0F00FFF1 & 0xF0000000_u32) >> 28) ;
+    println!("{lM}")
+}

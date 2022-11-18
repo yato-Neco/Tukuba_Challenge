@@ -8,7 +8,7 @@ pub fn add(left: usize, right: usize) -> usize {
 
 ///Simple Robot Management Protocol
 /// SRMP
-struct RasPico {
+pub struct RasPico {
     port: Box<dyn SerialPort>,
 }
 

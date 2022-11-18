@@ -42,12 +42,15 @@ Robot:
       - 0x1F33FFFF # S
       - 0x1F84FFFF # D
 
-  Test_mode:
-    - "./move.txt"
-
   Display_mode:
     order:
-      - "./order.csv" #Excelで編集厳禁
+      - "./order.csv"
+  RasPico:
+    Serial:
+      port:
+        - "COM7"
+      rate:
+        - 9600
 
   #未実装↓
   Order:

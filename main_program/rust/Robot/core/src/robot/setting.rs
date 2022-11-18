@@ -93,9 +93,21 @@ impl Settings {
         return (port, rate, buf_size);
     }
 
+    pub fn load_raspico(&self) -> (String, u32) {
+        let port = self.setting_yaml["Robot"]["RasPico"]["Serial"]["port"][0]
+            .as_str()
+            .unwrap_or("COM4")
+            .to_string();
+        let rate = self.setting_yaml["Robot"]["RasPico"]["Serial"]["rate"][0]
+            .as_i64()
+            .unwrap_or(115200) as u32;
+
+        return (port, rate);
+    }
+
     pub fn load_lidar(&self) {}
 
-    pub fn load_move_csv(&self) ->  Vec<(u32, u32)>  {
+    pub fn load_move_csv(&self) -> Vec<(u32, u32)> {
         extern crate csv;
         use std::fs::File;
 
