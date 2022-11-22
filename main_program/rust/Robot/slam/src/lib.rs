@@ -19,6 +19,10 @@ impl SLAM {
         }
     }
 
+    fn load_point(&mut self) {
+
+    }
+
     pub fn push(&mut self, value: ((f64, f64), Vec<(f64, f64)>)) {
         self.vec.push(value);
         self.del();
@@ -77,6 +81,12 @@ mod tests {
             time_sleep(0, 500);
 
             count += 1.0;
+        }
+    }
+    #[test]
+    fn for_test() {
+        for i in (0..100).step_by(2) {
+            println!("{}",i);
         }
     }
 }

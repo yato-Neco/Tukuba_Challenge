@@ -111,8 +111,8 @@ impl GPS {
             .timeout(Duration::from_millis(10))
             .open()
         {
-            Ok(p) => (p),
-            Err(_) => (panic!()),
+            Ok(p) => p,
+            Err(_) => panic!(),
         };
 
         let mut serial_buf: Vec<u8> = vec![0; buf_size];

@@ -169,7 +169,7 @@ impl Mode {
 
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order.get();
-            if order != config::None {
+            if order != config::NONE {
                 flacn.module.moter_controler.moter_control(order);
             }
         });
@@ -190,7 +190,7 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move.set(false);
             } else {
-                if !flacn.event.is_move.get() && order == config::None {
+                if !flacn.event.is_move.get() && order == config::NONE {
                     flacn.event.is_move.set(false);
                 } else {
                     flacn.event.is_move.set(true);
@@ -548,7 +548,7 @@ impl Mode {
         });
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
-            if order != config::None {
+            if order != config::NONE {
                 //flacn.module.moter_controler.moter_control(order);
             }
         });
@@ -566,7 +566,7 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move = false;
             } else {
-                if !flacn.event.is_move && order == config::None {
+                if !flacn.event.is_move && order == config::NONE {
                     flacn.event.is_move = false;
                 } else {
                     flacn.event.is_move = true;
@@ -792,7 +792,7 @@ impl Mode {
 
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
-            if order != config::None {
+            if order != config::NONE {
                 flacn.module.moter_controler.moter_control(order);
             }
         });
@@ -813,7 +813,7 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move = false;
             } else {
-                if !flacn.event.is_move && order == config::None {
+                if !flacn.event.is_move && order == config::NONE {
                     flacn.event.is_move = false;
                 } else {
                     flacn.event.is_move = true;
@@ -928,7 +928,7 @@ impl Mode {
 
         //let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut raspico_controler = robot_serialport::RasPico::new(&port, rate);
+        let mut raspico_controler = RasPico::new(&port, rate);
 
         let module = RasPicoKeyModule { raspico_controler };
 
@@ -958,7 +958,7 @@ impl Mode {
 
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
-            if order != config::None && !flacn.event.is_emergency_stop_lv0{
+            if order != config::NONE && !flacn.event.is_emergency_stop_lv0{
                 flacn.load_fnc("set_move");
                 flacn.module.raspico_controler.write(order);
 
@@ -975,7 +975,7 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move =  false;
             } else {
-                if !flacn.event.is_move && order == config::None {
+                if !flacn.event.is_move && order == config::NONE {
                     flacn.event.is_move = false;
                 } else {
                     if !flacn.event.is_emergency_stop_lv0{
@@ -1061,7 +1061,6 @@ impl Mode {
                     } else {
                         flag_controler.event.order = e;
                         flag_controler.load_fnc("emergency_stop");
-                        //flag_controler.load_fnc("emergency_stop");
                         flag_controler.load_fnc("moter_control");
                         // flag_controler.load_fnc("is_stop");
                         // flag_controler.load_fnc("is_emergency_stop");
@@ -1094,7 +1093,7 @@ impl Mode {
         let operation = setting_file.load_move_csv();
         let (gps_port, gps_rate, gps_buf_size) = setting_file.load_gps_serial();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = robot_serialport::RasPico::new(&rp_port, rp_rate);
+        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
 
         let mut gps = GPS::new(true);
 
@@ -1124,7 +1123,7 @@ impl Mode {
         });
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
-            if order != config::None {
+            if order != config::NONE {
                 //flacn.module.moter_controler.moter_control(order);
             }
         });
@@ -1142,7 +1141,7 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move = false;
             } else {
-                if !flacn.event.is_move && order == config::None {
+                if !flacn.event.is_move && order == config::NONE {
                     flacn.event.is_move = false;
                 } else {
                     flacn.event.is_move = true;
@@ -1278,7 +1277,6 @@ impl Mode {
                     if order_controler.event.is_interruption {
                         continue;
                     }
-
                     */
 
                     if !order_controler.event.is_interruption {
@@ -1342,12 +1340,12 @@ impl Mode {
         let (port, rate, buf_size) = setting_file.load_gps_serial();
 
         let gps_setting = setting_file.load_gps_serial();
-
+        let nav_setting = setting_file.load_waypoint();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = robot_serialport::RasPico::new(&rp_port, rp_rate);
+        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
 
         let mut gps = GPS::new(false);
-
+        gps.latlot = nav_setting;
         //モジュールをflag内で扱うための構造体
         let mut module = RasPicoAutoModule {
             terminal,
@@ -1378,6 +1376,12 @@ impl Mode {
 
         //flag_controler.event.is_move.set(true);
 
+        //flag_controler.module.gps.latlot.push((0.001, 0.001));
+        //flag_controler.module.gps.latlot.push((35.627200,139.340187));
+        //flag_controler.module.gps.latlot.push((35.627191,139.341463));
+        //flag_controler.module.gps.latlot.push((35.627191,139.341763));
+        //flag_controler.module.gps.nowpotion = Some((0.001, 0.001));
+
         flag_controler.add_fnc("is_stop", |flacn| {
             // is_move が false だったら呼び出す。
             if !flacn.event.is_move.get() {
@@ -1388,8 +1392,10 @@ impl Mode {
 
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order.get();
-            if order != config::None {
+            if order != config::NONE && !flacn.event.is_emergency_stop_lv0.get(){
+                flacn.load_fnc("set_move");
                 flacn.module.raspico_controler.write(order);
+
             }
         });
 
@@ -1409,10 +1415,12 @@ impl Mode {
             if order == config::EMERGENCY_STOP || order == config::STOP {
                 flacn.event.is_move.set(false);
             } else {
-                if !flacn.event.is_move.get() && order == config::None {
+                if !flacn.event.is_move.get() && order == config::NONE {
                     flacn.event.is_move.set(false);
                 } else {
-                    flacn.event.is_move.set(true);
+                    if !flacn.event.is_emergency_stop_lv0.get(){
+                        flacn.event.is_move.set(true);
+                    }
                 }
             }
         });
@@ -1435,9 +1443,13 @@ impl Mode {
         flag_controler.add_fnc("emergency_stop", |flacn| {
             // is_emergency_stop_lv0 が false で尚且つ、
             // order が前進をだったら is_move を true にする。
+            flacn.load_fnc("set_emergency_stop");
+
             if flacn.event.is_emergency_stop_lv0.get() {
+                
+                flacn.module.raspico_controler.write(config::EMERGENCY_STOP);
+
             } else {
-                println!("a");
                 flacn.load_fnc("set_move");
             }
         });
@@ -1453,17 +1465,8 @@ impl Mode {
             };
         });
 
-        //flag_controler.module.gps.latlot.push((0.001, 0.001));
-        flag_controler.module.gps.latlot.push((35.627200,139.340187));
-        flag_controler.module.gps.latlot.push((35.627191,139.341463));
-        flag_controler.module.gps.latlot.push((35.627191,139.341763));
-        //flag_controler.module.gps.nowpotion = Some((0.001, 0.001));
-
-        
         
         flag_controler.module.gps.generate_rome();
-
-
 
 
         println!("{:?}",flag_controler.module.gps.rome);
@@ -1528,9 +1531,9 @@ impl Mode {
                 flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
 
                 flacn.event.order.set(config::STOP);
-                flacn.load_fnc("move");
-                flacn.load_fnc("set_move");
-                flacn.load_fnc("is_stop");
+                flacn.load_fnc("moter_control");
+                //flacn.load_fnc("set_move");
+                //flacn.load_fnc("is_stop");
                 time_sleep(2, 0);
 
                 // 右周り左周りを決める。
@@ -1546,23 +1549,23 @@ impl Mode {
                 flacn.event.maneuver = "turn";
                 flacn.event.is_trune.set(true);
                 flacn.event.order.set(config::TRUN);
-                flacn.load_fnc("move");
-                flacn.load_fnc("set_move");
-                flacn.load_fnc("is_stop");
+                flacn.load_fnc("moter_control");
+                //flacn.load_fnc("set_move");
+                //flacn.load_fnc("is_stop");
                 time_sleep(5, 0);
 
                 flacn.event.order.set(config::STOP);
                 flacn.event.is_trune.set(false);
                 flacn.load_fnc("move");
-                flacn.load_fnc("set_move");
-                flacn.load_fnc("is_stop");
+                //flacn.load_fnc("set_move");
+                //flacn.load_fnc("is_stop");
                 time_sleep(2, 0);
                 
                 flacn.event.maneuver = "front";
                 flacn.event.order.set(config::FRONT);
-                flacn.load_fnc("move");
-                flacn.load_fnc("set_move");
-                flacn.load_fnc("is_stop");
+                flacn.load_fnc("moter_control");
+                //flacn.load_fnc("set_move");
+                //flacn.load_fnc("is_stop");
                 flacn.event.maneuver = "go to point";
 
                 
@@ -1660,16 +1663,16 @@ impl Mode {
                     if e == config::BREAK {
                         flag_controler.event.order.set(config::EMERGENCY_STOP);
                         //flag_controler.event.order.set(e);
-                        flag_controler.load_fnc("set_emergency_stop");
+                        //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
-                        flag_controler.load_fnc("is_emergency_stop");
+                        //flag_controler.load_fnc("is_emergency_stop");
                         flag_controler.event.maneuver = "exit";
                         break;
                     } else if e == config::EMERGENCY_STOP {
                         flag_controler.event.order.set(e);
-                        flag_controler.load_fnc("set_emergency_stop");
+                        //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
-                        flag_controler.load_fnc("is_emergency_stop");
+                        //flag_controler.load_fnc("is_emergency_stop");
                     }
                 }
                 Err(_) => {}
@@ -1693,8 +1696,8 @@ impl Mode {
                 Ok(e) => {
                     flag_controler.event.order.set(e);
                     flag_controler.event.maneuver = "emergency_stop";
-                    flag_controler.load_fnc("set_emergency_stop");
-                    flag_controler.load_fnc("is_emergency_stop");
+                    flag_controler.load_fnc("emergency_stop");
+                    //flag_controler.load_fnc("is_emergency_stop");
                 }
                 Err(_) => {}
             };
@@ -1758,7 +1761,7 @@ impl Mode {
             }
             49 => config::EMERGENCY_STOP,
 
-            _ => config::None,
+            _ => config::NONE,
         };
         order
     }

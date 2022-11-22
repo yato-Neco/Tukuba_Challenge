@@ -372,6 +372,9 @@ dependencies = [
 [[package]]
 name = "lidar"
 version = "0.1.0"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "linked-hash-map"

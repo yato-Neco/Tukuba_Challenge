@@ -1,0 +1,64 @@
+Robot:
+  Moter:
+    circumference:
+      - 55.0
+  
+    volt:
+      - 0.0
+
+    right_gpio:
+      - 25
+      - 24
+
+    left_gpio:
+     - 23
+     - 22
+
+  Lidar:
+    threshold:
+      - 3.5
+
+    Serial:
+      port:
+        - "COM4"
+
+  
+  GPS:
+    Serial:
+      port:
+        - "COM5"
+      rate:
+        - 115200
+      buf_size:
+        - 500
+      
+    waypoint:
+      - "./waypoint.csv" #Excelで編集厳禁
+
+  Key_mode:
+    speed:
+      - 0x1FBBFFFF # W
+      - 0x1F48FFFF # A
+      - 0x1F33FFFF # S
+      - 0x1F84FFFF # D
+
+  Display_mode:
+    order:
+      - "./order.csv"
+  RasPico:
+    Serial:
+      port:
+        - "COM7"
+      rate:
+        - 9600
+
+  #未実装↓
+  Order:
+    speedx:
+    # max 1.4
+      - 1.0
+    speed:
+      -
+      -
+      -
+      -

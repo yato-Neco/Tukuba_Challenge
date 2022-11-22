@@ -1,12 +1,11 @@
 extern crate yaml_rust;
 use yaml_rust::{Yaml, YamlLoader};
+use std::fs::File;
 
 #[test]
 fn test() {
-    let tmp = Settings::_load_setting("./settings.yaml")["Robot"]["Lidar"]["threshold"][0]
-        .as_f64()
-        .unwrap();
-    println!("{}", tmp);
+    let tmp = Settings::load_setting("./settings.yaml");
+    println!("{:?}", tmp.load_waypoint());
 }
 
 pub struct Settings {
@@ -155,5 +154,43 @@ impl Settings {
         }
 
         operation
+    }
+
+
+    pub fn load_waypoint(&self) -> Vec<(f64,f64)> {
+
+        let file = File::open(
+            self.setting_yaml["Robot"]["GPS"]["waypoint"][0]
+                .as_str()
+                .unwrap(),
+        ).unwrap();
+        let mut latlot = Vec::new();
+        let mut rdr = csv::Reader::from_reader(file);
+        for (i, result) in rdr.records().enumerate() {
+            let record = result.expect("a CSV record");
+
+            let slat = match record.get(0) {
+                Some(e) => e,
+                None => panic!("{}行目 latの設定", i),
+            };
+            let slot = match record.get(1) {
+                Some(e) => e,
+                None => panic!("{}行目 lotの設定", i),
+            };
+
+            let lat: f64 = match slat.trim().replace("_", "").parse() {
+                Ok(e) => e,
+                Err(_) => panic!("{}行目 latがf64形式じゃないよ", i),
+            };
+
+            let lot: f64 = match slot.trim().replace("_", "").parse() {
+                Ok(e) => e,
+                Err(_) => panic!("{}行目 lotがf64形式じゃないよ", i),
+            };
+
+            latlot.push((lat, lot));
+        };
+
+        latlot
     }
 }

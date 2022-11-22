@@ -23,10 +23,11 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     match args.mode.as_str() {
-        "auto" => Mode::auto(),
-        "key" => Mode::key(),
         "raspico_key" => Mode::raspico_key(),
         "raspico_test" => Mode::raspico_test(),
+        "raspico_test" => Mode::raspico_auto(),
+        "auto" => Mode::auto(),
+        "key" => Mode::key(),
         "test" => Mode::test(),
         "display" => {}
         "k" => Mode::key(),
