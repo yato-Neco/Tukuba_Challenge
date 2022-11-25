@@ -1,9 +1,13 @@
-from tkinter import Variable
 import RPi.GPIO as GPIO
 from time import sleep, time
 
-Motor1A = 24
-Motor1B = 25
+#左モーター
+Motor1A = 22
+Motor1B = 23
+
+#右モーター
+Motor2A = 24
+Motor2B = 25
 
 # Duty比 速度の調整
 duty = 50
@@ -15,18 +19,18 @@ GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(Motor1A, GPIO.OUT)
 GPIO.setup(Motor1B, GPIO.OUT)
-# GPIO.setup(Motor2A, GPIO.OUT)
-# GPIO.setup(Motor2B, GPIO.OUT)
+GPIO.setup(Motor2A, GPIO.OUT)
+GPIO.setup(Motor2B, GPIO.OUT)
 
 p1 = GPIO.PWM(Motor1A, freq)
 p2 = GPIO.PWM(Motor1B, freq)
-# p3 = GPIO.PWM(Motor2A, freq)
-# p4 = GPIO.PWM(Motor2B, freq)
+p3 = GPIO.PWM(Motor2A, freq)
+p4 = GPIO.PWM(Motor2B, freq)
 
 p1.start(0)
 p2.start(0)
-# p3.start(0)
-# p4.start(0)
+p3.start(0)
+p4.start(0)
     
 """
 モーターコントロール関数
