@@ -6,6 +6,7 @@ extern crate slam;
 extern crate rthred;
 extern crate scheduler;
 extern crate mytools;
+extern crate robot_serialport;
 
 mod robot;
 use clap::Parser;
@@ -22,6 +23,9 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     match args.mode.as_str() {
+        "raspico_key" => Mode::raspico_key(),
+        "raspico_test" => Mode::raspico_test(),
+        "raspico_auto" => Mode::raspico_auto(),
         "auto" => Mode::auto(),
         "key" => Mode::key(),
         "test" => Mode::test(),

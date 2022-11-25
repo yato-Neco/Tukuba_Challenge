@@ -8,7 +8,7 @@ pub fn add(left: usize, right: usize) -> usize {
 
 ///Simple Robot Management Protocol
 /// SRMP
-struct RasPico {
+pub struct RasPico {
     port: Box<dyn SerialPort>,
 }
 
@@ -36,6 +36,7 @@ impl RasPico {
         self.port.write(&0x10FFFFFF_u32.to_be_bytes()).expect("Write failed!");
 
     }
+    
 }
 
 #[cfg(test)]
