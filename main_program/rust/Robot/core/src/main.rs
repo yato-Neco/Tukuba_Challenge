@@ -25,7 +25,7 @@ async fn main() {
     match args.mode.as_str() {
         "raspico_key" => Mode::raspico_key(),
         "raspico_test" => Mode::raspico_test(),
-        "raspico_test" => Mode::raspico_auto(),
+        "raspico_auto" => Mode::raspico_auto(),
         "auto" => Mode::auto(),
         "key" => Mode::key(),
         "test" => Mode::test(),

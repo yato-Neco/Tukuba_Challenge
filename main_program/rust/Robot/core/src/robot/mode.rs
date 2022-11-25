@@ -1,4 +1,3 @@
-use robot_serialport::RasPico;
 use ::tui::backend::CrosstermBackend;
 use ::tui::Terminal;
 use flacon::{Event, FlaCon, Flags};
@@ -6,6 +5,7 @@ use getch;
 use gps::{self, GPS};
 use mytools::time_sleep;
 use robot_gpio::Moter;
+use robot_serialport::RasPico;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
 
@@ -45,7 +45,6 @@ pub struct KeyModule {
 pub struct RasPicoKeyModule {
     //pub moter_controler: Moter,
     pub raspico_controler: RasPico,
-
 }
 pub struct TestModule {
     //pub moter_controler: Moter,
@@ -67,7 +66,7 @@ pub struct AutoEvents {
     pub first_time: bool,
     pub trun_azimuth: f64,
     pub is_continue: bool,
-    pub maneuver: &'static str
+    pub maneuver: &'static str,
 }
 
 /// フラグのイベント一覧
@@ -218,7 +217,6 @@ impl Mode {
             // order が前進をだったら is_move を true にする。
             if flacn.event.is_emergency_stop_lv0.get() {
             } else {
-                println!("a");
                 flacn.load_fnc("set_move");
             }
         });
@@ -235,19 +233,26 @@ impl Mode {
         });
 
         //flag_controler.module.gps.latlot.push((0.001, 0.001));
-        flag_controler.module.gps.latlot.push((35.627200,139.340187));
-        flag_controler.module.gps.latlot.push((35.627191,139.341463));
-        flag_controler.module.gps.latlot.push((35.627191,139.341763));
+        flag_controler
+            .module
+            .gps
+            .latlot
+            .push((35.627200, 139.340187));
+        flag_controler
+            .module
+            .gps
+            .latlot
+            .push((35.627191, 139.341463));
+        flag_controler
+            .module
+            .gps
+            .latlot
+            .push((35.627191, 139.341763));
         //flag_controler.module.gps.nowpotion = Some((0.001, 0.001));
 
-        
-        
         flag_controler.module.gps.generate_rome();
 
-
-
-
-        println!("{:?}",flag_controler.module.gps.rome);
+        println!("{:?}", flag_controler.module.gps.rome);
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
@@ -293,22 +298,23 @@ impl Mode {
 
                     if tmp {
                         flacn.event.maneuver = "frist_calculate_azimuth";
-                        flacn.module.gps.now_azimuth = Some(flacn.module.gps.frist_calculate_azimuth());
+                        flacn.module.gps.now_azimuth =
+                            Some(flacn.module.gps.frist_calculate_azimuth());
                         flacn.event.is_continue = false;
                     }
                 }
             }
 
             /*
-                    flacn.event.order.set(config::FRONT);
-                    flacn.load_fnc("move");
-                    flacn.load_fnc("set_move");
-                    flacn.load_fnc("is_stop");
-                    flacn.event.order.set(config::STOP);
-                    flacn.load_fnc("move");
-                    flacn.load_fnc("set_move");
-                    flacn.load_fnc("is_stop");
-                    */
+            flacn.event.order.set(config::FRONT);
+            flacn.load_fnc("move");
+            flacn.load_fnc("set_move");
+            flacn.load_fnc("is_stop");
+            flacn.event.order.set(config::STOP);
+            flacn.load_fnc("move");
+            flacn.load_fnc("set_move");
+            flacn.load_fnc("is_stop");
+            */
 
             // gps
         });
@@ -317,7 +323,8 @@ impl Mode {
             // waypoint到着処理(初回は無視)
             if flacn.module.gps.in_waypoint && !flacn.event.first_time {
                 flacn.event.maneuver = "in_waypoint";
-                flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
+                flacn.event.trun_azimuth =
+                    flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
 
                 flacn.event.order.set(config::STOP);
                 flacn.load_fnc("move");
@@ -327,12 +334,7 @@ impl Mode {
 
                 // 右周り左周りを決める。
                 if flacn.event.trun_azimuth > 0.0 {
-
-
-                }else{
-
-
-
+                } else {
                 }
 
                 flacn.event.maneuver = "turn";
@@ -349,22 +351,17 @@ impl Mode {
                 flacn.load_fnc("set_move");
                 flacn.load_fnc("is_stop");
                 time_sleep(2, 0);
-                
+
                 flacn.event.maneuver = "front";
                 flacn.event.order.set(config::FRONT);
                 flacn.load_fnc("move");
                 flacn.load_fnc("set_move");
                 flacn.load_fnc("is_stop");
                 flacn.event.maneuver = "go to point";
-
-                
             }
         });
 
-        flag_controler.add_fnc("not_in_waypoint", |flacn| {
-            
-        });
-
+        flag_controler.add_fnc("not_in_waypoint", |flacn| {});
 
         flag_controler.add_fnc("tui", |flacn| {
             let event = flacn.event.clone();
@@ -399,7 +396,7 @@ impl Mode {
         thread.insert("slam", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::<String>::send_panic_msg(panic_msg);
             loop {
-                let order:u32 = 0xff;
+                let order: u32 = 0xff;
                 //send(order, msg);
                 msg.send(order).unwrap();
 
@@ -420,10 +417,9 @@ impl Mode {
 
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
-
         /*
-        
-        
+
+
         loop {
             // GPS
             match gps_receiver.try_recv() {
@@ -642,7 +638,10 @@ impl Mode {
                     scheduler: Scheduler,
                     moter_controler: Moter,
                 }
-                let module = Test { scheduler, moter_controler};
+                let module = Test {
+                    scheduler,
+                    moter_controler,
+                };
 
                 let mut order_controler = FlaCon::new(module, event);
                 ////order_vec.push((0xffffffff,0));
@@ -678,7 +677,10 @@ impl Mode {
                         }
                         //moter_controler.moter_control(config::EMERGENCY_STOP);
                         println!("{}", flacn.module.scheduler.nowtime());
-                        flacn.module.moter_controler.moter_control(config::EMERGENCY_STOP);
+                        flacn
+                            .module
+                            .moter_controler
+                            .moter_control(config::EMERGENCY_STOP);
 
                         flacn.event.order0_vec.remove(0);
                     }
@@ -715,8 +717,8 @@ impl Mode {
                                     stoptime = stoptime + e.1 as i128;
 
                                     println!("{:x} {}", e.0, e.1);
-                                    
-                                    order_controler.module.moter_controler.moter_control(e. 0);
+
+                                    order_controler.module.moter_controler.moter_control(e.0);
 
                                     order_controler.event.order1_vec.remove(0);
                                 }
@@ -848,11 +850,8 @@ impl Mode {
         flag_controler.add_fnc("set_emergency_stop", |flacn| {
             // order が EMERGENCY_STOP だったら EMERGENCY_STOP の bool を反転にする。
             if flacn.event.order == config::EMERGENCY_STOP {
-                flacn.event.is_move  = false;
-                flacn
-                    .event
-                    .is_emergency_stop_lv0 =
-                    !flacn.event.is_emergency_stop_lv0;
+                flacn.event.is_move = false;
+                flacn.event.is_emergency_stop_lv0 = !flacn.event.is_emergency_stop_lv0;
             };
         });
 
@@ -914,12 +913,7 @@ impl Mode {
         terminal.clear().unwrap();
     }
 
-
-
     pub fn raspico_key() {
-
-        
-
         let mut terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
@@ -937,7 +931,7 @@ impl Mode {
             is_avoidance: false,
             is_move: false,
             is_trune: Cell::new(false),
-            is_emergency_stop_lv1:false,
+            is_emergency_stop_lv1: false,
             is_emergency_stop_lv0: false,
             is_emergency_stop_lv0_delay: false,
             order: 0xfffffff,
@@ -955,17 +949,13 @@ impl Mode {
             };
         });
 
-
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order;
-            if order != config::NONE && !flacn.event.is_emergency_stop_lv0{
+            if order != config::NONE && !flacn.event.is_emergency_stop_lv0 {
                 flacn.load_fnc("set_move");
                 flacn.module.raspico_controler.write(order);
-
             }
-
         });
-
 
         flag_controler.add_fnc("debug", |flacn| if flacn.event.is_debug {});
 
@@ -973,13 +963,13 @@ impl Mode {
             // order が前進をだったら is_move を true にする。
             let order = flacn.event.order;
             if order == config::EMERGENCY_STOP || order == config::STOP {
-                flacn.event.is_move =  false;
+                flacn.event.is_move = false;
             } else {
                 if !flacn.event.is_move && order == config::NONE {
                     flacn.event.is_move = false;
                 } else {
-                    if !flacn.event.is_emergency_stop_lv0{
-                        flacn.event.is_move=true;
+                    if !flacn.event.is_emergency_stop_lv0 {
+                        flacn.event.is_move = true;
                     }
                 }
             }
@@ -1007,9 +997,7 @@ impl Mode {
             flacn.load_fnc("set_emergency_stop");
 
             if flacn.event.is_emergency_stop_lv0 && !flacn.event.is_emergency_stop_lv0_delay {
-
                 flacn.module.raspico_controler.write(config::EMERGENCY_STOP);
-
             } else {
                 flacn.load_fnc("set_move");
             }
@@ -1019,10 +1007,7 @@ impl Mode {
             // order が EMERGENCY_STOP だったら EMERGENCY_STOP の bool を反転にする。
             if flacn.event.order == config::EMERGENCY_STOP {
                 flacn.event.is_move = false;
-                flacn
-                    .event
-                    .is_emergency_stop_lv0
-                    = !flacn.event.is_emergency_stop_lv0;
+                flacn.event.is_emergency_stop_lv0 = !flacn.event.is_emergency_stop_lv0;
             };
         });
 
@@ -1064,7 +1049,8 @@ impl Mode {
                         flag_controler.load_fnc("moter_control");
                         // flag_controler.load_fnc("is_stop");
                         // flag_controler.load_fnc("is_emergency_stop");
-                        flag_controler.event.is_emergency_stop_lv0_delay = flag_controler.event.is_emergency_stop_lv0;
+                        flag_controler.event.is_emergency_stop_lv0_delay =
+                            flag_controler.event.is_emergency_stop_lv0;
                     }
                 }
                 Err(_) => {}
@@ -1084,7 +1070,6 @@ impl Mode {
         //terminal.clear().unwrap();
         tui::end(&mut terminal);
     }
-
 
     pub fn raspico_test() {
         let mut terminal = tui::start();
@@ -1217,7 +1202,10 @@ impl Mode {
                     scheduler: Scheduler,
                     moter_controler: RasPico,
                 }
-                let module = Test { scheduler, moter_controler};
+                let module = Test {
+                    scheduler,
+                    moter_controler,
+                };
 
                 let mut order_controler = FlaCon::new(module, event);
                 ////order_vec.push((0xffffffff,0));
@@ -1289,8 +1277,8 @@ impl Mode {
                                     stoptime = stoptime + e.1 as i128;
 
                                     println!("{:x} {}", e.0, e.1);
-                                    
-                                    order_controler.module.moter_controler.write(e. 0);
+
+                                    order_controler.module.moter_controler.write(e.0);
 
                                     order_controler.event.order1_vec.remove(0);
                                 }
@@ -1329,13 +1317,10 @@ impl Mode {
         }
     }
 
-
-    pub fn raspico_auto(){
-
+    pub fn raspico_auto() {
         let mut terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
-
 
         let (port, rate, buf_size) = setting_file.load_gps_serial();
 
@@ -1344,7 +1329,7 @@ impl Mode {
         let (rp_port, rp_rate) = setting_file.load_raspico();
         let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
 
-        let mut gps = GPS::new(false);
+        let mut gps = GPS::new(true);
         gps.latlot = nav_setting;
         //モジュールをflag内で扱うための構造体
         let mut module = RasPicoAutoModule {
@@ -1392,10 +1377,9 @@ impl Mode {
 
         flag_controler.add_fnc("moter_control", |flacn| {
             let order = flacn.event.order.get();
-            if order != config::NONE && !flacn.event.is_emergency_stop_lv0.get(){
+            if order != config::NONE && !flacn.event.is_emergency_stop_lv0.get() {
                 flacn.load_fnc("set_move");
                 flacn.module.raspico_controler.write(order);
-
             }
         });
 
@@ -1418,7 +1402,7 @@ impl Mode {
                 if !flacn.event.is_move.get() && order == config::NONE {
                     flacn.event.is_move.set(false);
                 } else {
-                    if !flacn.event.is_emergency_stop_lv0.get(){
+                    if !flacn.event.is_emergency_stop_lv0.get() {
                         flacn.event.is_move.set(true);
                     }
                 }
@@ -1446,9 +1430,7 @@ impl Mode {
             flacn.load_fnc("set_emergency_stop");
 
             if flacn.event.is_emergency_stop_lv0.get() {
-                
                 flacn.module.raspico_controler.write(config::EMERGENCY_STOP);
-
             } else {
                 flacn.load_fnc("set_move");
             }
@@ -1465,17 +1447,16 @@ impl Mode {
             };
         });
 
-        
         flag_controler.module.gps.generate_rome();
 
-
-        println!("{:?}",flag_controler.module.gps.rome);
+        //println!("{:?}",flag_controler.module.gps.rome);
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
             let mut gps = &mut flacn.module.gps;
             let isend = gps.nav();
             //print!("{}",isend);
+
             flacn.event.is_break = !isend;
 
             // gps
@@ -1504,31 +1485,61 @@ impl Mode {
         flag_controler.add_fnc("first_time", |flacn| {
             // 初期動
             // ロボット向きを求める。
+
             if flacn.event.first_time {
+                flacn.load_fnc("moter_control");
+
                 flacn.event.maneuver = "first_time wait fix";
                 let is_fix = flacn.module.gps.is_fix.unwrap_or(false);
                 time_sleep(0, 5);
                 if is_fix {
-                    let tmp = flacn.module.gps.nowpotion_history_sub();
+                    flacn.module.gps.is_nowpotion_history_sub =
+                        flacn.module.gps.nowpotion_history_sub();
                     //println!("{}",tmp);
                     flacn.event.maneuver = "nowpotion_history_sub";
 
-                    if tmp {
+                    if flacn.module.gps.is_nowpotion_history_sub {
                         flacn.event.maneuver = "frist_calculate_azimuth";
-                        flacn.module.gps.now_azimuth = Some(flacn.module.gps.frist_calculate_azimuth());
+                        flacn.module.gps.now_azimuth =
+                            Some(flacn.module.gps.frist_calculate_azimuth());
                         flacn.event.is_continue = false;
+                        //  in_waypoint　へ　移行す所に問題あり。in_waypointはポイント内に入らないと起動しないので first_time との間に処理の空間が生まれる。
                     }
                 }
             }
-
             // gps
         });
 
+
         flag_controler.add_fnc("in_waypoint", |flacn| {
+            
+            if  flacn.event.first_time  && !flacn.event.is_continue {
+                flacn.event.order.set(config::STOP);
+                flacn.load_fnc("moter_control");
+                time_sleep(2, 0);
+                flacn.event.maneuver = "turn";
+                flacn.event.is_trune.set(true);
+                flacn.event.order.set(config::TRUN);
+                flacn.load_fnc("moter_control");
+
+                time_sleep(5, 0);
+
+                flacn.event.order.set(config::STOP);
+                flacn.event.is_trune.set(false);
+                flacn.load_fnc("moter_control");
+
+                time_sleep(2, 0);
+                flacn.event.maneuver = "go to point";
+                flacn.event.order.set(config::FRONT);
+                flacn.load_fnc("moter_control");
+
+            }
+
             // waypoint到着処理(初回は無視)
             if flacn.module.gps.in_waypoint && !flacn.event.first_time {
                 flacn.event.maneuver = "in_waypoint";
-                flacn.event.trun_azimuth = flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
+                flacn.event.trun_azimuth =
+                    flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
 
                 flacn.event.order.set(config::STOP);
                 flacn.load_fnc("moter_control");
@@ -1538,44 +1549,31 @@ impl Mode {
 
                 // 右周り左周りを決める。
                 if flacn.event.trun_azimuth > 0.0 {
-
-
-                }else{
-
-
-
+                } else {
                 }
 
                 flacn.event.maneuver = "turn";
                 flacn.event.is_trune.set(true);
                 flacn.event.order.set(config::TRUN);
                 flacn.load_fnc("moter_control");
-                //flacn.load_fnc("set_move");
-                //flacn.load_fnc("is_stop");
+
                 time_sleep(5, 0);
 
                 flacn.event.order.set(config::STOP);
                 flacn.event.is_trune.set(false);
-                flacn.load_fnc("move");
-                //flacn.load_fnc("set_move");
-                //flacn.load_fnc("is_stop");
-                time_sleep(2, 0);
-                
-                flacn.event.maneuver = "front";
-                flacn.event.order.set(config::FRONT);
                 flacn.load_fnc("moter_control");
-                //flacn.load_fnc("set_move");
-                //flacn.load_fnc("is_stop");
+
+                time_sleep(2, 0);
                 flacn.event.maneuver = "go to point";
 
-                
+                //flacn.event.maneuver = "front";
+                flacn.event.order.set(config::FRONT);
+                flacn.load_fnc("moter_control");
+
             }
         });
 
-        flag_controler.add_fnc("not_in_waypoint", |flacn| {
-            
-        });
-
+        flag_controler.add_fnc("not_in_waypoint", |flacn| {});
 
         flag_controler.add_fnc("tui", |flacn| {
             let event = flacn.event.clone();
@@ -1589,11 +1587,8 @@ impl Mode {
                 .unwrap();
         });
 
-
         flag_controler.add_fnc("tui_end", |flacon| {
-            
             tui::end(&mut flacon.module.terminal);
-
         });
 
         let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
@@ -1614,16 +1609,18 @@ impl Mode {
             }
         });
 
+        /*
         thread.insert("slam", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::<String>::send_panic_msg(panic_msg);
             loop {
-                let order:u32 = 0xff;
+                //let order:u32 = 0xff;
                 //send(order, msg);
-                msg.send(order).unwrap();
+                //msg.send(order).unwrap();
 
                 time_sleep(0, 50);
             }
         });
+        */
 
         RthdG::_thread_generate(
             "gps",
@@ -1638,14 +1635,13 @@ impl Mode {
 
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
-
-        
         loop {
             // GPS
             match gps_receiver.try_recv() {
                 Ok(e) => {
                     flag_controler.module.gps.original_nowpotion = e.clone();
                     flag_controler.module.gps.parser(e);
+
                     //let _ = flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
                 }
                 Err(_) => {}
@@ -1656,6 +1652,7 @@ impl Mode {
             flag_controler.load_fnc("first_time");
             flag_controler.load_fnc("in_waypoint");
 
+            //flag_controler.load_fnc("moter_control");
 
             // Key
             match order.get("key").unwrap().1.try_recv() {
@@ -1725,7 +1722,6 @@ impl Mode {
         //println!("{:?}",flag_controler.module.gps.nowpotion_history);
         //tui::end();
         // */
-
     }
 
     /// キー入力
