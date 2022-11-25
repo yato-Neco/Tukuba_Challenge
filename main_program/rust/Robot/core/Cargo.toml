@@ -10,6 +10,7 @@ load-shdlib = { path = "../load-shdlib" }
 slam = { path = "../slam" }
 flacon = {path = "../flacon"}
 robot-gpio = {path = "../robot-gpio"}
+robot-serialport = {path = "../robot-serialport"}
 gps = {path = "../gps"}
 lidar = {path = "../lidar"}
 rthred = {path = "../rthred"}

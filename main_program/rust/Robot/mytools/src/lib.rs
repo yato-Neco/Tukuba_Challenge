@@ -50,7 +50,10 @@ pub fn time_sleep(sec: u64, ms: u64) {
 }
 
 
-
+#[inline]
+pub fn mic_sleep(micro: u64) {
+    thread::sleep(Duration::from_micros(micro));
+}
 
 /// warning: の部分が黄色になる。
 #[inline]
@@ -97,6 +100,5 @@ impl Xtools for f64 {
     fn roundf(&self,square:i32) -> f64 {
         (self * (square as f64)).round() / (square as f64)
    }
-   
 }
 

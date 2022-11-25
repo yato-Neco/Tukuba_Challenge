@@ -4,6 +4,7 @@ pub enum Mode {
     Back,
 }
 
+use mytools::mic_sleep;
 #[cfg(target_os = "linux")]
 use rppal::gpio::{Gpio, OutputPin};
 #[cfg(target_os = "linux")]
@@ -32,7 +33,7 @@ impl Moter {
     ///
     /// ```
     /// let mut moter = MoterGPIO::new([25,24], [23,22]);
-    /// 
+    ///
     /// ```
     ///
     pub fn new(r_pin: [u8; 2], l_pin: [u8; 2]) -> Self {
@@ -112,6 +113,14 @@ impl Moter {
         self.l_pin1.clear_pwm().unwrap();
     }
 
+    pub fn reset(&mut self) -> bool {
+        
+        self.r_pin0.reset_on_drop()
+            && self.r_pin1.reset_on_drop()
+            && self.l_pin0.reset_on_drop()
+            && self.l_pin1.reset_on_drop()
+    }
+
     /// ロボットの命令をモーターに伝える。
     pub fn moter_control(&mut self, order: u32) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
@@ -142,7 +151,7 @@ impl Moter {
 }
 
 #[cfg(target_os = "windows")]
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Moter {
     r_pin0: u8,
     r_pin1: u8,
@@ -214,6 +223,10 @@ impl Moter {
     /// PWMのリセット
     pub fn pwm_all_clean(&mut self) {}
 
+    pub fn reset(&mut self) -> bool {
+        true
+    }
+
     pub fn order_analysis(order: u32) -> (f64, f64) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
@@ -236,18 +249,22 @@ impl Moter {
         match (rM, lM) {
             (1..=7, 1..=7) => {
                 self.right(rM as f64 / 7.0, Mode::Front);
+                mic_sleep(1);
                 self.left(lM as f64 / 7.0, Mode::Front);
             }
             (8..=14, 8..=14) => {
                 self.right((rM - 7) as f64 / 7.0, Mode::Back);
+                mic_sleep(1);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
             }
             (1..=7, 8..=14) => {
                 self.right(rM as f64 / 7.0, Mode::Front);
+                mic_sleep(1);
                 self.left((lM - 7) as f64 / 7.0, Mode::Back);
             }
             (8..=14, 1..=7) => {
                 self.right((rM - 7) as f64 / 7.0, Mode::Back);
+                mic_sleep(1);
                 self.left(lM as f64 / 7.0, Mode::Front);
             }
             _ => {
@@ -299,4 +316,3 @@ impl Moter {
     }
     */
 }
-

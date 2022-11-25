@@ -167,6 +167,7 @@ dependencies = [
  "load-shdlib",
  "mytools",
  "robot-gpio",
+ "robot-serialport",
  "rthred",
  "scheduler",
  "serialport",
@@ -371,6 +372,9 @@ dependencies = [
 [[package]]
 name = "lidar"
 version = "0.1.0"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "linked-hash-map"
@@ -752,10 +756,16 @@ checksum = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
 [[package]]
 name = "robot-gpio"
 version = "1.0.0"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "robot-serialport"
 version = "0.1.0"
+dependencies = [
+ "serialport",
+]
 
 [[package]]
 name = "rthred"
