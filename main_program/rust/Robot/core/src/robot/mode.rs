@@ -75,7 +75,7 @@ pub struct KeyEvents {
     pub is_debug: bool,
     pub is_avoidance: bool,
     pub is_move: bool,
-    pub is_trune: Cell<bool>,
+    pub is_trune:bool,
     pub is_emergency_stop_lv1: bool,
     pub is_emergency_stop_lv0: bool,
     pub is_emergency_stop_lv0_delay: bool,
@@ -633,7 +633,7 @@ impl Mode {
                     order0_vec: Vec::<(u32, u32)>::new(),
                 };
 
-                let mut scheduler = Scheduler::start();
+                let scheduler = Scheduler::start();
                 struct Test {
                     scheduler: Scheduler,
                     moter_controler: Moter,
@@ -751,20 +751,19 @@ impl Mode {
                 moter_sender.send((config::EMERGENCY_STOP, 0)).unwrap();
             }
 
-            //time_sleep(3, 0);
 
             time_sleep(0, 6)
         }
     }
 
     pub fn key() {
-        let mut terminal = tui::start();
+        //let mut terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
 
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
 
-        let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
+        let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
         let module = KeyModule { moter_controler };
 
@@ -772,7 +771,7 @@ impl Mode {
             is_debug: true,
             is_avoidance: false,
             is_move: false,
-            is_trune: Cell::new(false),
+            is_trune: false,
             is_emergency_stop_lv1: false,
             is_emergency_stop_lv0: false,
             is_emergency_stop_lv0_delay: false,
@@ -802,6 +801,7 @@ impl Mode {
         flag_controler.add_fnc("move", |flacn| {
             // is_move が true だったら呼び出す。
             if flacn.event.is_move {
+                println!("{:x}",flacn.event.order);
                 flacn.load_fnc("moter_control");
                 //println!("is_move");
             };
@@ -827,7 +827,7 @@ impl Mode {
             // is_stop が false の時、呼び出す
 
             if !flacn.event.is_move {
-                //println!("stop");
+                println!("stop");
                 flacn.module.moter_controler.pwm_all_clean();
             };
         });
@@ -875,6 +875,8 @@ impl Mode {
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
+
+            /*
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
                     flag_controler.event.order = e;
@@ -882,11 +884,15 @@ impl Mode {
                 }
                 Err(_) => {}
             };
-
+            */
+            
             match order.get("key").unwrap().1.try_recv() {
                 Ok(e) => {
                     if e == config::BREAK {
-                        break;
+                        let  flag=  flag_controler.module.moter_controler.reset();
+                        if flag {
+                            break;   
+                        }
                     } else {
                         flag_controler.event.order = e;
                         flag_controler.load_fnc("set_emergency_stop");
@@ -899,18 +905,21 @@ impl Mode {
                 Err(_) => {}
             };
 
+            /*
             terminal
                 .draw(|f| {
                     tui::key_ui(f, &flag_controler);
                 })
                 .unwrap();
+            */
+            
 
             //flag_controler.load_fnc("debug");
 
-            time_sleep(0, 1);
+            time_sleep(0, 50);
         }
 
-        terminal.clear().unwrap();
+        //terminal.clear().unwrap();
     }
 
     pub fn raspico_key() {
@@ -922,7 +931,7 @@ impl Mode {
 
         //let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut raspico_controler = RasPico::new(&port, rate);
+        let raspico_controler = RasPico::new(&port, rate);
 
         let module = RasPicoKeyModule { raspico_controler };
 
@@ -930,7 +939,7 @@ impl Mode {
             is_debug: true,
             is_avoidance: false,
             is_move: false,
-            is_trune: Cell::new(false),
+            is_trune: false,
             is_emergency_stop_lv1: false,
             is_emergency_stop_lv0: false,
             is_emergency_stop_lv0_delay: false,
@@ -1031,6 +1040,7 @@ impl Mode {
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
+            /*
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
                     flag_controler.event.order = e;
@@ -1038,6 +1048,8 @@ impl Mode {
                 }
                 Err(_) => {}
             };
+            */
+            
 
             match order.get("key").unwrap().1.try_recv() {
                 Ok(e) => {
@@ -1064,7 +1076,7 @@ impl Mode {
 
             //flag_controler.load_fnc("debug");
 
-            time_sleep(0, 1);
+            time_sleep(0, 10);
         }
 
         //terminal.clear().unwrap();

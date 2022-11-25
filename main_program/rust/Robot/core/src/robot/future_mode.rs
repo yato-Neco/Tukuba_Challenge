@@ -16,7 +16,7 @@ struct Instruction {
     pub latlot: Option<(f32,f32)>,
     block_time:i128,
 }
-#[derive(Debug,Clone)]
+#[derive()]
 struct Instructions {
     vec:Vec<Instruction>,
     is_locked:bool,

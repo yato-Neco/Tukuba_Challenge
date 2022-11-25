@@ -17,5 +17,7 @@ pub type SenderOrders = std::sync::mpsc::Sender<u32>;
 #[test]
 fn test() {
     let lM = ((0x0F00FFF1 & 0xF0000000_u32) >> 28) ;
-    println!("{lM}")
+    println!("{lM}");
+
+    println!("{}", true && false)
 }
