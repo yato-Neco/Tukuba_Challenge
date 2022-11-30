@@ -24,10 +24,6 @@ impl Scheduler {
 
 
 
-
-    
-
-
     /// もう一つのカウントを開始する
     pub fn add_time_counter(&mut self) {
         self.next_start_time = Some(Instant::now());

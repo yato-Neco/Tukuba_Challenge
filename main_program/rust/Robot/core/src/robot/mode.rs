@@ -114,22 +114,20 @@ macro_rules! thread_variable {
 /// ロボットのモード構造体
 impl Mode {
     pub fn auto() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
 
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
 
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
-
         let gps_setting = setting_file.load_gps_serial();
 
-        let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
+        let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut gps = GPS::new(false);
+        let gps = GPS::new(false);
 
         //モジュールをflag内で扱うための構造体
-        let mut module = AutoModule {
+        let module = AutoModule {
             terminal,
             moter_controler,
             gps,
@@ -256,7 +254,7 @@ impl Mode {
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
-            let mut gps = &mut flacn.module.gps;
+            let gps = &mut flacn.module.gps;
             let isend = gps.nav();
             //print!("{}",isend);
             flacn.event.is_break = !isend;
@@ -510,13 +508,13 @@ impl Mode {
 
     /// test mode
     pub fn test() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
         let setting_file = Settings::load_setting("./settings.yaml");
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
         let operation = setting_file.load_move_csv();
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
-        let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
-        let mut gps = GPS::new(true);
+        //let (port, rate, buf_size) = setting_file.load_gps_serial();
+        let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
+        let gps = GPS::new(true);
 
         //TODO: Linuxじゃ動かない
 
@@ -1084,17 +1082,16 @@ impl Mode {
     }
 
     pub fn raspico_test() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
         let setting_file = Settings::load_setting("./settings.yaml");
-        let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
+        //let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
         let operation = setting_file.load_move_csv();
-        let (gps_port, gps_rate, gps_buf_size) = setting_file.load_gps_serial();
+        //let (gps_port, gps_rate, gps_buf_size) = setting_file.load_gps_serial();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
+        let raspico_controler = RasPico::new(&rp_port, rp_rate);
 
-        let mut gps = GPS::new(true);
+        let gps = GPS::new(true);
 
-        //TODO: Linuxじゃ動かない
 
         // Lidar も
         let module = TestModule {
@@ -1330,21 +1327,21 @@ impl Mode {
     }
 
     pub fn raspico_auto() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
 
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
+        //let (port, rate, buf_size) = setting_file.load_gps_serial();
 
         let gps_setting = setting_file.load_gps_serial();
         let nav_setting = setting_file.load_waypoint();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
+        let raspico_controler = RasPico::new(&rp_port, rp_rate);
 
         let mut gps = GPS::new(true);
         gps.latlot = nav_setting;
         //モジュールをflag内で扱うための構造体
-        let mut module = RasPicoAutoModule {
+        let module = RasPicoAutoModule {
             terminal,
             raspico_controler,
             gps,
@@ -1465,7 +1462,7 @@ impl Mode {
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
-            let mut gps = &mut flacn.module.gps;
+            let gps = &mut flacn.module.gps;
             let isend = gps.nav();
             //print!("{}",isend);
 
@@ -1774,5 +1771,4 @@ impl Mode {
         order
     }
 
-    fn test_order_compare() {}
 }
