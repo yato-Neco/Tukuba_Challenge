@@ -1,4 +1,4 @@
-import RPI.GPIO as GPIO
+import RPi.GPIO as GPIO
 import sys
 from time import sleep, time
 from pynput import keyboard
@@ -6,7 +6,7 @@ from pynput import keyboard
 
 def setup():
     # モーターPIN設定
-    gpio_left = [22, 23]
+    gpio_left = [23, 22]
     gpio_right = [24, 25]
 
     GPIO.setmode(GPIO.BCM)
@@ -19,10 +19,12 @@ def setup():
     main(gpio_left, gpio_right)
 
 def main(left, right):
-    p1 = GPIO.PWM(left[0], 0)
-    p2 = GPIO.PWM(left[1], 0)
-    p3 = GPIO.PWM(right[0], 0)
-    p4 = GPIO.PWM(right[0], 0)
+    freq = 50
+
+    p1 = GPIO.PWM(left[0], freq)
+    p2 = GPIO.PWM(left[1], freq)
+    p3 = GPIO.PWM(right[0], freq)
+    p4 = GPIO.PWM(right[1], freq)
 
     p1.start(0)
     p2.start(0)
@@ -31,59 +33,65 @@ def main(left, right):
 
     print("ready")
     
-    def on_press(key):
-        duty_1 = 0  # 正
-        duty_2 = 0  # 負
+    duty_1 = 10  # 正
+    duty_2 = 5  # 負
+
+    while True:
+        key = input("W:前進 S:後退 A:左旋回 D:右旋回 F:停止 K:終了\n")
 
         if key == "w":
-            if duty_2 > 0:
-                p2.ChangeDutyCycle(duty_2 - 1)
-                p4.ChangeDutyCycle(duty_2 - 1)
-                print(duty_1, duty_2)
-            else:
-                p1.ChangeDutyCycle(duty_1 + 1)
-                p3.ChangeDutyCycle(duty_1 + 1)
-                print(duty_1, duty_2)
+            # if duty_2 > 0:
+            #     p2.ChangeDutyCycle(duty_1)
+            #     p4.ChangeDutyCycle(duty_1)
+            # else:
+            #     p1.ChangeDutyCycle(duty_1)
+            #     p3.ChangeDutyCycle(duty_1)
+            
+            p1.ChangeDutyCycle(duty_1)
+            p2.ChangeDutyCycle(0)
+            p3.ChangeDutyCycle(duty_1)
+            p4.ChangeDutyCycle(0)
 
         if key == "s":
-            if duty_1 > 0:
-                p1.ChangeDutyCycle(duty_1 - 1)
-                p3.ChangeDutyCycle(duty_1 - 1)
-                print(duty_1, duty_2)
-            else:
-                p2.ChangeDutyCycle(duty_2 + 1)
-                p4.ChangeDutyCycle(duty_2 + 1)
-                print(duty_1, duty_2)
+            # if duty_1 > 0:
+            #     p1.ChangeDutyCycle(duty_1)
+            #     p3.ChangeDutyCycle(duty_1)
+            # else:
+            #     p2.ChangeDutyCycle(duty_1)
+            #     p4.ChangeDutyCycle(duty_1)
+
+            p1.ChangeDutyCycle(0)
+            p2.ChangeDutyCycle(duty_1)
+            p3.ChangeDutyCycle(0)
+            p4.ChangeDutyCycle(duty_1)
+
 
         if key == "a":
             p1.ChangeDutyCycle(0)
-            p2.ChangeDutyCycle(20)
-            p3.ChangeDutyCycle(20)
+            p2.ChangeDutyCycle(duty_2)
+            p3.ChangeDutyCycle(duty_2)
             p4.ChangeDutyCycle(0)
 
         if key == "d":
-            p1.ChangeDutyCycle(20)
+            p1.ChangeDutyCycle(duty_2)
             p2.ChangeDutyCycle(0)
             p3.ChangeDutyCycle(0)
-            p4.ChangeDutyCycle(20)
+            p4.ChangeDutyCycle(duty_2)
 
-        if key == keyboard.Key.space:
+        if key == "f":
+            p1.ChangeDutyCycle(0)
+            p2.ChangeDutyCycle(0)
+            p3.ChangeDutyCycle(0)
+            p4.ChangeDutyCycle(0)
+
+        if key == "k":
             duty_1, duty_2 = 0
             p1.ChangeDutyCycle(0)
             p2.ChangeDutyCycle(0)
             p3.ChangeDutyCycle(0)
             p4.ChangeDutyCycle(0)
-
-    def on_release(key):
-        if key == keyboard.Key.esc:
             GPIO.clean()
-            keyboard.Listener.stop()
             sys.exit()
+            
 
-
-    with keyboard.Listener(
-            on_press=on_press,
-            on_release=on_release) as listener:
-        listener.join()
-
-
+setup()
