@@ -14,5 +14,6 @@ members = [
     "scheduler",
     "mytools",
     "camera",
-    "SRP"
+    "SRP",
+    "pymoter"
 ]
