@@ -114,22 +114,20 @@ macro_rules! thread_variable {
 /// ロボットのモード構造体
 impl Mode {
     pub fn auto() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
 
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
 
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
-
         let gps_setting = setting_file.load_gps_serial();
 
-        let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
+        let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut gps = GPS::new(false);
+        let gps = GPS::new(false);
 
         //モジュールをflag内で扱うための構造体
-        let mut module = AutoModule {
+        let module = AutoModule {
             terminal,
             moter_controler,
             gps,
@@ -256,7 +254,7 @@ impl Mode {
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
-            let mut gps = &mut flacn.module.gps;
+            let gps = &mut flacn.module.gps;
             let isend = gps.nav();
             //print!("{}",isend);
             flacn.event.is_break = !isend;
@@ -510,13 +508,13 @@ impl Mode {
 
     /// test mode
     pub fn test() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
         let setting_file = Settings::load_setting("./settings.yaml");
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
         let operation = setting_file.load_move_csv();
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
-        let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
-        let mut gps = GPS::new(true);
+        //let (port, rate, buf_size) = setting_file.load_gps_serial();
+        let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
+        let gps = GPS::new(true);
 
         //TODO: Linuxじゃ動かない
 
@@ -1084,17 +1082,16 @@ impl Mode {
     }
 
     pub fn raspico_test() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
         let setting_file = Settings::load_setting("./settings.yaml");
-        let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
+        //let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
         let operation = setting_file.load_move_csv();
-        let (gps_port, gps_rate, gps_buf_size) = setting_file.load_gps_serial();
+        //let (gps_port, gps_rate, gps_buf_size) = setting_file.load_gps_serial();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
+        let raspico_controler = RasPico::new(&rp_port, rp_rate);
 
-        let mut gps = GPS::new(true);
+        let gps = GPS::new(true);
 
-        //TODO: Linuxじゃ動かない
 
         // Lidar も
         let module = TestModule {
@@ -1330,21 +1327,21 @@ impl Mode {
     }
 
     pub fn raspico_auto() {
-        let mut terminal = tui::start();
+        let terminal = tui::start();
 
         let setting_file = Settings::load_setting("./settings.yaml");
 
-        let (port, rate, buf_size) = setting_file.load_gps_serial();
+        //let (port, rate, buf_size) = setting_file.load_gps_serial();
 
         let gps_setting = setting_file.load_gps_serial();
         let nav_setting = setting_file.load_waypoint();
         let (rp_port, rp_rate) = setting_file.load_raspico();
-        let mut raspico_controler = RasPico::new(&rp_port, rp_rate);
+        let raspico_controler = RasPico::new(&rp_port, rp_rate);
 
         let mut gps = GPS::new(true);
         gps.latlot = nav_setting;
         //モジュールをflag内で扱うための構造体
-        let mut module = RasPicoAutoModule {
+        let module = RasPicoAutoModule {
             terminal,
             raspico_controler,
             gps,
@@ -1465,7 +1462,7 @@ impl Mode {
 
         flag_controler.add_fnc("gps_nav", |flacn| {
             // GPS Nav 終了フラグなど
-            let mut gps = &mut flacn.module.gps;
+            let gps = &mut flacn.module.gps;
             let isend = gps.nav();
             //print!("{}",isend);
 
@@ -1477,6 +1474,7 @@ impl Mode {
         flag_controler.add_fnc("gps_Fix", |flacn| {
             //flacn.module.gps.is_fix;
             // gps 受信フラグ
+            time_sleep(0, 50);
 
             if flacn.module.gps.is_fix.unwrap_or(false) {
                 match flacn.module.gps.nowpotion {
@@ -1491,30 +1489,45 @@ impl Mode {
                 //flacn.load_fnc("is_emergency_stop");
             }
 
-            time_sleep(0, 5);
+            time_sleep(0, 50);
         });
 
         flag_controler.add_fnc("first_time", |flacn| {
             // 初期動
             // ロボット向きを求める。
-
             if flacn.event.first_time {
-                flacn.load_fnc("moter_control");
+
 
                 flacn.event.maneuver = "first_time wait fix";
+
                 let is_fix = flacn.module.gps.is_fix.unwrap_or(false);
-                time_sleep(0, 5);
+
+                flacn.load_fnc("tui");
+                time_sleep(0, 50);
+
                 if is_fix {
+
                     flacn.module.gps.is_nowpotion_history_sub =
                         flacn.module.gps.nowpotion_history_sub();
-                    //println!("{}",tmp);
                     flacn.event.maneuver = "nowpotion_history_sub";
+
+                    flacn.event.order.set(config::FRONT);
+                    flacn.load_fnc("moter_control");
+                    flacn.load_fnc("tui");
+                    time_sleep(2, 50);
 
                     if flacn.module.gps.is_nowpotion_history_sub {
                         flacn.event.maneuver = "frist_calculate_azimuth";
                         flacn.module.gps.now_azimuth =
                             Some(flacn.module.gps.frist_calculate_azimuth());
+                            
+                        flacn.event.order.set(config::EMERGENCY_STOP);
+                        flacn.load_fnc("moter_control");
+
                         flacn.event.is_continue = false;
+                        flacn.load_fnc("tui");
+                        time_sleep(0, 50);
+
                         //  in_waypoint　へ　移行す所に問題あり。in_waypointはポイント内に入らないと起動しないので first_time との間に処理の空間が生まれる。
                     }
                 }
@@ -1524,26 +1537,28 @@ impl Mode {
 
 
         flag_controler.add_fnc("in_waypoint", |flacn| {
-            
             if  flacn.event.first_time  && !flacn.event.is_continue {
+                
                 flacn.event.order.set(config::STOP);
                 flacn.load_fnc("moter_control");
                 time_sleep(2, 0);
                 flacn.event.maneuver = "turn";
-                flacn.event.is_trune.set(true);
+                //flacn.event.is_trune.set(true);
                 flacn.event.order.set(config::TRUN);
                 flacn.load_fnc("moter_control");
 
                 time_sleep(5, 0);
 
                 flacn.event.order.set(config::STOP);
-                flacn.event.is_trune.set(false);
+                //flacn.event.is_trune.set(false);
                 flacn.load_fnc("moter_control");
 
                 time_sleep(2, 0);
                 flacn.event.maneuver = "go to point";
                 flacn.event.order.set(config::FRONT);
                 flacn.load_fnc("moter_control");
+                
+                
 
             }
 
@@ -1561,18 +1576,19 @@ impl Mode {
 
                 // 右周り左周りを決める。
                 if flacn.event.trun_azimuth > 0.0 {
+                    
                 } else {
                 }
 
                 flacn.event.maneuver = "turn";
-                flacn.event.is_trune.set(true);
+                //flacn.event.is_trune.set(true);
                 flacn.event.order.set(config::TRUN);
                 flacn.load_fnc("moter_control");
 
                 time_sleep(5, 0);
 
                 flacn.event.order.set(config::STOP);
-                flacn.event.is_trune.set(false);
+                //flacn.event.is_trune.set(false);
                 flacn.load_fnc("moter_control");
 
                 time_sleep(2, 0);
@@ -1648,6 +1664,7 @@ impl Mode {
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
         loop {
+            
             // GPS
             match gps_receiver.try_recv() {
                 Ok(e) => {
@@ -1774,5 +1791,4 @@ impl Mode {
         order
     }
 
-    fn test_order_compare() {}
 }

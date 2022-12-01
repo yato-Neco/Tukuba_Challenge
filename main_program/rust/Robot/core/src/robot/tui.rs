@@ -151,11 +151,12 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
 
     
     let right_block = Paragraph::new(
-        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}",
+        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}\n{:?}",
         module.nowpotion,
         module.is_fix,
         module.latlot,
         module.next_latlot,
+        module.rome,
     ))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);

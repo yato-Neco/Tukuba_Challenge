@@ -53,6 +53,7 @@ impl Moter {
     }
 
     /// 右モーター制御
+    #[inline]
     pub fn right(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Back {
             self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
@@ -63,6 +64,7 @@ impl Moter {
         }
     }
     /// 左モーター制御
+    #[inline]
     pub fn left(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Back {
             self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
@@ -106,15 +108,18 @@ impl Moter {
     }
 
     /// PWMのリセット
+    #[inline]
     pub fn pwm_all_clean(&mut self) {
         self.r_pin0.clear_pwm().unwrap();
         self.r_pin1.clear_pwm().unwrap();
         self.l_pin0.clear_pwm().unwrap();
         self.l_pin1.clear_pwm().unwrap();
     }
+    #[inline]
 
+    #[inline]
     pub fn reset(&mut self) -> bool {
-        
+
         self.r_pin0.reset_on_drop()
             && self.r_pin1.reset_on_drop()
             && self.l_pin0.reset_on_drop()
@@ -122,6 +127,7 @@ impl Moter {
     }
 
     /// ロボットの命令をモーターに伝える。
+    #[inline]
     pub fn moter_control(&mut self, order: u32) {
         let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
         let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
