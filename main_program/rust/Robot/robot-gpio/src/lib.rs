@@ -80,36 +80,41 @@ impl Moter {
         }
     }
 
-    /// right モーター 前後
-    /// duty 0.0 ~ 1.0
-    ///  非推奨
-    pub fn rfpwm(&mut self, duty: f64) {
-        self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
-        self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+
+
+    pub fn _front(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
-    /// right モーター　後進
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn rbpwm(&mut self, duty: f64) {
-        self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-        self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
+
+    pub fn _back(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, l_duty).unwrap();
+    }
+    
+    pub fn _left(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
-    /// left モーター 前後
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn lfpwm(&mut self, duty: f64) {
-        self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
-        self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+    pub fn _right(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, l_duty).unwrap();
     }
-
-    /// left モーター　後進
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn lbpwm(&mut self, duty: f64) {
-        self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-        self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
+    pub fn _stop(&mut self) {
+        self.r_pin0.set_pwm_frequency(50.0, 0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0).unwrap();
     }
 
     /// PWMのリセット
@@ -139,23 +144,29 @@ impl Moter {
 
         match (rM, lM) {
             (1..=7, 1..=7) => {
-                self.right(rM as f64 / 7.0, Mode::Back);
-                self.left(lM as f64 / 7.0, Mode::Back);
+                self._front((rM / 7) as f64,(lM / 7) as f64);
+                //self.right(rM as f64 / 7.0, Mode::Back);
+                //self.left(lM as f64 / 7.0, Mode::Back);
             }
             (8..=14, 8..=14) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Front);
-                self.left((lM - 7) as f64 / 7.0, Mode::Front);
+                self._back(((rM-7) / 7) as f64,((lM-7) / 7) as f64);
+
+                //self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (1..=7, 8..=14) => {
-                self.right(rM as f64 / 7.0, Mode::Back);
-                self.left((lM - 7) as f64 / 7.0, Mode::Front);
+                self._right((rM / 7) as f64,((lM-7) / 7) as f64);
+                //self.right(rM as f64 / 7.0, Mode::Back);
+                //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (8..=14, 1..=7) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Front);
-                self.left(lM as f64 / 7.0, Mode::Back);
+                self._left(((rM-7) / 7) as f64,(lM / 7) as f64);
+                //self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                //self.left(lM as f64 / 7.0, Mode::Back);
             }
             _ => {
-                self.pwm_all_clean();
+                self._stop()
+                //self.pwm_all_clean();
             }
         }
     }
