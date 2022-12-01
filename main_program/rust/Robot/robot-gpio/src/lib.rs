@@ -4,11 +4,16 @@ pub enum Mode {
     Back,
 }
 
+
+mod wiringpi_moter;
+
 use mytools::mic_sleep;
 #[cfg(target_os = "linux")]
 use rppal::gpio::{Gpio, OutputPin};
 #[cfg(target_os = "linux")]
 use rppal::system::DeviceInfo;
+
+
 
 #[cfg(target_os = "linux")]
 #[derive(Debug)]
