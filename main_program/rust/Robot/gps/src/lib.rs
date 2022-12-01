@@ -408,6 +408,7 @@ impl GPS {
     }
 
     pub fn nowpotion_history_sub(&self) -> bool {
+        
         if self.is_simulater {
             return  true;
         }
