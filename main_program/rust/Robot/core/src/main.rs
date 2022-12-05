@@ -10,7 +10,8 @@ extern crate robot_serialport;
 
 mod robot;
 use clap::Parser;
-use robot::mode::Mode;
+use robot::mode::{key::key,test::test,auto::auto};
+
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -23,16 +24,11 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     match args.mode.as_str() {
-        "raspico_key" => Mode::raspico_key(),
-        "raspico_test" => Mode::raspico_test(),
-        "raspico_auto" => Mode::raspico_auto(),
-        "auto" => Mode::auto(),
-        "key" => Mode::key(),
-        "test" => Mode::test(),
-        "display" => {}
-        "k" => Mode::key(),
-        "a" => Mode::auto(),
-        "d" => {}
+        "auto" => auto(),
+        "key" => key(),
+        "test" => test(),
+        "k" => key(),
+        "a" => auto(),
         _ => {}
     }
 }

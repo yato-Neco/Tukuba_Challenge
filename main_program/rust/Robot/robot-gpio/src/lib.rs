@@ -5,7 +5,7 @@ pub enum Mode {
 }
 
 
-mod wiringpi_moter;
+//mod wiringpi_moter;
 
 use mytools::mic_sleep;
 #[cfg(target_os = "linux")]
