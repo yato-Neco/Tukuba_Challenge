@@ -1,6 +1,6 @@
 /// 定数の置き場所
 pub const STOP: u32 = 0x1F00FFFF;
-pub const EMERGENCY_STOP: u32 = 0x0F00FFF1;
+pub const EMERGENCY_STOP: u32 = 0x0F00FFFF;
 pub const BREAK: u32 = 0x0FFFFFFF;
 pub const NONE: u32 = 0xffffffff;
 pub const FRONT:u32 = 0x1FEEFFFF;

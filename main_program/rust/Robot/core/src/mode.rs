@@ -1054,11 +1054,8 @@ impl Mode {
                     if e == config::BREAK {
                         break;
                     } else {
-                        flag_controler.event.order = e;
                         flag_controler.load_fnc("emergency_stop");
                         flag_controler.load_fnc("moter_control");
-                        // flag_controler.load_fnc("is_stop");
-                        // flag_controler.load_fnc("is_emergency_stop");
                         flag_controler.event.is_emergency_stop_lv0_delay =
                             flag_controler.event.is_emergency_stop_lv0;
                     }

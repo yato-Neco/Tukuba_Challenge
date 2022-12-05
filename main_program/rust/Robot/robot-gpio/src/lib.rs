@@ -105,10 +105,10 @@ impl Moter {
         self.l_pin1.set_pwm_frequency(50.0, l_duty).unwrap();
     }
     pub fn _stop(&mut self) {
-        self.r_pin0.set_pwm_frequency(50.0, 0).unwrap();
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
         self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
-        self.l_pin1.set_pwm_frequency(50.0, 0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
     /// PWMのリセット

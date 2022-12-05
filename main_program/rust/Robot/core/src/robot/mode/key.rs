@@ -1,3 +1,6 @@
+use crate::robot::config;
+use crate::robot::setting::Settings;
+use lidar::ydlidarx2;
 use ::tui::backend::CrosstermBackend;
 use ::tui::Terminal;
 use flacon::{Event, FlaCon, Flags};
@@ -9,16 +12,11 @@ use robot_serialport::RasPico;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
 use tui;
-use crate::robot::config;
-use crate::robot::setting::Settings;
 
-
-use config::{
-    SenderOrders
-};
-
+use config::SenderOrders;
 
 use std::io::Stdout;
+use std::time::Duration;
 use std::{
     cell::Cell,
     collections::HashMap,
@@ -26,24 +24,21 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
 };
 
-
 pub struct KeyModule {
     pub moter_controler: Moter,
 }
-
 
 #[derive(Debug)]
 pub struct KeyEvents {
     pub is_debug: bool,
     pub is_avoidance: bool,
     pub is_move: bool,
-    pub is_trune:bool,
+    pub is_trune: bool,
     pub is_emergency_stop_lv1: bool,
     pub is_emergency_stop_lv0: bool,
     pub is_emergency_stop_lv0_delay: bool,
     pub order: u32,
 }
-
 
 #[macro_export]
 macro_rules! thread_variable {
@@ -62,7 +57,6 @@ macro_rules! thread_variable {
         }
     };
 }
-
 
 pub fn key() {
     //let mut terminal = tui::start();
@@ -88,77 +82,79 @@ pub fn key() {
 
     let mut flag_controler = FlaCon::new(module, event);
 
-        //flag_controler.event.is_move.set(true);
+    //flag_controler.event.is_move.set(true);
 
-        flag_controler.add_fnc("is_stop", |flacn| {
-            // is_move が false だったら呼び出す。
-            if !flacn.event.is_move {
-                //println!("{:x}",flacn.event.order.get());
-            };
-        });
+    flag_controler.add_fnc("is_stop", |flacn| {
+        // is_move が false だったら呼び出す。
+        if !flacn.event.is_move {
+            //println!("{:x}",flacn.event.order.get());
+        };
+    });
 
-        flag_controler.add_fnc("moter_control", |flacn| {
-            let order = flacn.event.order;
-            if order != config::NONE && !flacn.event.is_emergency_stop_lv0 {
-                flacn.load_fnc("set_move");
-                flacn.module.moter_controler.moter_control(order);
-            }
-        });
+    flag_controler.add_fnc("moter_control", |flacn| {
+        let order = flacn.event.order;
+        if order != config::NONE && !flacn.event.is_emergency_stop_lv0 {
+            flacn.load_fnc("set_move");
+            flacn.module.moter_controler.moter_control(order);
+        }
+    });
 
-        flag_controler.add_fnc("debug", |flacn| if flacn.event.is_debug {});
+    flag_controler.add_fnc("debug", |flacn| if flacn.event.is_debug {});
 
-        flag_controler.add_fnc("set_move", |flacn| {
-            // order が前進をだったら is_move を true にする。
-            let order = flacn.event.order;
-            if order == config::EMERGENCY_STOP || order == config::STOP {
+    flag_controler.add_fnc("set_move", |flacn| {
+        // order が前進をだったら is_move を true にする。
+        let order = flacn.event.order;
+        if order == config::EMERGENCY_STOP || order == config::STOP {
+            flacn.event.is_move = false;
+        } else {
+            if !flacn.event.is_move && order == config::NONE {
                 flacn.event.is_move = false;
             } else {
-                if !flacn.event.is_move && order == config::NONE {
-                    flacn.event.is_move = false;
-                } else {
-                    if !flacn.event.is_emergency_stop_lv0 {
-                        flacn.event.is_move = true;
-                    }
+                if !flacn.event.is_emergency_stop_lv0 {
+                    flacn.event.is_move = true;
                 }
             }
-        });
+        }
+    });
 
-        flag_controler.add_fnc("is_stop", |flacn| {
-            // is_stop が false の時、呼び出す
+    flag_controler.add_fnc("is_stop", |flacn| {
+        // is_stop が false の時、呼び出す
 
-            if !flacn.event.is_move {
-                //println!("stop");
-                flacn.module.moter_controler.moter_control(config::STOP);
-            };
-        });
-        flag_controler.add_fnc("is_emergency_stop", |flacn| {
-            // is_emergency_stop_lv0 が true の時、呼び出す
-            if flacn.event.is_emergency_stop_lv0 {
-                //flacn.module.raspico_controler.write(config::STOP);
-            };
-        });
+        if !flacn.event.is_move {
+            //println!("stop");
+            flacn.module.moter_controler.moter_control(config::STOP);
+        };
+    });
+    flag_controler.add_fnc("is_emergency_stop", |flacn| {
+        // is_emergency_stop_lv0 が true の時、呼び出す
+        if flacn.event.is_emergency_stop_lv0 {
+            //flacn.module.raspico_controler.write(config::STOP);
+        };
+    });
 
-        flag_controler.add_fnc("emergency_stop", |flacn| {
-            // is_emergency_stop_lv0 が false で尚且つ、
-            // order が前進をだったら is_move を true にする。
+    flag_controler.add_fnc("emergency_stop", |flacn| {
+        // is_emergency_stop_lv0 が false で尚且つ、
+        // order が前進をだったら is_move を true にする。
 
-            flacn.load_fnc("set_emergency_stop");
+        flacn.load_fnc("set_emergency_stop");
 
-            if flacn.event.is_emergency_stop_lv0 && !flacn.event.is_emergency_stop_lv0_delay {
-                flacn.module.moter_controler.moter_control(config::EMERGENCY_STOP);
-            } else {
-                flacn.load_fnc("set_move");
-            }
-        });
+        if flacn.event.is_emergency_stop_lv0 && !flacn.event.is_emergency_stop_lv0_delay {
+            flacn
+                .module
+                .moter_controler
+                .moter_control(config::EMERGENCY_STOP);
+        } else {
+            flacn.load_fnc("set_move");
+        }
+    });
 
-        flag_controler.add_fnc("set_emergency_stop", |flacn| {
-            // order が EMERGENCY_STOP だったら EMERGENCY_STOP の bool を反転にする。
-            if flacn.event.order == config::EMERGENCY_STOP {
-                flacn.event.is_move = false;
-                flacn.event.is_emergency_stop_lv0 = !flacn.event.is_emergency_stop_lv0;
-            };
-        });
-
+    flag_controler.add_fnc("set_emergency_stop", |flacn| {
+        // order が EMERGENCY_STOP だったら EMERGENCY_STOP の bool を反転にする。
+        if flacn.event.order == config::EMERGENCY_STOP {
+            flacn.event.is_move = false;
+            flacn.event.is_emergency_stop_lv0 = !flacn.event.is_emergency_stop_lv0;
+        };
+    });
 
     let order = thread_variable!("key", "lidar");
 
@@ -180,34 +176,96 @@ pub fn key() {
         }
     });
 
+    thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
+        Rthd::<String>::send_panic_msg(panic_msg);
+
+        let setting_file = Settings::load_setting("./settings.yaml");
+
+        let mut port = match serialport::new("/dev/ttyUSB0", 115200)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => p,
+            Err(_) => panic!(),
+        };
+        let mut serial_buf: Vec<u8> = vec![0; 1500];
+
+        let mut ignition0 = false;
+        let mut ignition1 = false;
+
+        loop{
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //let mut map_vec = Vec::new();
+    
+                    let mut data = serial_buf[..t].to_vec();
+                    let points = ydlidarx2(&mut data);
+    
+    
+                    for point in points.iter() {
+    
+                        if point.1 < 30.0 {
+                            if 179.5 < point.0 && point.0 < 180.5 {
+                                ignition0 = true;
+    
+                            }
+    
+                            if ignition0 && !ignition1 {
+                                send(config::EMERGENCY_STOP, &msg);
+                                //println!("{:?}",(ignition0,ignition1));
+                                //println!("{:?}",point);
+                            }
+    
+                        }else{
+    
+                            if 179.0 < point.0 && point.0 < 181.0 {
+                                ignition0 = false;
+                                //println!("{:?}",point);
+    
+                            }
+    
+                        }
+    
+                        ignition1 = ignition0;
+                    }
+                }
+                Err(_) => {},
+            }
+        }
+    });
+
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
-
-        /*
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
                 flag_controler.event.order = e;
-                flag_controler.load_fnc("set_emergency_stop");
+                println!("E:{:x}", flag_controler.event.order);
+                flag_controler.load_fnc("emergency_stop");
+                flag_controler.load_fnc("moter_control");
             }
             Err(_) => {}
         };
-        */
-        
+
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
                 if e == config::BREAK {
-                    let  flag=  flag_controler.module.moter_controler.reset();
+                    let flag = flag_controler.module.moter_controler.reset();
                     if flag {
-                        break;   
+                        break;
                     }
                 } else {
                     flag_controler.event.order = e;
-                    flag_controler.load_fnc("set_emergency_stop");
+                    flag_controler.event.order = e;
+                    println!("{:x}", flag_controler.event.order);
+
+                    //flag_controler.load_fnc("set_emergency_stop");
                     flag_controler.load_fnc("emergency_stop");
-                    flag_controler.load_fnc("move");
-                    flag_controler.load_fnc("is_stop");
-                    flag_controler.load_fnc("is_emergency_stop");
+                    flag_controler.load_fnc("moter_control");
+                    //flag_controler.load_fnc("is_stop");
+                    //flag_controler.load_fnc("is_emergency_stop");
                 }
             }
             Err(_) => {}
@@ -220,19 +278,16 @@ pub fn key() {
             })
             .unwrap();
         */
-        
 
         //flag_controler.load_fnc("debug");
 
-        time_sleep(0, 50);
+        time_sleep(0, 10);
     }
 
     //terminal.clear().unwrap();
 }
 
-
-
-pub fn input_key(key_bind:[u32;4]) -> u32 {
+pub fn input_key(key_bind: [u32; 4]) -> u32 {
     let key = getch::Getch::new();
     let key_order_u8 = key.getch().unwrap();
     //println!("{}", key_order_u8);
@@ -272,5 +327,3 @@ pub fn input_key(key_bind:[u32;4]) -> u32 {
     };
     order
 }
-
-
