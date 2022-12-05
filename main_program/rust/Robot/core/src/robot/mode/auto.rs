@@ -360,8 +360,12 @@ pub fn auto() {
 
         thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::<String>::send_panic_msg(panic_msg);
+            let setting_file = Settings::load_setting("./settings.yaml");
+
+            let key_bind = setting_file.load_key_bind();
+
             loop {
-                let order = input_key();
+                let order = input_key(key_bind);
                 msg.send(order).unwrap();
                 time_sleep(0, 50);
             }

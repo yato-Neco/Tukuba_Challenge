@@ -1,3 +1,7 @@
+/*
+
+
+
 use std::collections::HashMap;
 
 use pyo3::prelude::*;
@@ -55,3 +59,4 @@ pub fn python() {
     PyMoter::_front(pyfun,0.0,0.0);
     
 }
+*/

@@ -37,10 +37,10 @@ Robot:
 
   Key_mode:
     speed:
-      - 0x1FBBFFFF # W
-      - 0x1F48FFFF # A
-      - 0x1F33FFFF # S
-      - 0x1F84FFFF # D
+      - 0x1FDDFFFF # W
+      - 0x1F6DFFFF # A
+      - 0x1F66FFFF # S
+      - 0x1FD6FFFF # D
 
   Display_mode:
     order:

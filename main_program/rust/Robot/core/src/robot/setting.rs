@@ -1,6 +1,6 @@
 extern crate yaml_rust;
-use yaml_rust::{Yaml, YamlLoader};
 use std::fs::File;
+use yaml_rust::{Yaml, YamlLoader};
 
 #[test]
 fn test() {
@@ -41,6 +41,23 @@ impl Settings {
             .unwrap() as u8;
 
         ([r0, r1], [l0, l1])
+    }
+
+    pub fn load_key_bind(&self) -> [u32;4] {
+        let f_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][0]
+            .as_i64()
+            .unwrap() as u32;
+        let a_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][1]
+            .as_i64()
+            .unwrap() as u32;
+        let d_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][2]
+            .as_i64()
+            .unwrap() as u32;
+        let s_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][3]
+            .as_i64()
+            .unwrap() as u32;
+            
+        [f_key,a_key,d_key,s_key]
     }
 
     /// Yaml 読み込み
@@ -156,14 +173,13 @@ impl Settings {
         operation
     }
 
-
-    pub fn load_waypoint(&self) -> Vec<(f64,f64)> {
-
+    pub fn load_waypoint(&self) -> Vec<(f64, f64)> {
         let file = File::open(
             self.setting_yaml["Robot"]["GPS"]["waypoint"][0]
                 .as_str()
                 .unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
         let mut latlot = Vec::new();
         let mut rdr = csv::Reader::from_reader(file);
         for (i, result) in rdr.records().enumerate() {
@@ -189,7 +205,7 @@ impl Settings {
             };
 
             latlot.push((lat, lot));
-        };
+        }
 
         latlot
     }

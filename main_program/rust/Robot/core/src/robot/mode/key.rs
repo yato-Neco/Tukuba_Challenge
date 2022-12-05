@@ -170,10 +170,13 @@ pub fn key() {
 
     thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
+        let setting_file = Settings::load_setting("./settings.yaml");
+
+        let key_bind = setting_file.load_key_bind();
         loop {
-            let order = input_key();
+            let order = input_key(key_bind);
             send(order, &msg);
-            time_sleep(0, 50);
+            time_sleep(0, 5);
         }
     });
 
@@ -229,7 +232,7 @@ pub fn key() {
 
 
 
-pub fn input_key() -> u32 {
+pub fn input_key(key_bind:[u32;4]) -> u32 {
     let key = getch::Getch::new();
     let key_order_u8 = key.getch().unwrap();
     //println!("{}", key_order_u8);
@@ -237,19 +240,23 @@ pub fn input_key() -> u32 {
     let order = match key_order_u8 {
         119 => {
             // w
-            0x1FEEFFFF
+            //0x1FDDFFFF
+            key_bind[0]
         }
         97 => {
             // a
-            0x1F7EFFFF
+            //0x1F6DFFFF
+            key_bind[1]
         }
         115 => {
             // s
-            0x1F77FFFF
+            //0x1F66FFFF
+            key_bind[2]
         }
         100 => {
             // d
-            0x1FE7FFFF
+            //0x1FD6FFFF
+            key_bind[3]
         }
         32 => {
             // stop

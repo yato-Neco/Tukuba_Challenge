@@ -10,7 +10,7 @@ extern crate robot_serialport;
 
 mod robot;
 use clap::Parser;
-use robot::mode::{key::key,test::test,auto::auto};
+use robot::mode::{key::key,test::test as other_test,auto::auto};
 
 
 #[derive(Parser, Debug)]
@@ -26,7 +26,7 @@ async fn main() {
     match args.mode.as_str() {
         "auto" => auto(),
         "key" => key(),
-        "test" => test(),
+        "test" => other_test(),
         "k" => key(),
         "a" => auto(),
         _ => {}
