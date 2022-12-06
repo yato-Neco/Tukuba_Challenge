@@ -1,11 +1,11 @@
 use crate::robot::config;
 use crate::robot::setting::Settings;
-use lidar::ydlidarx2;
 use ::tui::backend::CrosstermBackend;
 use ::tui::Terminal;
 use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
+use lidar::ydlidarx2;
 use mytools::time_sleep;
 use robot_gpio::Moter;
 use robot_serialport::RasPico;
@@ -175,13 +175,12 @@ pub fn key() {
             time_sleep(0, 5);
         }
     });
-
+    
     thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
-
         let setting_file = Settings::load_setting("./settings.yaml");
-
-        let mut port = match serialport::new("/dev/ttyUSB0", 115200)
+        let (port, rate) = setting_file.load_lidar();
+        let mut port = match serialport::new(port, rate)
             .stop_bits(serialport::StopBits::One)
             .data_bits(serialport::DataBits::Eight)
             .timeout(Duration::from_millis(10))
@@ -193,48 +192,48 @@ pub fn key() {
         let mut serial_buf: Vec<u8> = vec![0; 1500];
 
         let mut ignition0 = false;
-        let mut ignition1 = false;
+        let mut count = 0;
 
-        loop{
+        loop {
             match port.read(serial_buf.as_mut_slice()) {
                 Ok(t) => {
                     //let mut map_vec = Vec::new();
-    
+
                     let mut data = serial_buf[..t].to_vec();
                     let points = ydlidarx2(&mut data);
-    
-    
+
                     for point in points.iter() {
-    
                         if point.1 < 30.0 {
                             if 179.5 < point.0 && point.0 < 180.5 {
-                                ignition0 = true;
-    
+                                count += 1;
                             }
-    
-                            if ignition0 && !ignition1 {
-                                send(config::EMERGENCY_STOP, &msg);
-                                //println!("{:?}",(ignition0,ignition1));
-                                //println!("{:?}",point);
+                        } else {
+                            if 179.5 < point.0 && point.0 < 180.5 {
+                                count = 0;
                             }
-    
-                        }else{
-    
-                            if 179.0 < point.0 && point.0 < 181.0 {
-                                ignition0 = false;
-                                //println!("{:?}",point);
-    
-                            }
-    
                         }
     
-                        ignition1 = ignition0;
+                        if count == 3 && !ignition0 {
+                            send(config::EMERGENCY_STOP, &msg);
+                            ignition0 = true;
+                        }
+    
+                        if count == 0 && ignition0 {
+                            send(config::EMERGENCY_STOP, &msg);
+                            ignition0 = false;
+                        }
+    
+                        if count >= 4 {
+                            count = 4;
+                        }
                     }
                 }
-                Err(_) => {},
+                Err(_) => {}
             }
         }
     });
+     
+    
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 

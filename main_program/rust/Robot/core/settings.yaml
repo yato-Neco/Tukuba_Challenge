@@ -20,7 +20,9 @@ Robot:
 
     Serial:
       port:
-        - "COM4"
+        - "/dev/ttyUSB0"
+      rate:
+        - 115200
 
   
   GPS:

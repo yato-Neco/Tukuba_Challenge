@@ -121,7 +121,17 @@ impl Settings {
         return (port, rate);
     }
 
-    pub fn load_lidar(&self) {}
+    pub fn load_lidar(&self) -> (String,u32) {
+        let port = self.setting_yaml["Robot"]["Lidar"]["Serial"]["port"][0]
+            .as_str()
+            .unwrap_or("COM4")
+            .to_string();
+        let rate = self.setting_yaml["Robot"]["Lidar"]["Serial"]["rate"][0]
+            .as_i64()
+            .unwrap_or(115200) as u32;
+
+        return (port, rate);
+    }
 
     pub fn load_move_csv(&self) -> Vec<(u32, u32)> {
         extern crate csv;

@@ -57,7 +57,7 @@ pub fn test() {
         //let raspico_controler = RasPico::new(&rp_port, rp_rate);
         let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let gps = GPS::new(true);
+        //let gps = GPS::new(true);
 
 
         // Lidar も
@@ -263,6 +263,10 @@ pub fn test() {
                         }
                     }
 
+                    if order_controler.event.order0_vec.len()  == 0{
+
+
+                    }
                     time_sleep(0, 1);
                 }
             },
