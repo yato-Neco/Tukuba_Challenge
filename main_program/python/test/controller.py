@@ -19,7 +19,7 @@ def setup():
     main(gpio_left, gpio_right)
 
 def main(left, right):
-    freq = 50
+    freq = 4000
 
     p1 = GPIO.PWM(left[0], freq)
     p2 = GPIO.PWM(left[1], freq)
