@@ -31,11 +31,11 @@ pub struct AutoEvents {
     pub is_debug: bool,
     pub is_avoidance: bool,
     pub is_break: bool,
-    pub is_move: Cell<bool>,
-    pub is_trune: Cell<bool>,
-    pub is_emergency_stop_lv1: Cell<bool>,
-    pub is_emergency_stop_lv0: Cell<bool>,
-    pub order: Cell<u32>,
+    pub is_move: bool,
+    pub is_trune: bool,
+    pub is_emergency_stop_lv1: bool,
+    pub is_emergency_stop_lv0: bool,
+    pub order: u32,
     pub order_history: Vec<u32>,
     pub latlot: (f64, f64),
     pub first_time: bool,
@@ -79,11 +79,11 @@ pub fn auto() {
             is_debug: true,
             is_avoidance: true,
             is_break: false,
-            is_move: Cell::new(false),
-            is_trune: Cell::new(false),
-            is_emergency_stop_lv1: Cell::new(false),
-            is_emergency_stop_lv0: Cell::new(false),
-            order: Cell::new(0xfffffff),
+            is_move: false,
+            is_trune: false,
+            is_emergency_stop_lv1: false,
+            is_emergency_stop_lv0: false,
+            order: 0xfffffff,
             order_history: Vec::new(),
             latlot: (0.0, 0.0),
             first_time: true,
@@ -105,15 +105,15 @@ pub fn auto() {
 
         flag_controler.add_fnc("is_stop", |flacn| {
             // is_move が false だったら呼び出す。
-            if !flacn.event.is_move.get() {
+            if !flacn.event.is_move {
 
                 //println!("{:x}",flacn.event.order.get());
             };
         });
 
         flag_controler.add_fnc("moter_control", |flacn| {
-            let order = flacn.event.order.get();
-            if order != config::NONE && !flacn.event.is_emergency_stop_lv0.get() {
+            let order = flacn.event.order;
+            if order != config::NONE && !flacn.event.is_emergency_stop_lv0 {
                 flacn.load_fnc("set_move");
                 flacn.module.moter_controler.moter_control(order);
             }
@@ -121,7 +121,7 @@ pub fn auto() {
 
         flag_controler.add_fnc("move", |flacn| {
             // is_move が true だったら呼び出す。
-            if flacn.event.is_move.get() {
+            if flacn.event.is_move {
                 flacn.load_fnc("moter_control");
                 //println!("is_move");
             };
@@ -131,15 +131,15 @@ pub fn auto() {
 
         flag_controler.add_fnc("set_move", |flacn| {
             // order が前進をだったら is_move を true にする。
-            let order = flacn.event.order.get();
+            let order = flacn.event.order;
             if order == config::EMERGENCY_STOP || order == config::STOP {
-                flacn.event.is_move.set(false);
+                flacn.event.is_move = false;
             } else {
-                if !flacn.event.is_move.get() && order == config::NONE {
-                    flacn.event.is_move.set(false);
+                if !flacn.event.is_move && order == config::NONE {
+                    flacn.event.is_move = false;
                 } else {
-                    if !flacn.event.is_emergency_stop_lv0.get() {
-                        flacn.event.is_move.set(true);
+                    if !flacn.event.is_emergency_stop_lv0 {
+                        flacn.event.is_move = true;
                     }
                 }
             }
@@ -148,14 +148,14 @@ pub fn auto() {
         flag_controler.add_fnc("is_stop", |flacn| {
             // is_stop が false の時、呼び出す
 
-            if !flacn.event.is_move.get() {
+            if !flacn.event.is_move {
                 //println!("stop");
                 flacn.module.moter_controler.moter_control(config::STOP);
             };
         });
         flag_controler.add_fnc("is_emergency_stop", |flacn| {
             // is_emergency_stop_lv0 が true の時、呼び出す
-            if flacn.event.is_emergency_stop_lv0.get() {
+            if flacn.event.is_emergency_stop_lv0 {
                 flacn.module.moter_controler.moter_control(config::EMERGENCY_STOP);
             };
         });
@@ -165,7 +165,7 @@ pub fn auto() {
             // order が前進をだったら is_move を true にする。
             flacn.load_fnc("set_emergency_stop");
 
-            if flacn.event.is_emergency_stop_lv0.get() {
+            if flacn.event.is_emergency_stop_lv0 {
                 flacn.module.moter_controler.moter_control(config::EMERGENCY_STOP);
             } else {
                 flacn.load_fnc("set_move");
@@ -174,12 +174,12 @@ pub fn auto() {
 
         flag_controler.add_fnc("set_emergency_stop", |flacn| {
             // order が EMERGENCY_STOP だったら EMERGENCY_STOP の bool を反転にする。
-            if flacn.event.order.get() == config::EMERGENCY_STOP {
-                flacn.event.is_move.set(false);
+            if flacn.event.order == config::EMERGENCY_STOP {
+                flacn.event.is_move=false;
                 flacn
                     .event
                     .is_emergency_stop_lv0
-                    .set(!flacn.event.is_emergency_stop_lv0.get());
+                    =!flacn.event.is_emergency_stop_lv0;
             };
         });
 
@@ -201,7 +201,7 @@ pub fn auto() {
         flag_controler.add_fnc("gps_Fix", |flacn| {
             //flacn.module.gps.is_fix;
             // gps 受信フラグ
-            time_sleep(0, 50);
+            //time_sleep(0, 50);
 
             if flacn.module.gps.is_fix.unwrap_or(false) {
                 match flacn.module.gps.nowpotion {
@@ -216,7 +216,7 @@ pub fn auto() {
                 //flacn.load_fnc("is_emergency_stop");
             }
 
-            time_sleep(0, 50);
+            //time_sleep(0, 50);
         });
 
         flag_controler.add_fnc("first_time", |flacn| {
@@ -230,7 +230,7 @@ pub fn auto() {
                 let is_fix = flacn.module.gps.is_fix.unwrap_or(false);
 
                 flacn.load_fnc("tui");
-                time_sleep(0, 50);
+                //time_sleep(0, 50);
 
                 if is_fix {
 
@@ -238,22 +238,22 @@ pub fn auto() {
                         flacn.module.gps.nowpotion_history_sub();
                     flacn.event.maneuver = "nowpotion_history_sub";
 
-                    flacn.event.order.set(config::FRONT);
+                    flacn.event.order= config::FRONT;
                     flacn.load_fnc("moter_control");
                     flacn.load_fnc("tui");
-                    time_sleep(10, 0);
+                    //time_sleep(10, 0);
 
                     if flacn.module.gps.is_nowpotion_history_sub {
                         flacn.event.maneuver = "frist_calculate_azimuth";
                         flacn.module.gps.now_azimuth =
                             Some(flacn.module.gps.frist_calculate_azimuth());
                             
-                        flacn.event.order.set(config::EMERGENCY_STOP);
+                        flacn.event.order=config::EMERGENCY_STOP;
                         flacn.load_fnc("moter_control");
 
                         flacn.event.is_continue = false;
                         flacn.load_fnc("tui");
-                        time_sleep(0, 50);
+                        //time_sleep(0, 50);
 
                         //  in_waypoint　へ　移行す所に問題あり。in_waypointはポイント内に入らないと起動しないので first_time との間に処理の空間が生まれる。
                     }
@@ -266,23 +266,23 @@ pub fn auto() {
         flag_controler.add_fnc("in_waypoint", |flacn| {
             if  flacn.event.first_time  && !flacn.event.is_continue {
                 
-                flacn.event.order.set(config::STOP);
+                flacn.event.order = config::STOP;
                 flacn.load_fnc("moter_control");
                 time_sleep(2, 0);
                 flacn.event.maneuver = "turn";
                 //flacn.event.is_trune.set(true);
-                flacn.event.order.set(config::TRUN);
+                flacn.event.order= config::TRUN;
                 flacn.load_fnc("moter_control");
 
                 time_sleep(5, 0);
 
-                flacn.event.order.set(config::STOP);
+                flacn.event.order= config::STOP;
                 //flacn.event.is_trune.set(false);
                 flacn.load_fnc("moter_control");
 
                 time_sleep(2, 0);
                 flacn.event.maneuver = "go to point";
-                flacn.event.order.set(config::FRONT);
+                flacn.event.order=config::FRONT;
                 flacn.load_fnc("moter_control");
                 
                 
@@ -295,7 +295,7 @@ pub fn auto() {
                 flacn.event.trun_azimuth =
                     flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
 
-                flacn.event.order.set(config::STOP);
+                flacn.event.order=config::STOP;
                 flacn.load_fnc("moter_control");
                 //flacn.load_fnc("set_move");
                 //flacn.load_fnc("is_stop");
@@ -309,12 +309,12 @@ pub fn auto() {
 
                 flacn.event.maneuver = "turn";
                 //flacn.event.is_trune.set(true);
-                flacn.event.order.set(config::TRUN);
+                flacn.event.order= config::TRUN;
                 flacn.load_fnc("moter_control");
 
                 time_sleep(5, 0);
 
-                flacn.event.order.set(config::STOP);
+                flacn.event.order= config::STOP;
                 //flacn.event.is_trune.set(false);
                 flacn.load_fnc("moter_control");
 
@@ -322,7 +322,7 @@ pub fn auto() {
                 flacn.event.maneuver = "go to point";
 
                 //flacn.event.maneuver = "front";
-                flacn.event.order.set(config::FRONT);
+                flacn.event.order=config::FRONT;
                 flacn.load_fnc("moter_control");
 
             }
@@ -421,7 +421,7 @@ pub fn auto() {
             match order.get("key").unwrap().1.try_recv() {
                 Ok(e) => {
                     if e == config::BREAK {
-                        flag_controler.event.order.set(config::EMERGENCY_STOP);
+                        flag_controler.event.order=config::EMERGENCY_STOP;
                         //flag_controler.event.order.set(e);
                         //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
@@ -429,7 +429,7 @@ pub fn auto() {
                         flag_controler.event.maneuver = "exit";
                         break;
                     } else if e == config::EMERGENCY_STOP {
-                        flag_controler.event.order.set(e);
+                        flag_controler.event.order= e;
                         //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
                         //flag_controler.load_fnc("is_emergency_stop");
@@ -454,7 +454,7 @@ pub fn auto() {
             // Lidar 後に SLAM
             match order.get("lidar").unwrap().1.try_recv() {
                 Ok(e) => {
-                    flag_controler.event.order.set(e);
+                    flag_controler.event.order = e;
                     flag_controler.event.maneuver = "emergency_stop";
                     flag_controler.load_fnc("emergency_stop");
                     //flag_controler.load_fnc("is_emergency_stop");
@@ -467,7 +467,7 @@ pub fn auto() {
             //flag_controler.load_fnc("debug");
 
             if flag_controler.event.is_break {
-                flag_controler.event.order.set(config::EMERGENCY_STOP);
+                flag_controler.event.order= config::EMERGENCY_STOP;
                 flag_controler.load_fnc("moter_control");
                 flag_controler.event.maneuver = "exit";
                 break;

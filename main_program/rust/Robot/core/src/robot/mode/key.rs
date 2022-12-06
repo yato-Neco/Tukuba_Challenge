@@ -198,7 +198,6 @@ pub fn key() {
             match port.read(serial_buf.as_mut_slice()) {
                 Ok(t) => {
                     //let mut map_vec = Vec::new();
-
                     let mut data = serial_buf[..t].to_vec();
                     let points = ydlidarx2(&mut data);
 
@@ -212,17 +211,14 @@ pub fn key() {
                                 count = 0;
                             }
                         }
-    
                         if count == 3 && !ignition0 {
                             send(config::EMERGENCY_STOP, &msg);
                             ignition0 = true;
                         }
-    
                         if count == 0 && ignition0 {
                             send(config::EMERGENCY_STOP, &msg);
                             ignition0 = false;
                         }
-    
                         if count >= 4 {
                             count = 4;
                         }
@@ -233,8 +229,6 @@ pub fn key() {
         }
     });
      
-    
-
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
