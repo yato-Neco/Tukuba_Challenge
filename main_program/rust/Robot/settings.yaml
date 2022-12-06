@@ -7,12 +7,12 @@ Robot:
       - 0.0
 
     right_gpio:
-      - 25
-      - 24
+      - 23
+      - 22
 
     left_gpio:
-     - 23
-     - 22
+     - 21
+     - 20
 
   Lidar:
     threshold:
@@ -20,7 +20,9 @@ Robot:
 
     Serial:
       port:
-        - "COM4"
+        - "/dev/ttyUSB0"
+      rate:
+        - 115200
 
   
   GPS:
@@ -37,10 +39,10 @@ Robot:
 
   Key_mode:
     speed:
-      - 0x1FBBFFFF # W
-      - 0x1F48FFFF # A
-      - 0x1F33FFFF # S
-      - 0x1F84FFFF # D
+      - 0x1F55FFFF # W
+      - 0x1F5CFFFF # A
+      - 0x1FCCFFFF # S 
+      - 0x1FC5FFFF # D
 
   Display_mode:
     order:

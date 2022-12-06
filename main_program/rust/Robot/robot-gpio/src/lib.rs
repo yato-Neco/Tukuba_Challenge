@@ -4,6 +4,8 @@ pub enum Mode {
     Back,
 }
 
+//mod wiringpi_moter;
+
 use mytools::mic_sleep;
 #[cfg(target_os = "linux")]
 use rppal::gpio::{Gpio, OutputPin};
@@ -75,36 +77,38 @@ impl Moter {
         }
     }
 
-    /// right モーター 前後
-    /// duty 0.0 ~ 1.0
-    ///  非推奨
-    pub fn rfpwm(&mut self, duty: f64) {
-        self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
-        self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+    pub fn _front(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
-    /// right モーター　後進
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn rbpwm(&mut self, duty: f64) {
-        self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-        self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
+    pub fn _back(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, l_duty).unwrap();
     }
 
-    /// left モーター 前後
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn lfpwm(&mut self, duty: f64) {
-        self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
-        self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
+    pub fn _left(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
-    /// left モーター　後進
-    /// duty 0.0 ~ 1.0
-    /// 非推奨
-    pub fn lbpwm(&mut self, duty: f64) {
-        self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-        self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
+    pub fn _right(&mut self, r_duty: f64, l_duty: f64) {
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, l_duty).unwrap();
+    }
+    pub fn _stop(&mut self) {
+        self.r_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(50.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(50.0, 0.0).unwrap();
     }
 
     /// PWMのリセット
@@ -116,10 +120,8 @@ impl Moter {
         self.l_pin1.clear_pwm().unwrap();
     }
     #[inline]
-
     #[inline]
     pub fn reset(&mut self) -> bool {
-
         self.r_pin0.reset_on_drop()
             && self.r_pin1.reset_on_drop()
             && self.l_pin0.reset_on_drop()
@@ -129,28 +131,34 @@ impl Moter {
     /// ロボットの命令をモーターに伝える。
     #[inline]
     pub fn moter_control(&mut self, order: u32) {
-        let rM: i8 = ((order & 0x00F00000) >> 20) as i8;
-        let lM: i8 = ((order & 0x000F0000) >> 16) as i8;
+        let rM = ((order & 0x00F00000) >> 20) as f64;
+        let lM = ((order & 0x000F0000) >> 16) as f64;
 
-        match (rM, lM) {
+        match (rM as u8, lM as u8) {
             (1..=7, 1..=7) => {
-                self.right(rM as f64 / 7.0, Mode::Back);
-                self.left(lM as f64 / 7.0, Mode::Back);
+                self._front((rM / 7.0),(lM / 7.0));
+                //self.right(rM as f64 / 7.0, Mode::Back);
+                //self.left(lM as f64 / 7.0, Mode::Back);
             }
             (8..=14, 8..=14) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Front);
-                self.left((lM - 7) as f64 / 7.0, Mode::Front);
+                self._back(((rM-7.0) / 7.0) ,((lM-7.0) / 7.0));
+
+                //self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (1..=7, 8..=14) => {
-                self.right(rM as f64 / 7.0, Mode::Back);
-                self.left((lM - 7) as f64 / 7.0, Mode::Front);
+                self._right((rM / 7.0),((lM-7.0) / 7.0));
+                //self.right(rM as f64 / 7.0, Mode::Back);
+                //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (8..=14, 1..=7) => {
-                self.right((rM - 7) as f64 / 7.0, Mode::Front);
-                self.left(lM as f64 / 7.0, Mode::Back);
+                self._left(((rM-7.0) / 7.0),(lM / 7.0));
+                //self.right((rM - 7) as f64 / 7.0, Mode::Front);
+                //self.left(lM as f64 / 7.0, Mode::Back);
             }
             _ => {
-                self.pwm_all_clean();
+                self._stop()
+                //self.pwm_all_clean();
             }
         }
     }

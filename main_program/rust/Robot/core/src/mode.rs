@@ -1054,11 +1054,8 @@ impl Mode {
                     if e == config::BREAK {
                         break;
                     } else {
-                        flag_controler.event.order = e;
                         flag_controler.load_fnc("emergency_stop");
                         flag_controler.load_fnc("moter_control");
-                        // flag_controler.load_fnc("is_stop");
-                        // flag_controler.load_fnc("is_emergency_stop");
                         flag_controler.event.is_emergency_stop_lv0_delay =
                             flag_controler.event.is_emergency_stop_lv0;
                     }
@@ -1754,41 +1751,6 @@ impl Mode {
     }
 
     /// キー入力
-    fn input_key() -> u32 {
-        let key = getch::Getch::new();
-        let key_order_u8 = key.getch().unwrap();
-        //println!("{}", key_order_u8);
-
-        let order = match key_order_u8 {
-            119 => {
-                // w
-                0x1FEEFFFF
-            }
-            97 => {
-                // a
-                0x1F7EFFFF
-            }
-            115 => {
-                // s
-                0x1F77FFFF
-            }
-            100 => {
-                // d
-                0x1FE7FFFF
-            }
-            32 => {
-                // stop
-                config::STOP
-            }
-            3 => {
-                // break
-                config::BREAK
-            }
-            49 => config::EMERGENCY_STOP,
-
-            _ => config::NONE,
-        };
-        order
-    }
+    
 
 }
