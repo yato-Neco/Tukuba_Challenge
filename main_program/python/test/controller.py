@@ -1,7 +1,6 @@
 import RPi.GPIO as GPIO
 import sys
 from time import sleep, time
-from pynput import keyboard
 
 
 def setup():
