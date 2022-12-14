@@ -65,7 +65,7 @@ pub fn auto() {
         let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
         let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-        let mut gps = GPS::new(true);
+        let mut gps = GPS::new(false);
         gps.latlot = nav_setting;
         //モジュールをflag内で扱うための構造体
         let module = AutoModule {
@@ -371,6 +371,7 @@ pub fn auto() {
             }
         });
 
+
         /*
         thread.insert("slam", |panic_msg: Sender<String>, msg: SenderOrders| {
             Rthd::<String>::send_panic_msg(panic_msg);
@@ -378,7 +379,6 @@ pub fn auto() {
                 //let order:u32 = 0xff;
                 //send(order, msg);
                 //msg.send(order).unwrap();
-
                 time_sleep(0, 50);
             }
         });
@@ -391,11 +391,13 @@ pub fn auto() {
             gps_setting,
             |panic_msg, gps_sender, gps_setting| {
                 Rthd::<String>::send_panic_msg(panic_msg);
-                //GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
+                GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
             },
         );
 
+
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
+
 
         loop {
             
@@ -404,6 +406,7 @@ pub fn auto() {
                 Ok(e) => {
                     flag_controler.module.gps.original_nowpotion = e.clone();
                     flag_controler.module.gps.parser(e);
+                    //println!("{:?}",flag_controler.module.gps.num_sat);
 
                     //let _ = flag_controler.module.gps.now_azimuth.unwrap() - flag_controler.module.gps.azimuth;
                 }

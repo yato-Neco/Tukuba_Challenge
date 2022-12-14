@@ -1,5 +1,5 @@
 use core::num;
-use mytools::{Xtools, time_sleep};
+use mytools::{time_sleep, Xtools};
 use nav_types::{ENU, WGS84};
 use rthred::sendG;
 use std::sync::mpsc::Sender;
@@ -13,9 +13,8 @@ fn gps() {
 
     let result = gps.nav();
 
-    println!("{}", result);
-
-    GPS::_serial("COM5", 115200, 1000);
+    println!("{:?}", gps.distance((35.892050,139.833724), (35.892051,139.833724)));
+    //835644
 }
 
 #[test]
@@ -54,22 +53,19 @@ pub struct GPS {
     pub in_waypoint: bool,
     pub next_latlot: Option<(f64, f64)>,
     pub is_simulater: bool,
-    pub rome: Vec<(f64,f64)>,
-    pub is_nowpotion_history_sub:bool,
+    pub rome: Vec<(f64, f64)>,
+    pub is_nowpotion_history_sub: bool,
+    pub nowtime:String,
+    pub gps_format: Vec<String>,
 }
 
 impl GPS {
     pub fn new(simulater: bool) -> Self {
-         
-        let is_fix  = if simulater {
-            Some(true)
-        }else{
-            None
-        };
+        let is_fix = if simulater { Some(true) } else { None };
 
         let nowpotion = if simulater {
             Some((36.000000, 136.000000))
-        }else{
+        } else {
             None
         };
 
@@ -87,8 +83,10 @@ impl GPS {
             next_latlot: None,
             in_waypoint: false,
             is_simulater: simulater,
-            rome:Vec::with_capacity(100),
-            is_nowpotion_history_sub:simulater,
+            rome: Vec::with_capacity(100),
+            is_nowpotion_history_sub: simulater,
+            nowtime:String::new(),
+            gps_format: Vec::new(),
         }
     }
 
@@ -159,7 +157,7 @@ impl GPS {
         let vec: Vec<&str> = gps_format.split(&[':', '=', ','][..]).collect();
         //print!("{:?}",v);
         //println!("{:?}",vec.iter().find(|&&num_sat| num_sat == " numSat"),);
-        let gps_format = match vec.iter().find(|&&num_sat| num_sat == "numSat") {
+        let mut gps_format = match vec.iter().find(|&&num_sat| num_sat == "numSat") {
             Some(_) => {
                 //println!("{} {:?}",i,gps_format[i].split(',').collect::<Vec<&str>>());
 
@@ -168,14 +166,17 @@ impl GPS {
             None => [].to_vec(),
         };
 
+
+        //println!("{:?}",gps_format);
+
         /*
-        println!("{:?}",gps_format);
         println!("{:?}", gps_format.get(1));
         println!("{:?}", gps_format.get(2));
-        println!("{:?}", gps_format.get(3));
-        println!("{:?}", gps_format.get(4));
         */
 
+        //println!("{:?}", gps_format.get(3));
+        //println!("{:?}", gps_format.get(4));
+        self.nowtime = gps_format.get(0).unwrap_or(&"").to_string();
         match gps_format.get(1) {
             Some(e) => {
                 let num_sat = e.split_at(7);
@@ -184,6 +185,7 @@ impl GPS {
             None => {}
         }
 
+        //println!("{:?}",self.num_sat);
         match gps_format.get(2) {
             Some(e) => {
                 if *e == "No-Fix" {
@@ -199,26 +201,21 @@ impl GPS {
             Some(lat) => {
                 let lot = gps_format.get(4).unwrap();
 
-                self.nowpotion = Some((
-                    lat.parse::<f64>()
-                        .unwrap_or(self.nowpotion_history.last().unwrap().0),
-                    lot.parse::<f64>()
-                        .unwrap_or(self.nowpotion_history.last().unwrap().1),
-                )); //unwarp err 改善
+                self.nowpotion = Some((lat.parse::<f64>().unwrap(), lot.parse::<f64>().unwrap()));
+                //unwarp err 改善
 
-
+                //unwrap_or(self.nowpotion_history.last().unwrap().1)
                 /*
                 self.nowpotion = Some((
                     lat.parse::<f64>().ok().unwrap(),
                     lot.parse::<f64>().ok().unwrap(),
                 )); //unwarp err 改善
                 */
-                
-
-
             }
             None => {}
         }
+
+        self.gps_format = gps_format.iter_mut().map(|x| x.to_string()).collect();
 
         //println!("{:?}", self);
     }
@@ -255,8 +252,8 @@ impl GPS {
             };
 
             //println!("{:?}",gps_format);
-            println!("{:?}", gps_format.get(1));
-            println!("{:?}", gps_format.get(2));
+            //println!("{:?}", gps_format.get(1));
+            //println!("{:?}", gps_format.get(2));
             println!("{:?}", gps_format.get(3));
             println!("{:?}", gps_format.get(4));
 
@@ -298,7 +295,6 @@ impl GPS {
 
     /// ロボットが実際に動くことをシミュレートする
     pub fn running_simulater(&mut self, arg: bool) {
-
         if arg {
             if self.latlot[0].0 > self.nowpotion.unwrap().0 {
                 self.nowpotion = Some((
@@ -392,8 +388,8 @@ impl GPS {
 
     ///  frist 実行時 二地点間の角度(度数法)
     pub fn frist_calculate_azimuth(&self) -> f64 {
-        if self.is_simulater { 
-            return  0.0;
+        if self.is_simulater {
+            return 0.0;
         }
         let nowpotion = self.nowpotion.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(
@@ -408,9 +404,8 @@ impl GPS {
     }
 
     pub fn nowpotion_history_sub(&self) -> bool {
-        
         if self.is_simulater {
-            return  true;
+            return true;
         }
 
         if self.nowpotion_history.len() > 0 {
@@ -418,11 +413,10 @@ impl GPS {
             let lat_sub = (nowpotion.0 - self.nowpotion_history[0].0).abs();
             let lot_sub = (nowpotion.1 - self.nowpotion_history[0].1).abs();
 
-            //println!("{}",lat_sub);
-
-            if lat_sub > 0.0001 || lot_sub > 0.00001 {
+            if lat_sub > 0.00005 || lot_sub > 0.00005 {
                 return true;
             }
+
         }
 
         return false;
@@ -438,8 +432,9 @@ impl GPS {
         azimuth
     }
 
+
     pub fn distance(&self, a: (f64, f64), b: (f64, f64)) -> f64 {
-        let nowpotion = self.nowpotion.unwrap();
+        //let nowpotion = self.nowpotion.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(b.0, b.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
@@ -447,42 +442,35 @@ impl GPS {
         distance
     }
 
-
     pub fn generate_rome(&mut self) {
-        
         let len = self.latlot.len() - 1;
 
         //println!("{}",self.latlot[0].0 - self.latlot[1].0);
-    
+
         for i in 0..len {
-
-            let sub0:f64 = (self.latlot[i].0 - self.latlot[i + 1].0).roundf(1000_000);
-            let sub1:f64 = (self.latlot[i].1 - self.latlot[i + 1].1).roundf(1000_000);
-
+            let sub0: f64 = (self.latlot[i].0 - self.latlot[i + 1].0).roundf(1000_000);
+            let sub1: f64 = (self.latlot[i].1 - self.latlot[i + 1].1).roundf(1000_000);
 
             //println!("{:?} : {:?}",self.latlot[i],self.latlot[i + 1]);
             //println!("{}",sub0);
-            
-            if sub0.abs()>= 0.000009 || sub1.abs() >= 0.000009 {
+
+            if sub0.abs() >= 0.000009 || sub1.abs() >= 0.000009 {
                 let x = (self.latlot[i].0 + (sub0 / 2.0)).roundf(1000_000);
 
                 if self.latlot[i] == self.latlot[i + 1] {
-                    let  y = self.latlot[i].1;
-                    self.rome.push((x,y))
-                }else{
-                    let mut y =  (((self.latlot[i + 1].1 - self.latlot[i].1) / (self.latlot[i + 1].0 - self.latlot[i].0)) * (x - self.latlot[i].0)).roundf(1000_000); 
+                    let y = self.latlot[i].1;
+                    self.rome.push((x, y))
+                } else {
+                    let mut y = (((self.latlot[i + 1].1 - self.latlot[i].1)
+                        / (self.latlot[i + 1].0 - self.latlot[i].0))
+                        * (x - self.latlot[i].0))
+                        .roundf(1000_000);
                     //println!("y {y}");
                     y = (y - self.latlot[i].1).abs();
-                    self.rome.push((x,y));
+                    self.rome.push((x, y));
                 }
-                
-            } 
-
-            
-
-        };
-
-
+            }
+        }
     }
 
     /// 設定したlatlotに半径(box状だけど)r に入った true 以外 false
@@ -783,4 +771,3 @@ impl GPSmodule {
         println!("{}", azimuth);
     }
 }
-

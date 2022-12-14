@@ -8,6 +8,7 @@ extern crate scheduler;
 extern crate mytools;
 extern crate robot_serialport;
 
+
 mod robot;
 use clap::Parser;
 use robot::mode::{key::key,test::test as other_test,auto::auto};

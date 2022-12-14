@@ -28,7 +28,7 @@ Robot:
   GPS:
     Serial:
       port:
-        - "COM5"
+        - "COM4"
       rate:
         - 115200
       buf_size:

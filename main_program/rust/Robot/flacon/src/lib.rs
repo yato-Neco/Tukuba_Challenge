@@ -28,20 +28,22 @@ pub struct FlaCon<T,R> {
     pub event: R,
     pub module: T,
     fnc_map: HashMap<&'static str, fn(_self: &mut FlaCon<T,R>)>,
+    is_panic:bool,
 }
 
  
 
 pub trait Flags<T,R> {
     fn new(module: T, event: R) -> FlaCon<T,R>;
-    fn add_fnc(&mut self, name: &'static str, f: fn(_self: &mut FlaCon<T,R>));
-    fn none_fnc(_self: &FlaCon<T,R>);
+    fn set_panic(&mut self);
 }
 
 
 
-pub trait Event {
+pub trait Event<T,R>  {
+    fn add_fnc(&mut self, name: &'static str, f: fn(_self: &mut FlaCon<T,R>));
     fn load_fnc(&mut self, name: &str);
+    fn none_fnc(_self: &mut FlaCon<T,R>);
 }
 
 
@@ -53,34 +55,46 @@ impl<T,R> Flags<T,R> for FlaCon<T,R> {
             event: event,
             module: module,
             fnc_map: HashMap::new(),
+            is_panic:false,
         }
     }
+
+    fn set_panic(&mut self) {
+        self.is_panic = true;
+    }
+    
+}
+
+
+/// フラグのイベント関係の構造体
+impl<T,R> Event<T,R>  for FlaCon<T,R> {
 
     /// HashMapにフラグの名前と関数ポインタを入れる。
     fn add_fnc(&mut self, name: &'static str, fnc_pointer: fn(_self: &mut Self)) {
         self.fnc_map.insert(name, fnc_pointer);
     }
-    
-
-    fn none_fnc(_self: &FlaCon<T,R>) {
-        
-    }
-}
-
-
-/// フラグのイベント関係の構造体
-impl<T,R> Event for FlaCon<T,R> {
 
     /// フラグのイベントを呼び出す関数
     fn load_fnc(&mut self, name: &str) {
         let tmp = match self.fnc_map.get(name) {
             Some(e) => *e,
             None => {
-                panic!("Not Fnc {}",name);
+                if self.is_panic {
+                    panic!("Not Fnc {}",name);
+
+                }else{
+                    Self::none_fnc
+                }
+
             },
         };
 
         tmp(self);
+    }
+
+    
+    fn none_fnc(_self: &mut Self) {
+        
     }
 }
 
