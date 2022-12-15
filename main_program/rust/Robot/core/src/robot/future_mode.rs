@@ -89,7 +89,7 @@ fn auto() {
         time_sleep(0, 500);
         //println!("{}",start_time.nowtime());
         if count == 2 {
-            //tmp.add(0,3,2000);
+            tmp.add(0,3,2000);
         }
         count += 1;
     }
