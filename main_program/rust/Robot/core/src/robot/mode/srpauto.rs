@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::io::Stdout;
+use std::sync::mpsc::{Sender, Receiver, self};
 
 use super::key::input_key;
 use crate::robot::setting::Settings;
@@ -47,7 +49,6 @@ struct AutoModule {
     pub gps: GPS,
 }
 
-#[test]
 pub fn auto() {
     let terminal = tui::start();
     let setting_file = Settings::load_setting("./settings.yaml");
@@ -56,7 +57,7 @@ pub fn auto() {
     let nav_setting = setting_file.load_waypoint();
     let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
     let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
-    let mut gps = GPS::new(false);
+    let mut gps = GPS::new(true);
     gps.latlot = nav_setting;
     //モジュールをflag内で扱うための構造体
     let module = AutoModule {
@@ -165,23 +166,55 @@ pub fn auto() {
             flacn.load_fnc("moter_control");
             time_sleep(1, 0);
 
-
             flacn.event.opcode = config::FRONT;
             flacn.load_fnc("moter_control");
-
         }
     });
 
+    flag_controler.add_fnc("rotate", |flacon| {});
 
-    flag_controler.add_fnc("rotate", |flacon| {
+    let opcode = thread_variable!("key", "lidar");
+    let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
+    mpsc::channel();
+    let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
+        std::collections::HashMap::new();
 
+    thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
+        Rthd::<String>::send_panic_msg(panic_msg);
+        let setting_file = Settings::load_setting("./settings.yaml");
 
+        let key_bind = setting_file.load_key_bind();
+
+        loop {
+            let order = input_key(key_bind);
+            msg.send(order).unwrap();
+            time_sleep(0, 10);
+        }
     });
+
+    Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
 
     loop {
         println!("test");
         flag_controler.load_fnc("gps_Fix");
         flag_controler.load_fnc("first_time");
+
+
+        // Key
+        match opcode.get("key").unwrap().1.try_recv() {
+            Ok(e) => {
+                if e == config::BREAK {
+                    flag_controler.event.opcode=config::EMERGENCY_STOP;
+                    flag_controler.load_fnc("emergency_stop");
+                    flag_controler.event.maneuver = "exit";
+                    break;
+                } else if e == config::EMERGENCY_STOP {
+                    flag_controler.event.opcode= e;
+                    flag_controler.load_fnc("emergency_stop");
+                }
+            }
+            Err(_) => {}
+        };
 
         if flag_controler.event.is_continue {
             time_sleep(0, 1);
@@ -191,6 +224,6 @@ pub fn auto() {
         flag_controler.load_fnc("in_waypoint");
         flag_controler.load_fnc("gps_nav");
 
-        time_sleep(1, 0)
+        time_sleep(1, 0);
     }
 }

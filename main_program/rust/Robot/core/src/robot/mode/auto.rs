@@ -425,17 +425,12 @@ pub fn auto() {
                 Ok(e) => {
                     if e == config::BREAK {
                         flag_controler.event.order=config::EMERGENCY_STOP;
-                        //flag_controler.event.order.set(e);
-                        //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
-                        //flag_controler.load_fnc("is_emergency_stop");
                         flag_controler.event.maneuver = "exit";
                         break;
                     } else if e == config::EMERGENCY_STOP {
                         flag_controler.event.order= e;
-                        //flag_controler.load_fnc("set_emergency_stop");
                         flag_controler.load_fnc("emergency_stop");
-                        //flag_controler.load_fnc("is_emergency_stop");
                     }
                 }
                 Err(_) => {}
