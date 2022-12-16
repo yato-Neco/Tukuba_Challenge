@@ -36,6 +36,7 @@ pub struct AutoEvents {
     pub is_trune: bool,
     pub is_first_time: bool,
     pub is_continue: bool,
+    pub is_interruption: bool,
     pub opcode: u32,
     pub opcode_history: Vec<u32>,
     pub latlot: (f64, f64),
@@ -47,6 +48,8 @@ struct AutoModule {
     pub terminal: Terminal<CrosstermBackend<Stdout>>,
     pub moter_controler: Moter,
     pub gps: GPS,
+    pub scheduler: Scheduler,
+
 }
 
 pub fn auto() {
@@ -64,6 +67,7 @@ pub fn auto() {
         terminal,
         moter_controler,
         gps,
+        scheduler,
     };
 
     let event = AutoEvents {
@@ -76,6 +80,7 @@ pub fn auto() {
         is_move: false,
         is_trune: false,
         is_first_time: true,
+        is_interruption:false,
         opcode: 0xfffffff,
         opcode_history: Vec::new(),
         latlot: (0.0, 0.0),
@@ -184,7 +189,19 @@ pub fn auto() {
         let setting_file = Settings::load_setting("./settings.yaml");
 
         let key_bind = setting_file.load_key_bind();
+    flag_controler.add_fnc("rotate", |flacn| {
+        let mut stoptime: i128 = 0;
 
+        if flacn.event.is_lidar_stop {
+            flacn.event.is_interruption = !flacn.event.is_interruption;
+
+            if flacn.event.is_interruption {
+                flacn.module.scheduler.add_time_counter();
+            } else {
+                flacn.module.scheduler.end();
+            }
+            println!("{}", flacn.module.scheduler.nowtime());
+        }
         loop {
             let order = input_key(key_bind);
             msg.send(order).unwrap();
@@ -196,8 +213,8 @@ pub fn auto() {
 
     loop {
         println!("test");
-        flag_controler.load_fnc("gps_Fix");
-        flag_controler.load_fnc("first_time");
+        //flag_controler.load_fnc("gps_Fix");
+        //flag_controler.load_fnc("first_time");
 
 
         // Key
@@ -221,6 +238,7 @@ pub fn auto() {
             continue;
         }
 
+        flag_controler.load_fnc("rotate");
         flag_controler.load_fnc("in_waypoint");
         flag_controler.load_fnc("gps_nav");
 
