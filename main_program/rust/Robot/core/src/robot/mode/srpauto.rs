@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::Stdout;
 use std::sync::mpsc::{Sender, Receiver, self};
+use std::time::Duration;
 
 use super::key::input_key;
 use crate::robot::setting::Settings;
@@ -192,6 +193,9 @@ pub fn auto() {
         }
     });
 
+
+
+
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
 
     loop {
@@ -226,4 +230,33 @@ pub fn auto() {
 
         time_sleep(1, 0);
     }
+}
+
+
+
+fn module_loop(port: &str, rate: u32, buf_size: usize,msg: Sender<String>) {
+    let mut gps_port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => p,
+            Err(_) => panic!(),
+        };
+
+        let mut gps_serial_buf: Vec<u8> = vec![0; buf_size];
+        loop {
+            match gps_port.read(gps_serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //serial_buf[..t].to_vec();
+                    let gps_data = String::from_utf8_lossy(&gps_serial_buf[..t]).to_string();
+                    sendG(gps_data, &msg);
+                    //msg.send(gps_data).unwrap();
+                }
+                Err(_) => {}
+            }
+
+
+        }
 }
