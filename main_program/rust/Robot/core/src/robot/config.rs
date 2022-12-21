@@ -18,9 +18,9 @@ pub type SenderOrders = std::sync::mpsc::Sender<u32>;
 fn test() {
     //let lM = ((0x0F80FFF1 & 0x00F00000) >> 20) ;
     //println!("{lM}");
-    moter_control(0x1F6DFFFF);
+    //moter_control(0x1F6DFFFF);
 }
-
+/* 
 pub fn moter_control(order: u32) {
     let rM = ((order & 0x00F00000) >> 20) as f64;
     let lM = ((order & 0x000F0000) >> 16) as f64;
@@ -56,3 +56,4 @@ pub fn moter_control(order: u32) {
         }
     }
 }
+*/

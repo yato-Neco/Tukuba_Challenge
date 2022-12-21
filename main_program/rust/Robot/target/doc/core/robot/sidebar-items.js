@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["config",""],["mode",""],["serial",""],["setting",""],["tui",""]]});

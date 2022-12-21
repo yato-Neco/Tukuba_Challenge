@@ -176,8 +176,8 @@ dependencies = [
  "scheduler",
  "serialport",
  "slam",
- "tokio",
  "tui",
+ "wt901-rs",
  "yaml-rust",
 ]
 
@@ -661,10 +661,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pymoter"
-version = "0.1.0"
-
-[[package]]
 name = "quote"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1086,6 +1082,11 @@ name = "windows_x86_64_msvc"
 version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
+
+[[package]]
+name = "wt901-rs"
+version = "1.0.0"
+source = "git+https://github.com/yato-Neco/wt901-rs.git?branch=master#1b83921794a1ee9c7c6ddf66dc904ed46f8ad6b6"
 
 [[package]]
 name = "yaml-rust"

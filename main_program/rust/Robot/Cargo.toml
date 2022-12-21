@@ -15,5 +15,5 @@ members = [
     "mytools",
     "camera",
     "SRP",
-    "pymoter"
+
 ]

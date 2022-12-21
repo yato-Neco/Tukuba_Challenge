@@ -7,7 +7,7 @@ extern crate rthred;
 extern crate scheduler;
 extern crate mytools;
 extern crate robot_serialport;
-
+extern crate wt901_rs;
 
 mod robot;
 use clap::Parser;
@@ -21,8 +21,7 @@ struct Args {
     mode: String,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Args::parse();
     match args.mode.as_str() {
         "auto" => auto(),

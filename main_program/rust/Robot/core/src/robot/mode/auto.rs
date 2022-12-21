@@ -384,6 +384,7 @@ pub fn auto() {
         });
         */
 
+        /*
         RthdG::_thread_generate(
             "gps",
             &sendr_err_handles,
@@ -394,6 +395,8 @@ pub fn auto() {
                 GPS::serial(&gps_setting.0, gps_setting.1, gps_setting.2, gps_sender);
             },
         );
+        */
+        
 
 
         Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);

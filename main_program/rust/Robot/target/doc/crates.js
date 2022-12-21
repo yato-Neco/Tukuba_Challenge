@@ -1,1 +1,0 @@
-window.ALL_CRATES = ["api","camera","core","flacon","gps","lidar","load_shdlib","mytools","robot_gpio","robot_serialport","rthred","scheduler","slam"];
