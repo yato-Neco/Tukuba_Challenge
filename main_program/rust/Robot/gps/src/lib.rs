@@ -5,6 +5,27 @@ use std::sync::mpsc::Sender;
 use std::time::Duration;
 use std::vec;
 
+#[test]
+fn test() {
+    let tmp = GPS::new(false);
+    //35.631316,139.330911
+    let lat = &(35.631316, 139.330911);
+    let lot = &(35.631317, 139.330912);
+    let distance = tmp.distance(lat, lot);
+    let azimuth = tmp.azimuth(lat, lot).round().abs();
+    //println!("{}", distance);
+    //println!("{}", azimuth);
+    let latlot = vec![
+        (35.631316, 139.330911),
+        (35.631316, 139.330911),
+        (35.631316, 139.330911),
+    ];
+    let siten = (35.631316, 139.330911);
+    GPS::generate_rome(siten,latlot);
+
+    //println!("{:?}",tmp.azimuth_none_gps(lat,lot));
+}
+
 #[derive(Debug, Clone)]
 pub struct GPS {
     pub nowpotion: Option<(f64, f64)>,
@@ -24,7 +45,9 @@ pub struct GPS {
     pub is_nowpotion_history_sub: bool,
     pub nowtime: String,
     pub gps_format: Vec<String>,
-    pub guess_position:Option<(f64,f64)>,
+    pub guess_position: Option<(f64, f64)>,
+    pub gps_msec: u32,
+    pub m_ms: f64,
     pub wt901: WT901,
 }
 
@@ -62,8 +85,9 @@ impl GPS {
             is_nowpotion_history_sub: simulater,
             nowtime: String::new(),
             gps_format: Vec::new(),
-            guess_position:None,
-
+            guess_position: None,
+            gps_msec: 1000,
+            m_ms: 0.0,
             wt901: WT901 {
                 ang: None,
                 mag: None,
@@ -98,7 +122,7 @@ impl GPS {
         }
     }
     */
-    
+
     ///
     /// シリアル通信から来るデータ扱いやすく、パースする。
     pub fn parser(&mut self, gps_data: String) {
@@ -159,6 +183,7 @@ impl GPS {
         //println!("{:?}", self);
     }
 
+    #[inline]
     /// ロボットが実際に動くことをシミュレートする
     pub fn running_simulater(&mut self, arg: bool) {
         if arg {
@@ -193,8 +218,6 @@ impl GPS {
     /// nav システム
     /// 戻り値は終了時のbool
     pub fn nav(&mut self) -> bool {
-        //let len_flag: bool = self.latlot.len() == 0;
-
         let result = match self.latlot.len() {
             0 => false,
             1.. => {
@@ -206,17 +229,12 @@ impl GPS {
 
                 (self.azimuth, self.distance) = self.fm_azimuth(&self.nowpotion.unwrap());
 
-                //println!("{:?} {:?}", azimuth, distance);
-
-                //println!("{}",box_flag);
-
                 self.running_simulater(self.is_simulater);
 
                 self.in_waypoint = box_flag;
 
                 if box_flag {
                     self.latlot.remove(0);
-                    //self.next_latlot = Some((self.latlot[0].0, self.latlot[0].1));
                 }
 
                 true
@@ -224,7 +242,6 @@ impl GPS {
             _ => false,
         };
 
-        //println!("{}",result);
         result
     }
 
@@ -286,7 +303,8 @@ impl GPS {
         azimuth
     }
 
-    pub fn distance(&self, a: (f64, f64), b: (f64, f64)) -> f64 {
+    #[inline]
+    pub fn distance(&self, a: &(f64, f64), b: &(f64, f64)) -> f64 {
         //let nowpotion = self.nowpotion.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(b.0, b.1, 0.0);
@@ -295,7 +313,73 @@ impl GPS {
         distance
     }
 
-    pub fn generate_rome(&mut self) {
+    #[inline]
+    ///a,bの角度
+    pub fn azimuth(&self, a: &(f64, f64), b: &(f64, f64)) -> f64 {
+        let pos_a = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
+        let pos_b = WGS84::from_degrees_and_meters(b.0, b.1, 0.0);
+        let vec = pos_b - pos_a;
+        let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
+
+        azimuth
+    }
+
+    pub fn azimuth_none_gps(&self, a: &(f64, f64), b: &(f64, f64)) {
+
+        //let tmp = ((a.0 * 1000_000.0 - b.0 * 1000_000.0).abs(), (a.1 * 1000_000.0 - b.1 * 1000_000.0).abs());
+        //let tmp2 = (0.0,0.0);
+
+        //let ab_vec = ((a.0 * b.0) + (a.1 * b.1)) / ((a.0.powf(2.0) + a.1.powf(2.0)).sqrt() * (b.0.powf(2.0) + b.1.powf(2.0)).sqrt());
+
+        //println!("{:?}",ab_vec);
+    }
+
+    pub fn generate_rome(siten:(f64,f64),latlot:Vec<(f64, f64)>) {
+
+        let mut distance_vec = Vec::new();
+
+        for p in latlot {
+            let pos_a = WGS84::from_degrees_and_meters(p.0, p.1, 0.0);
+            let pos_b = WGS84::from_degrees_and_meters(p.0, p.1, 0.0);
+            let distance: f64 = pos_a.distance(&pos_b);
+            distance_vec.push(distance);
+        }
+
+        distance_vec.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        println!("{:?}",distance_vec);
+
+        let mut start_mesh_map = (0, 0);
+
+        let cm = (0.03 * 100.0) as u64 * 2;
+        // 1cm
+
+        //println!("{}", cm / 2);
+
+        let mut mesh_map = Vec::new();
+
+        //let mut mesh_map_y = Vec::new();
+
+        for y in 0..=cm {
+            let mut mesh_map_x = Vec::new();
+
+            for x in 0..=cm {
+                //println!("{} {}",y,x);
+                mesh_map_x.push(0);
+            }
+            mesh_map.push(mesh_map_x);
+        }
+
+        //mesh_map.push(mesh_map_x);
+
+        for i in mesh_map {
+            println!("{:?}", i);
+        }
+
+        // 1cm
+    }
+
+    pub fn _generate_rome(&mut self) {
         let len = self.latlot.len() - 1;
 
         //println!("{}",self.latlot[0].0 - self.latlot[1].0);
@@ -345,5 +429,26 @@ impl GPS {
         }
 
         return false;
+    }
+
+    pub fn prediction(&mut self) {
+        //let a = self.nowpotion_history.last().unwrap();
+        let a = self.nowpotion.unwrap();
+        let b = self.nowpotion_history.last().unwrap();
+        //self.nowpotion_history.last_mut();
+        //self.fm_azimuth(now_postion)
+
+        if self.is_fix != None {
+            if self.is_fix.unwrap() {
+                let distance = self.distance(&a, b);
+                let azimuth = self.azimuth(&a, b);
+
+                self.m_ms = distance / self.gps_msec as f64;
+
+                self.guess_position;
+            } else {
+                self.guess_position;
+            }
+        }
     }
 }

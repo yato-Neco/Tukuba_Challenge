@@ -183,7 +183,7 @@ pub fn auto() {
             };
         });
 
-        flag_controler.module.gps.generate_rome();
+        flag_controler.module.gps._generate_rome();
 
         //println!("{:?}",flag_controler.module.gps.rome);
 
