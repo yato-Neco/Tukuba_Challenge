@@ -7,21 +7,25 @@ use std::vec;
 
 #[test]
 fn test() {
-    let tmp = GPS::new(false);
+    let mut tmp = GPS::new(false);
     //35.631316,139.330911
     let lat = &(35.631316, 139.330911);
-    let lot = &(35.631317, 139.330912);
+    let lot = &(35.631316, 139.330910);
     let distance = tmp.distance(lat, lot);
     let azimuth = tmp.azimuth(lat, lot).round().abs();
+    //println!("{}",tmp.azimuth_none_gps(lat, lot));
     //println!("{}", distance);
     //println!("{}", azimuth);
     let latlot = vec![
         (35.631316, 139.330911),
-        (35.631316, 139.330911),
-        (35.631316, 139.330911),
+        (35.631317, 139.330912),
+        (35.631316, 139.330912),
     ];
     let siten = (35.631316, 139.330911);
-    GPS::generate_rome(siten,latlot);
+
+    tmp.generate_rome(siten,latlot);
+    let now  =  (35.631317, 139.330911);
+    tmp.rome_robot_move(siten,now);
 
     //println!("{:?}",tmp.azimuth_none_gps(lat,lot));
 }
@@ -48,6 +52,8 @@ pub struct GPS {
     pub guess_position: Option<(f64, f64)>,
     pub gps_msec: u32,
     pub m_ms: f64,
+    pub mesh_map: Vec<Vec<u8>>,
+    pub robot_start_index: usize,
     pub wt901: WT901,
 }
 
@@ -88,6 +94,8 @@ impl GPS {
             guess_position: None,
             gps_msec: 1000,
             m_ms: 0.0,
+            robot_start_index:0,
+            mesh_map:Vec::new(),
             wt901: WT901 {
                 ang: None,
                 mag: None,
@@ -324,8 +332,9 @@ impl GPS {
         azimuth
     }
 
-    pub fn azimuth_none_gps(&self, a: &(f64, f64), b: &(f64, f64)) {
-
+    pub fn azimuth_none_gps(&self, a: &(f64, f64), b: &(f64, f64)) -> f64 {
+        
+        (((b.0 - a.0).atan2(b.1 - a.1)))
         //let tmp = ((a.0 * 1000_000.0 - b.0 * 1000_000.0).abs(), (a.1 * 1000_000.0 - b.1 * 1000_000.0).abs());
         //let tmp2 = (0.0,0.0);
 
@@ -334,12 +343,12 @@ impl GPS {
         //println!("{:?}",ab_vec);
     }
 
-    pub fn generate_rome(siten:(f64,f64),latlot:Vec<(f64, f64)>) {
+    pub fn generate_rome(&mut self,siten:(f64,f64),latlot:Vec<(f64, f64)>) {
 
         let mut distance_vec = Vec::new();
 
-        for p in latlot {
-            let pos_a = WGS84::from_degrees_and_meters(p.0, p.1, 0.0);
+        for p in latlot.iter() {
+            let pos_a = WGS84::from_degrees_and_meters(siten.0, siten.1, 0.0);
             let pos_b = WGS84::from_degrees_and_meters(p.0, p.1, 0.0);
             let distance: f64 = pos_a.distance(&pos_b);
             distance_vec.push(distance);
@@ -347,16 +356,13 @@ impl GPS {
 
         distance_vec.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        println!("{:?}",distance_vec);
+        //println!("{:?}",distance_vec);
 
-        let mut start_mesh_map = (0, 0);
 
-        let cm = (0.03 * 100.0) as u64 * 2;
+        let cm = (distance_vec.last().unwrap() * 100.0) as u64 * 2;
         // 1cm
 
-        //println!("{}", cm / 2);
-
-        let mut mesh_map = Vec::new();
+        self.robot_start_index = (cm / 2) as usize; 
 
         //let mut mesh_map_y = Vec::new();
 
@@ -367,16 +373,69 @@ impl GPS {
                 //println!("{} {}",y,x);
                 mesh_map_x.push(0);
             }
-            mesh_map.push(mesh_map_x);
+            self.mesh_map.push(mesh_map_x);
         }
 
         //mesh_map.push(mesh_map_x);
 
-        for i in mesh_map {
-            println!("{:?}", i);
+        //add
+
+        for p in latlot.iter() {
+            let distance =  (self.distance(&siten,p) * 100.0);
+            let azimuth = self.azimuth_none_gps(&siten, p);
+            let y = (azimuth.sin() * distance).round() as usize;
+            let x = (azimuth.cos() * distance).round() as usize;
+            
+            
+            if x != 0 || y != 0 {
+                println!("{} {}",distance,(azimuth * 360.0) / (2.0 *std::f64::consts::PI));
+                self.mesh_map[self.robot_start_index - y][self.robot_start_index + x] = 2;
+            }
+
         }
 
+        self.mesh_map[self.robot_start_index][self.robot_start_index] = 1;
+        
+        /*
+        let a = (35.631317, 139.330911);
+        let pos_a = WGS84::from_degrees_and_meters(siten.0, siten.1, 0.0);
+        let pos_b = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
+        let distance: f64 = pos_a.distance(&pos_b);
+        println!("{}",(distance * 100.0) as u64);
+        */
+        
+        //println!("{:?}",self.mesh_map[self.robot_start_index][self.robot_start_index]);
+        
+        for j in self.mesh_map.iter() {
+            println!("{:?}",j);
+        }
+
+
+        
+
+
+
+
         // 1cm
+    }
+
+    pub fn rome_robot_move(&mut self,siten:(f64,f64),now:(f64,f64)) {
+        self.mesh_map[self.robot_start_index][self.robot_start_index] = 0;
+        println!("{}","-".repeat(self.robot_start_index * 6));
+
+        //緯度 11cm
+        //軽度 9cm
+
+        let distance =  self.distance(&siten,&now) * 100.0;
+        let azimuth = self.azimuth_none_gps(&siten, &now);
+        let y = (azimuth.sin() * distance).round() as usize;
+        let x = (azimuth.cos() * distance).round() as usize;
+        println!("{} {}", y,x);
+        self.mesh_map[self.robot_start_index - y][self.robot_start_index + x] = 1;
+
+        for j in self.mesh_map.iter() {
+            println!("{:?}",j);
+        }
     }
 
     pub fn _generate_rome(&mut self) {
@@ -409,6 +468,10 @@ impl GPS {
             }
         }
     }
+
+
+
+    
 
     /// 設定したlatlotに半径(box状だけど)r に入った true 以外 false
     fn r#box(&self, latlon: &(f64, f64), now_p: &(f64, f64), r: f64) -> bool {

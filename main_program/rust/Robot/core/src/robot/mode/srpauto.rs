@@ -227,6 +227,7 @@ pub fn auto() {
     );
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
+    
 
     loop {
         //println!("test");

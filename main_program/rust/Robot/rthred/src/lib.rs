@@ -153,19 +153,21 @@ impl<T: 'static + std::marker::Send, R: 'static + std::marker::Send> RthdG<T, R>
         //return return_sender;
     }
 
+    /*Sender<T>,*/
+    /*sender,*/
     pub fn _thread_generate(
         name: &str,
         err_msg: &Sender<String>,
         //sender: Sender<T>,
         arg: R,
-        func: fn(Sender<String>, /*Sender<T>,*/ R),
+        func: fn(Sender<String>,  R),
     ) {
         let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
         //let return_sender;
         let _thread = thread::Builder::new()
             .name(name.to_string())
             .spawn(move || {
-                func(sendr_join_handle_errmsg, /*sender,*/ arg);
+                func(sendr_join_handle_errmsg,  arg);
             })
             .unwrap();
 
