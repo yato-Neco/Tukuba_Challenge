@@ -3,7 +3,6 @@ use nav_types::{ENU, WGS84};
 use rthred::sendG;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
-use std::vec;
 
 #[test]
 fn test() {
@@ -11,8 +10,8 @@ fn test() {
     //35.631316,139.330911
     let lat = &(35.631316, 139.330911);
     let lot = &(35.631316, 139.330910);
-    let distance = tmp.distance(lat, lot);
-    let azimuth = tmp.azimuth(lat, lot).round().abs();
+    //let distance = tmp.distance(lat, lot);
+    //let azimuth = tmp.azimuth(lat, lot).round().abs();
     //println!("{}",tmp.azimuth_none_gps(lat, lot));
     //println!("{}", distance);
     //println!("{}", azimuth);
@@ -24,8 +23,8 @@ fn test() {
     let siten = (35.631316, 139.330911);
 
     tmp.generate_rome(siten,latlot);
-    let now  =  (35.631317, 139.330911);
-    tmp.rome_robot_move(siten,now);
+    tmp.rome_robot_move(siten);
+
 
     //println!("{:?}",tmp.azimuth_none_gps(lat,lot));
 }
@@ -131,7 +130,7 @@ impl GPS {
     }
     */
 
-    ///
+    #[inline]
     /// シリアル通信から来るデータ扱いやすく、パースする。
     pub fn parser(&mut self, gps_data: String) {
         let gps_format = gps_data.replace(' ', "");
@@ -223,6 +222,9 @@ impl GPS {
         }
     }
 
+
+
+
     /// nav システム
     /// 戻り値は終了時のbool
     pub fn nav(&mut self) -> bool {
@@ -253,6 +255,8 @@ impl GPS {
         result
     }
 
+
+
     /// 二地点間の角度(度数法) と 距離
     fn fm_azimuth(&self, now_postion: &(f64, f64)) -> (f64, f64) {
         let pos_a = WGS84::from_degrees_and_meters(self.latlot[0].0, self.latlot[0].1, 0.0);
@@ -265,6 +269,8 @@ impl GPS {
 
         (azimuth, distance)
     }
+
+
 
     ///  frist 実行時 二地点間の角度(度数法)
     pub fn frist_calculate_azimuth(&self) -> f64 {
@@ -332,6 +338,7 @@ impl GPS {
         azimuth
     }
 
+    #[inline]
     pub fn azimuth_none_gps(&self, a: &(f64, f64), b: &(f64, f64)) -> f64 {
         
         (((b.0 - a.0).atan2(b.1 - a.1)))
@@ -366,10 +373,9 @@ impl GPS {
 
         //let mut mesh_map_y = Vec::new();
 
-        for y in 0..=cm {
+        for _ in 0..=cm {
             let mut mesh_map_x = Vec::new();
-
-            for x in 0..=cm {
+            for _ in 0..=cm {
                 //println!("{} {}",y,x);
                 mesh_map_x.push(0);
             }
@@ -382,7 +388,8 @@ impl GPS {
 
         for p in latlot.iter() {
             let distance =  (self.distance(&siten,p) * 100.0);
-            let azimuth = self.azimuth_none_gps(&siten, p);
+            //let azimuth = self.azimuth_none_gps(&siten, p);
+            let azimuth = self.azimuth(&siten, p) * std::f64::consts::PI / 180.0;
             let y = (azimuth.sin() * distance).round() as usize;
             let x = (azimuth.cos() * distance).round() as usize;
             
@@ -403,40 +410,50 @@ impl GPS {
         let distance: f64 = pos_a.distance(&pos_b);
         println!("{}",(distance * 100.0) as u64);
         */
-        
         //println!("{:?}",self.mesh_map[self.robot_start_index][self.robot_start_index]);
         
+
         for j in self.mesh_map.iter() {
             println!("{:?}",j);
         }
 
 
-        
-
-
-
+    
 
         // 1cm
     }
 
-    pub fn rome_robot_move(&mut self,siten:(f64,f64),now:(f64,f64)) {
+    pub fn rome_robot_move(&mut self,siten:(f64,f64)) {
         self.mesh_map[self.robot_start_index][self.robot_start_index] = 0;
         println!("{}","-".repeat(self.robot_start_index * 6));
 
         //緯度 11cm
         //軽度 9cm
 
-        let distance =  self.distance(&siten,&now) * 100.0;
-        let azimuth = self.azimuth_none_gps(&siten, &now);
+        let nowpotion = self.nowpotion.unwrap_or((35.631317, 139.330911));
+
+        let distance =  self.distance(&siten,&nowpotion) * 100.0;
+        //let azimuth = self.azimuth_none_gps(&siten, &now);
+        let azimuth = self.azimuth(&siten, &nowpotion)  * std::f64::consts::PI / 180.0;;
+
         let y = (azimuth.sin() * distance).round() as usize;
         let x = (azimuth.cos() * distance).round() as usize;
         println!("{} {}", y,x);
+
+
         self.mesh_map[self.robot_start_index - y][self.robot_start_index + x] = 1;
+        
 
         for j in self.mesh_map.iter() {
             println!("{:?}",j);
         }
+
+
     }
+
+
+    
+
 
     pub fn _generate_rome(&mut self) {
         let len = self.latlot.len() - 1;
@@ -493,6 +510,8 @@ impl GPS {
 
         return false;
     }
+
+
 
     pub fn prediction(&mut self) {
         //let a = self.nowpotion_history.last().unwrap();
