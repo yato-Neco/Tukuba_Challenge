@@ -154,14 +154,15 @@ pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
 
     
     let right_block = Paragraph::new(
-        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}\n{:?}\n{:?}\n{:?}",
+        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}\n{:?}\n{:?}\n{:?}\n{:?}",
         module.nowpotion,
         module.is_fix,
-        module.latlot,
+        module.waypoints,
         module.next_latlot,
-        module.rome,
+        module._rome,
         module.nowtime,
         module.gps_format,
+        module.nowpotion_history,
     ))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);

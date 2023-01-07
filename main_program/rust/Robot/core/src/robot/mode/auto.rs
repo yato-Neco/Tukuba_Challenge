@@ -66,7 +66,7 @@ pub fn auto() {
         let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
         let mut gps = GPS::new(false);
-        gps.latlot = nav_setting;
+        gps.waypoints = nav_setting;
         //モジュールをflag内で扱うための構造体
         let module = AutoModule {
             terminal,
@@ -367,7 +367,7 @@ pub fn auto() {
             loop {
                 let order = input_key(key_bind);
                 msg.send(order).unwrap();
-                time_sleep(0, 50);
+                time_sleep(0, 10);
             }
         });
 

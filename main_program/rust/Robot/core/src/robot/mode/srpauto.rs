@@ -63,7 +63,7 @@ pub fn auto() {
     let (right_moter_pin, left_moter_pin) = setting_file.load_moter_pins();
     let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
     let mut gps = GPS::new(true);
-    gps.latlot = nav_setting;
+    gps.waypoints = nav_setting;
     
     //モジュールをflag内で扱うための構造体
     let module = AutoModule {
@@ -186,6 +186,7 @@ pub fn auto() {
     let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
         std::collections::HashMap::new();
 
+
     thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
         let setting_file = Settings::load_setting("./settings.yaml");
@@ -199,8 +200,9 @@ pub fn auto() {
         }
     });
 
+
     flag_controler.add_fnc("rotate", |flacn| {
-        let mut stoptime: i128 = 0;
+        //let mut stoptime: i128 = 0;
 
         if flacn.event.is_lidar_stop {
             flacn.event.is_interruption = !flacn.event.is_interruption;
@@ -215,6 +217,11 @@ pub fn auto() {
     });
 
 
+    let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
+    let (wt901_sender, wt901_receiver) = std::sync::mpsc::channel::<WT901>();
+
+
+    /*
     RthdG::<(), Settings>::_thread_generate(
         "gps",
         &sendr_err_handles,
@@ -225,12 +232,32 @@ pub fn auto() {
             //module_loop(setting.load_gps_serial(), ("".to_owned(),9600,2000), lidar_setting , gps_msg, lidar_msg, wt901_msg);
         },
     );
+    */
+    
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
     
 
     loop {
-        //println!("test");
+
+        match gps_receiver.try_recv() {
+            Ok(e) => {
+                flag_controler.module.gps.original_nowpotion = e.clone();
+                flag_controler.module.gps.parser(e);
+            }
+            Err(_) => {}
+        }
+
+        match wt901_receiver.try_recv() {
+            Ok(e) => {
+               flag_controler.module.gps.rome.set_azimuth(e.ang.unwrap().0 as f64);
+
+            }
+            Err(_) => {}
+        }
+
+
+        // nowpotsiton_history push
         flag_controler.load_fnc("gps_Fix");
         flag_controler.load_fnc("first_time");
 
@@ -240,7 +267,9 @@ pub fn auto() {
                 if e == config::BREAK {
                     flag_controler.event.opcode = config::EMERGENCY_STOP;
                     flag_controler.load_fnc("emergency_stop");
+                
                     flag_controler.event.maneuver = "exit";
+                    tui::end(&mut flag_controler.module.terminal);
                     break;
                 } else if e == config::EMERGENCY_STOP {
                     flag_controler.event.opcode = e;
@@ -272,7 +301,7 @@ fn module_loop(
     lidar_setting: (String, u32, usize),
     gps_msg: Sender<String>,
     lidar_msg:Sender<String>,
-    wt901_msg:Sender<String>
+    wt901_msg:Sender<WT901>
 
 ) {
     let mut gps_port = match serialport::new(gps_setting.0, gps_setting.1)
@@ -313,6 +342,8 @@ fn module_loop(
 
     loop {
 
+
+
         match gps_port.read(gps_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 //serial_buf[..t].to_vec();
@@ -325,9 +356,14 @@ fn module_loop(
 
         match wt901_port.read(wt901_serial_buf.as_mut_slice()) {
             Ok(t) => {
-                let mut data = wt901_serial_buf[..t].to_vec();
+                let data = wt901_serial_buf[..t].to_vec();
+                
                 //cope_serial_data(data);
                 wt901.cope_serial_data(data);
+                
+                sendG(wt901.clone(), &wt901_msg);
+
+
 
             }
 
