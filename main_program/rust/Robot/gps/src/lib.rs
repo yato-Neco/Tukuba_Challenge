@@ -19,10 +19,15 @@ fn test() {
     //let start_latlot = (35.631316, 139.330911);
     let now_latlot = (35.631316, 139.330912);
     tmp.nowpotion_history = vec![(35.631316, 139.330911)];
-    let a = tmp.azimuth(&now_latlot,&(35.631316, 139.330912));
-    println!("{}",a);
-    tmp.azimuth_string(a);
+    let a = tmp.azimuth(&now_latlot,&(35.631316, 139.330911));
+    println!("{}",tmp.azimuth360(a));
 
+    tmp.azimuth_string(a);
+    tmp.generate_rome(waypoints);
+    println!("{:?}",tmp.rome.now_index);
+
+    tmp.rome.set_azimuth(270.0);
+    tmp.rome.robot_move(100.0);
     /*
     
     //is fix 以降。
@@ -203,6 +208,22 @@ impl Rome {
 
         azimuth
     }
+
+
+    fn robot_move(&mut self,speed:f64) {
+
+        let azimuth = self.azimuth * (std::f64::consts::PI / 180.0);
+        println!("{}",azimuth);
+        
+        let x = self.now_index.1 as f64 + (azimuth.sin() * speed);
+        let y = self.now_index.0 as f64 + (azimuth.cos() * speed);
+        //speed;
+
+        println!("{:?}",(y,x));
+    }
+
+    
+
 
 
     
@@ -490,8 +511,8 @@ impl GPS {
     }
 
     pub fn azimuth_string(&self,azimuth:f64) {
-        let azimuth_usize = azimuth.round() as isize;
-        let tmp =  match  azimuth_usize {
+        let azimuth_isize = azimuth.round() as isize;
+        let tmp =  match  azimuth_isize {
             -45..=45 => "北",
             46..=135 => "東",
             -135..=-44 => "西",
@@ -500,6 +521,17 @@ impl GPS {
 
         println!("{}",tmp);
 
+    }
+
+
+    pub fn azimuth360(&self,azimuth:f64) -> usize {
+        let mut azimuth_isize = azimuth.round() as isize;
+
+        if azimuth_isize < 0 {
+            azimuth_isize += 360;
+        }
+
+        return azimuth_isize as usize
     }
 
     #[inline]
