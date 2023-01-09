@@ -7,27 +7,35 @@ use std::time::Duration;
 #[test]
 fn test() {
     let mut tmp = GPS::new(false);
-    //35.631316,139.330911
-    //let lat = &(35.631316, 139.330911);
-    //let lot = &(35.631316, 139.330910);
-    //let distance = tmp.distance(lat, lot);
-    //let azimuth = tmp.azimuth(lat, lot).round().abs();
-    //println!("{}",tmp.azimuth_none_gps(lat, lot));
-    //println!("{}", distance);
-    //println!("{}", azimuth);
     let waypoints = vec![(35.631317, 139.330912)];
     //let start_latlot = (35.631316, 139.330911);
     let now_latlot = (35.631316, 139.330912);
     tmp.nowpotion_history = vec![(35.631316, 139.330911)];
-    let a = tmp.azimuth(&now_latlot,&(35.631316, 139.330911));
+    let a = tmp.azimuth(&now_latlot,&(35.631318, 139.330912));
     println!("{}",tmp.azimuth360(a));
 
     tmp.azimuth_string(a);
     tmp.generate_rome(waypoints);
     println!("{:?}",tmp.rome.now_index);
 
-    tmp.rome.set_azimuth(270.0);
-    tmp.rome.robot_move(100.0);
+    
+    for i in tmp.rome.mesh_map.iter() {
+        //println!("{:?}", i);
+    }
+    println!("{}", "-".repeat(80));
+
+    tmp.rome.set_azimuth(0.0);
+    //tmp.azimuth_string(0.0);
+    tmp.rome.robot_move(10.0);
+
+    for i in tmp.rome.mesh_map.iter() {
+        println!("{:?}", i);
+    }
+    println!("{}", "-".repeat(80));
+    
+    
+    
+
     /*
     
     //is fix 以降。
@@ -212,14 +220,36 @@ impl Rome {
 
     fn robot_move(&mut self,speed:f64) {
 
-        let azimuth = self.azimuth * (std::f64::consts::PI / 180.0);
-        println!("{}",azimuth);
+        /*
+        let azimuth = if  self.azimuth > 270.0 { 
+            (self.azimuth - 360.0).abs() -  180.0
+
+         }else if  self.azimuth > 180.0 { 
+            (self.azimuth - 270.0).abs() - 90.0
+        }else{
+            (self.azimuth - 180.0).abs()
+        };
+        */
+        
+        let azimuth = (self.azimuth - 180.0) * -1.0;
+
+        //println!("azimuth {}",azimuth);
+
+        let azimuth = azimuth * (std::f64::consts::PI / 180.0);
+
+        //let azimuth = (self.azimuth -180.0).abs() * (std::f64::consts::PI / 180.0);
+        
         
         let x = self.now_index.1 as f64 + (azimuth.sin() * speed);
         let y = self.now_index.0 as f64 + (azimuth.cos() * speed);
         //speed;
 
         println!("{:?}",(y,x));
+
+        self.mesh_map[self.now_index.0][self.now_index.1] = 0;
+        self.now_index = (y as usize,x as usize);
+        self.mesh_map[self.now_index.0][self.now_index.1] = 1;
+
     }
 
     
