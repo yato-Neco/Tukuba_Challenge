@@ -9,33 +9,39 @@ fn test() {
     let mut tmp = GPS::new(false);
     let waypoints = vec![(35.631317, 139.330912)];
     //let start_latlot = (35.631316, 139.330911);
-    let now_latlot = (35.631316, 139.330912);
-    tmp.nowpotion_history = vec![(35.631316, 139.330911)];
-    let a = tmp.azimuth(&now_latlot,&(35.631318, 139.330912));
-    println!("{}",tmp.azimuth360(a));
+    //35.672654,139.746093
+    //35.631316, 139.330912
 
-    tmp.azimuth_string(a);
-    tmp.generate_rome(waypoints);
+    //35.627471, 139.340386
+    //35.623271, 139.345627
+    let now_latlot = (35.627471, 139.340386);
+    tmp.nowpotion_history = vec![(35.627471, 139.340386)];
+    tmp.waypoints = vec![(35.627472, 139.340388)];
+
+
+    println!("{:?}",tmp.azimuth360(tmp.azimuth(&now_latlot, &waypoints[0])));
+
+    tmp.generate_rome();
     println!("{:?}",tmp.rome.now_index);
-
+    println!("{:?}",tmp.rome.index_order);
     
     for i in tmp.rome.mesh_map.iter() {
-        //println!("{:?}", i);
+        println!("{:?}", i);
     }
     println!("{}", "-".repeat(80));
 
-    tmp.rome.set_azimuth(0.0);
+    tmp.rome.set_azimuth(45.0);
     //tmp.azimuth_string(0.0);
-    tmp.rome.robot_move(10.0);
+    tmp.rome.robot_move(1.0);
 
     for i in tmp.rome.mesh_map.iter() {
         println!("{:?}", i);
     }
     println!("{}", "-".repeat(80));
     
+    println!("{:?}",tmp.rome.mesh_map.len());
     
     
-
     /*
     
     //is fix 以降。
@@ -109,6 +115,7 @@ pub struct Rome {
     pub robot_start_index: usize,
     pub now_index: (usize, usize),
     pub start_latlot: Option<(f64, f64)>,
+    pub index_order: Vec<(usize, usize)>,
 }
 
 impl Rome {
@@ -152,7 +159,10 @@ impl Rome {
             let y = (azimuth.cos() * distance).round() as usize;
 
             if x != 0 || y != 0 {
-                self.mesh_map[self.robot_start_index - y][self.robot_start_index + x] = 2;
+                let y_index = self.robot_start_index - (y / 10);
+                let x_index = self.robot_start_index + (x / 10);
+                self.mesh_map[y_index][x_index] = 2;
+                self.index_order.push((y_index,x_index));
             }
         }
     }
@@ -261,7 +271,7 @@ impl Rome {
         println!("{:?}",(y,x));
 
         self.mesh_map[self.now_index.0][self.now_index.1] = 0;
-        self.now_index = (y as usize,x as usize);
+        self.now_index = (y.round() as usize,x.round() as usize);
         self.mesh_map[self.now_index.0][self.now_index.1] = 1;
 
     }
@@ -319,6 +329,7 @@ impl GPS {
                 robot_start_index: 0,
                 now_index: (0, 0),
                 start_latlot: None,
+                index_order:Vec::new(),
             },
             wt901: WT901 {
                 ang: None,
@@ -599,12 +610,12 @@ impl GPS {
 
 
     #[inline]
-    pub fn generate_rome(&mut self, waypoints: Vec<(f64, f64)>) {
+    pub fn generate_rome(&mut self) {
         //　一番遠いwaypointsのアルゴリズム -->
         let mut distance_vec = Vec::new();
         const EXPECT_MSG: &str = "nowpotion_history index is 0";
-
-        for p in waypoints.iter() {
+        
+        for p in self.waypoints.iter() {
             let pos_a = WGS84::from_degrees_and_meters(
                 self.nowpotion_history.get(0).expect(EXPECT_MSG).0,
                 self.nowpotion_history.get(0).expect(EXPECT_MSG).1,
@@ -623,9 +634,11 @@ impl GPS {
         let range = (distance_vec.last().unwrap() * 100.0) as usize * 2;
         // 1cm
 
-        self.rome.mesh_generation(range);
+        println!("{}",range / 10);
+
+        self.rome.mesh_generation(range / 10);
         self.rome
-            .add_waypoints(&waypoints, &self.nowpotion_history.get(0).expect(EXPECT_MSG));
+            .add_waypoints(&self.waypoints, &self.nowpotion_history.get(0).expect(EXPECT_MSG));
         self.rome.start_latlot = Some(*self.nowpotion_history.get(0).expect(EXPECT_MSG));
     }
 

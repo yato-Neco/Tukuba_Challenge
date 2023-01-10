@@ -237,7 +237,7 @@ pub fn auto() {
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
     
-
+    flag_controler.module.gps.generate_rome();
     loop {
 
         match gps_receiver.try_recv() {
