@@ -176,12 +176,27 @@ impl Rome {
     /// GPSなしの位置
     /// is not fix の時
     #[inline]
-    fn non_gps_robot_move(&mut self, last_latlot: &(f64, f64)) {
+    fn non_gps_robot_move(&mut self, speed:f64) {
         //let distance = self.distance(last_latlot, b);
+        let azimuth = (self.azimuth - 180.0) * -1.0;
+
+
+        let azimuth = azimuth * (std::f64::consts::PI / 180.0);
+
+        //let azimuth = (self.azimuth -180.0).abs() * (std::f64::consts::PI / 180.0);
         
         
+        let x = self.now_index.1 as f64 + (azimuth.sin() * speed);
+        let y = self.now_index.0 as f64 + (azimuth.cos() * speed);
+        //speed;
+
+        println!("{:?}",(y,x));
+
+        self.mesh_map[self.now_index.0][self.now_index.1] = 0;
+        self.now_index = (y as usize,x as usize);
+        self.mesh_map[self.now_index.0][self.now_index.1] = 1;
         
-        todo!()
+        
     }
 
     #[inline]
@@ -233,7 +248,6 @@ impl Rome {
         
         let azimuth = (self.azimuth - 180.0) * -1.0;
 
-        //println!("azimuth {}",azimuth);
 
         let azimuth = azimuth * (std::f64::consts::PI / 180.0);
 
@@ -255,7 +269,15 @@ impl Rome {
     
 
 
+    fn in_waypoint(&mut self) -> bool {
 
+        if self.mesh_map[self.now_index.0][self.now_index.1] == 2{
+            return  true;
+        }else{
+            return  false;
+        };
+        
+    }
     
 
 }
