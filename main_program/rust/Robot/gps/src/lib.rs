@@ -16,7 +16,7 @@ fn test() {
     //35.623271, 139.345627
     let now_latlot = (35.627471, 139.340386);
     tmp.nowpotion_history = vec![(35.627471, 139.340386)];
-    tmp.waypoints = vec![(35.627472, 139.340388)];
+    tmp.waypoints = vec![(35.627471, 139.340388)];
 
 
     println!("{:?}",tmp.azimuth360(tmp.azimuth(&now_latlot, &waypoints[0])));
@@ -28,11 +28,13 @@ fn test() {
     for i in tmp.rome.mesh_map.iter() {
         println!("{:?}", i);
     }
+    
+    
     println!("{}", "-".repeat(80));
 
-    tmp.rome.set_azimuth(45.0);
+    tmp.rome.set_azimuth(tmp.rome.next_point_azimuth());
     //tmp.azimuth_string(0.0);
-    tmp.rome.robot_move(1.0);
+    tmp.rome.robot_move(2.0);
 
     for i in tmp.rome.mesh_map.iter() {
         println!("{:?}", i);
@@ -133,7 +135,7 @@ impl Rome {
     #[inline]
     fn mesh_generation(&mut self, range: usize) {
         self.set_start_index(&range);
-
+        println!("{}",range);
         for _ in 0..=range {
             let mut mesh_map_x = Vec::with_capacity(range);
             for _ in 0..=range {
@@ -147,6 +149,7 @@ impl Rome {
 
     /// mesh_mapにwaypointsを追加
     /// waypointsの表現は2
+    /// bug あり y_index x_index isize にすべき。
     #[inline]
     fn add_waypoints(&mut self, waypoints: &Vec<(f64, f64)>, start_latlot: &(f64, f64)) {
         //println!("{:?}", waypoints);
@@ -155,12 +158,12 @@ impl Rome {
             let azimuth = self.azimuth(&start_latlot, latlot);
 
             //TODO: x,yが反転してる気がする。
-            let x = (azimuth.sin() * distance).round() as usize;
-            let y = (azimuth.cos() * distance).round() as usize;
-
-            if x != 0 || y != 0 {
-                let y_index = self.robot_start_index - (y / 10);
-                let x_index = self.robot_start_index + (x / 10);
+            let x = (azimuth.sin() * distance).round();
+            let y = (azimuth.cos() * distance).round();
+            println!("{:?}",(y,x));
+            if x != 0.0 || y != 0.0 {
+                let y_index = (self.robot_start_index as f64 - (y / 10.0)) as usize;
+                let x_index = (self.robot_start_index as f64 + (x / 10.0) ) as usize;
                 self.mesh_map[y_index][x_index] = 2;
                 self.index_order.push((y_index,x_index));
             }
@@ -217,6 +220,7 @@ impl Rome {
 
 
     pub fn set_azimuth(&mut self, azimuth: f64) {
+
         self.azimuth = azimuth;
     }
 
@@ -241,6 +245,46 @@ impl Rome {
 
         azimuth
     }
+
+
+    fn none_gps_azimuth(&self,a:&(usize,usize),b:&(usize,usize)) -> f64{
+
+
+        let y = a.0  as f64  - b.0 as f64;
+        let x = b.1 as f64 - a.1 as f64;
+
+        let tansi = y / x ;
+
+        println!("x y : {:?}",(y,x));
+        //println!("{:?}",tansi);
+        //println!("{:?}",(tansi.tan() * 180.0 / std::f64::consts::PI / 2.0).round());
+
+        if y < 0.0 && x == 0.0 {
+            return 180.0;
+        }else if y == 0.0 && x > 0.0 {
+            return  90.0;
+        }else if y > 0.0 && x == 0.0{
+            return  0.0;
+        }else if y == 0.0 && x < 0.0 {
+            return  270.0;
+        } else{
+            return  (tansi.tan() * 180.0 / std::f64::consts::PI / 2.0).round()
+        }
+
+        
+
+        
+
+    }
+
+
+    fn next_point_azimuth(&self) -> f64{
+
+
+       let azimuth =  self.none_gps_azimuth(&self.now_index, &self.index_order[0]);
+        println!("{}",(azimuth) * 1.0);
+        azimuth  * -1.0
+     }
 
 
     fn robot_move(&mut self,speed:f64) {
@@ -269,7 +313,7 @@ impl Rome {
         //speed;
 
         println!("{:?}",(y,x));
-
+        self.mesh_map.get(0); //TODO:mesh_map外検知
         self.mesh_map[self.now_index.0][self.now_index.1] = 0;
         self.now_index = (y.round() as usize,x.round() as usize);
         self.mesh_map[self.now_index.0][self.now_index.1] = 1;
@@ -594,6 +638,8 @@ impl GPS {
             azimuth_isize += 360;
         }
 
+        println!("{}",azimuth_isize);
+
         return azimuth_isize as usize
     }
 
@@ -634,9 +680,9 @@ impl GPS {
         let range = (distance_vec.last().unwrap() * 100.0) as usize * 2;
         // 1cm
 
-        println!("{}",range / 10);
+        println!("range {}",(range as f32 / 10.0).round());
 
-        self.rome.mesh_generation(range / 10);
+        self.rome.mesh_generation((range as f32 / 10.0).round() as usize);
         self.rome
             .add_waypoints(&self.waypoints, &self.nowpotion_history.get(0).expect(EXPECT_MSG));
         self.rome.start_latlot = Some(*self.nowpotion_history.get(0).expect(EXPECT_MSG));
