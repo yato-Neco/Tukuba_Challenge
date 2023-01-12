@@ -16,7 +16,7 @@ fn test() {
     //35.623271, 139.345627
     let now_latlot = (35.627471, 139.340386);
     tmp.nowpotion_history = vec![(35.627471, 139.340386)];
-    tmp.waypoints = vec![(35.627471, 139.340388)];
+    tmp.waypoints = vec![(35.627469, 139.340383)];
 
 
     println!("{:?}",tmp.azimuth360(tmp.azimuth(&now_latlot, &waypoints[0])));
@@ -31,10 +31,11 @@ fn test() {
     
     
     println!("{}", "-".repeat(80));
-
+    
+    println!("{}",tmp.rome.next_point_azimuth());
     tmp.rome.set_azimuth(tmp.rome.next_point_azimuth());
     //tmp.azimuth_string(0.0);
-    tmp.rome.robot_move(2.0);
+    tmp.rome.robot_move(3.0);
 
     for i in tmp.rome.mesh_map.iter() {
         println!("{:?}", i);
@@ -149,7 +150,6 @@ impl Rome {
 
     /// mesh_mapにwaypointsを追加
     /// waypointsの表現は2
-    /// bug あり y_index x_index isize にすべき。
     #[inline]
     fn add_waypoints(&mut self, waypoints: &Vec<(f64, f64)>, start_latlot: &(f64, f64)) {
         //println!("{:?}", waypoints);
@@ -162,8 +162,8 @@ impl Rome {
             let y = (azimuth.cos() * distance).round();
             println!("{:?}",(y,x));
             if x != 0.0 || y != 0.0 {
-                let y_index = (self.robot_start_index as f64 - (y / 10.0)) as usize;
-                let x_index = (self.robot_start_index as f64 + (x / 10.0) ) as usize;
+                let y_index = (self.robot_start_index as f64 - (y / 10.0).round()) as usize;
+                let x_index = (self.robot_start_index as f64 + (x / 10.0).round() ) as usize;
                 self.mesh_map[y_index][x_index] = 2;
                 self.index_order.push((y_index,x_index));
             }
@@ -220,7 +220,7 @@ impl Rome {
 
 
     pub fn set_azimuth(&mut self, azimuth: f64) {
-
+        println!("{}",azimuth);
         self.azimuth = azimuth;
     }
 
@@ -260,15 +260,17 @@ impl Rome {
         //println!("{:?}",(tansi.tan() * 180.0 / std::f64::consts::PI / 2.0).round());
 
         if y < 0.0 && x == 0.0 {
-            return 180.0;
+            return 0.0;
         }else if y == 0.0 && x > 0.0 {
             return  90.0;
         }else if y > 0.0 && x == 0.0{
-            return  0.0;
+            return  180.0;
         }else if y == 0.0 && x < 0.0 {
             return  270.0;
-        } else{
-            return  (tansi.tan() * 180.0 / std::f64::consts::PI / 2.0).round()
+        } else if y == 0.0 && x == 0.0 {
+            return  0.0;
+        }else{
+            return ( (tansi.tan() * 180.0 / std::f64::consts::PI /2.0).round()  ) * -1.0
         }
 
         
@@ -283,7 +285,7 @@ impl Rome {
 
        let azimuth =  self.none_gps_azimuth(&self.now_index, &self.index_order[0]);
         println!("{}",(azimuth) * 1.0);
-        azimuth  * -1.0
+        azimuth 
      }
 
 
@@ -300,10 +302,10 @@ impl Rome {
         };
         */
         
-        let azimuth = (self.azimuth - 180.0) * -1.0;
+        //let azimuth = (self.azimuth - 180.0) * -1.0;
 
 
-        let azimuth = azimuth * (std::f64::consts::PI / 180.0);
+        let azimuth = self.azimuth * (std::f64::consts::PI / 180.0);
 
         //let azimuth = (self.azimuth -180.0).abs() * (std::f64::consts::PI / 180.0);
         
@@ -313,7 +315,7 @@ impl Rome {
         //speed;
 
         println!("{:?}",(y,x));
-        self.mesh_map.get(0); //TODO:mesh_map外検知
+        //self.mesh_map.get(0); //TODO:mesh_map外検知
         self.mesh_map[self.now_index.0][self.now_index.1] = 0;
         self.now_index = (y.round() as usize,x.round() as usize);
         self.mesh_map[self.now_index.0][self.now_index.1] = 1;

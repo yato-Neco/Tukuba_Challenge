@@ -9,17 +9,17 @@ use crate::robot::{self, config};
 use crate::thread_variable;
 use ::tui::backend::CrosstermBackend;
 use ::tui::Terminal;
+use config::SenderOrders;
 use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
+use lidar::ydlidarx2;
 use mytools::time_sleep;
 use robot::tui;
 use robot_gpio::Moter;
 use robot_serialport::RasPico;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
-use lidar::ydlidarx2;
-use config::SenderOrders;
 use wt901_rs::WT901;
 
 struct SRP<'a> {
@@ -43,6 +43,7 @@ pub struct AutoEvents {
     pub opcode_history: Vec<u32>,
     pub latlot: (f64, f64),
     pub trun_azimuth: f64,
+    pub azimuth: f64,
     pub maneuver: &'static str,
 }
 
@@ -64,7 +65,7 @@ pub fn auto() {
     let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
     let mut gps = GPS::new(true);
     gps.waypoints = nav_setting;
-    
+
     //モジュールをflag内で扱うための構造体
     let module = AutoModule {
         terminal,
@@ -88,6 +89,7 @@ pub fn auto() {
         opcode_history: Vec::new(),
         latlot: (0.0, 0.0),
         trun_azimuth: 0.0,
+        azimuth: 0.0,
         maneuver: "Start",
     };
 
@@ -155,13 +157,15 @@ pub fn auto() {
         }
     });
 
-
     flag_controler.add_fnc("in_waypoint", |flacn| {
         if flacn.module.gps.in_waypoint && !flacn.event.is_first_time {
             flacn.event.maneuver = "in_waypoint";
 
+            /*
             flacn.event.trun_azimuth =
                 flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
+            */
+            
 
             flacn.event.opcode = config::STOP;
             flacn.load_fnc("moter_control");
@@ -178,14 +182,38 @@ pub fn auto() {
         }
     });
 
-    flag_controler.add_fnc("rotate", |flacon| {});
+    flag_controler.add_fnc("rotate", |flacn| {
+        flacn.event.opcode = config::STOP;
+        flacn.load_fnc("moter_control");
+        time_sleep(0, 50);
+
+
+        let azimuth = flacn.module.gps.now_azimuth;
+
+        flacn.module.gps.wt901.ang.unwrap_or((0.0,0.0,0.0)).0;
+
+
+
+
+        //flacn.event.opcode = 0x1F4AFFFF;
+        //flacn.event.opcode = 0x1FA4FFFF;
+
+        
+        //while すべき
+        loop {
+
+            flacn.event.opcode = 0x1F4AFFFF;
+            flacn.load_fnc("moter_control");
+            break;
+            time_sleep(0, 10)
+        }
+    });
 
     let opcode = thread_variable!("key", "lidar");
     let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
         mpsc::channel();
     let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
         std::collections::HashMap::new();
-
 
     thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
@@ -200,7 +228,7 @@ pub fn auto() {
         }
     });
 
-
+    /*
     flag_controler.add_fnc("rotate", |flacn| {
         //let mut stoptime: i128 = 0;
 
@@ -215,11 +243,11 @@ pub fn auto() {
             println!("{}", flacn.module.scheduler.nowtime());
         }
     });
-
+    */
+    
 
     let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
     let (wt901_sender, wt901_receiver) = std::sync::mpsc::channel::<WT901>();
-
 
     /*
     RthdG::<(), Settings>::_thread_generate(
@@ -233,13 +261,11 @@ pub fn auto() {
         },
     );
     */
-    
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
-    
+
     flag_controler.module.gps.generate_rome();
     loop {
-
         match gps_receiver.try_recv() {
             Ok(e) => {
                 flag_controler.module.gps.original_nowpotion = e.clone();
@@ -250,12 +276,14 @@ pub fn auto() {
 
         match wt901_receiver.try_recv() {
             Ok(e) => {
-               flag_controler.module.gps.rome.set_azimuth(e.ang.unwrap().0 as f64);
-
+                flag_controler
+                    .module
+                    .gps
+                    .rome
+                    .set_azimuth(e.ang.unwrap().0 as f64);
             }
             Err(_) => {}
         }
-
 
         // nowpotsiton_history push
         flag_controler.load_fnc("gps_Fix");
@@ -267,7 +295,7 @@ pub fn auto() {
                 if e == config::BREAK {
                     flag_controler.event.opcode = config::EMERGENCY_STOP;
                     flag_controler.load_fnc("emergency_stop");
-                
+
                     flag_controler.event.maneuver = "exit";
                     tui::end(&mut flag_controler.module.terminal);
                     break;
@@ -284,25 +312,21 @@ pub fn auto() {
             continue;
         }
 
-        flag_controler.load_fnc("rotate");
+        //flag_controler.load_fnc("rotate");
         flag_controler.load_fnc("in_waypoint");
         flag_controler.load_fnc("gps_nav");
 
-        time_sleep(1, 0);
+        time_sleep(0, 10);
     }
 }
-
-
-
 
 fn module_loop(
     gps_setting: (String, u32, usize),
     wt901_setting: (String, u32, usize),
     lidar_setting: (String, u32, usize),
     gps_msg: Sender<String>,
-    lidar_msg:Sender<String>,
-    wt901_msg:Sender<WT901>
-
+    lidar_msg: Sender<String>,
+    wt901_msg: Sender<WT901>,
 ) {
     let mut gps_port = match serialport::new(gps_setting.0, gps_setting.1)
         .stop_bits(serialport::StopBits::One)
@@ -339,11 +363,7 @@ fn module_loop(
     let mut lidar_serial_buf: Vec<u8> = vec![0; lidar_setting.2];
     let mut wt901 = WT901::new();
 
-
     loop {
-
-
-
         match gps_port.read(gps_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 //serial_buf[..t].to_vec();
@@ -357,23 +377,20 @@ fn module_loop(
         match wt901_port.read(wt901_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 let data = wt901_serial_buf[..t].to_vec();
-                
+
                 //cope_serial_data(data);
                 wt901.cope_serial_data(data);
-                
+
                 sendG(wt901.clone(), &wt901_msg);
-
-
-
             }
 
             Err(_) => {}
         }
 
-        match  lidar_port.read(lidar_serial_buf.as_mut_slice()) {
+        match lidar_port.read(lidar_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 let mut data = lidar_serial_buf[..t].to_vec();
-                let points =  ydlidarx2(&mut data);
+                let points = ydlidarx2(&mut data);
             }
             Err(_) => {}
         }
