@@ -20,3 +20,13 @@ class Correction():
         return(azimuth, bkw_azimuth, distance)
 
     def threshold(self):
+        """
+        しきい値計算プログラム
+        現在地点(点A), 次のwaypoint(点B), 前のwaypoint(点C)三点を頂点とし、
+        不等辺三角形としてあらわす。
+        角A, B, Cのθを元に高さ(h)を算出する。
+        高さ(h)をしきい値とし、±90cmとする。
+        右を+, 左を-とし、+方向に超えた場合は-1を,-方向に超えた場合は+1を返す
+        """
+
+        # 角
