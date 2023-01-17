@@ -182,8 +182,6 @@ pub fn auto() {
     });
 
     flag_controler.add_fnc("rotate", |flacn| {
-
-        
         
         let opcode:u32 = if flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap() > 0.0 {
             0x1FA4FFFF
@@ -191,33 +189,18 @@ pub fn auto() {
             0x1F4AFFFF
         };
 
-        
-        
-
-            
-
         flacn.event.opcode = config::STOP;
         flacn.load_fnc("moter_control");
         time_sleep(0, 50);
-
 
         let azimuth = flacn.module.gps.now_azimuth.unwrap();
 
         flacn.module.gps.wt901.ang.unwrap_or((0.0,0.0,0.0)).0;
 
-
-
-
-        //flacn.event.opcode = 0x1F4AFFFF;
-        //flacn.event.opcode = 0x1FA4FFFF;
-
-       
-
-        while true {
-            flacn.event.opcode = 0x1F4AFFFF;
+        while flacn.event.tmp_azimuth <= 0.0 {
+            flacn.event.opcode = opcode;
             flacn.load_fnc("moter_control");
-            break;
-            time_sleep(0, 10)     
+            time_sleep(0, 1);
         }
 
         flacn.event.opcode = config::STOP;
