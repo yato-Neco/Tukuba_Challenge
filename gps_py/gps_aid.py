@@ -7,11 +7,9 @@ A地点からB地点までの距離を出し、m当たりのlatlongを計測す�
 
 import pyproj, math
 
-g = pyproj.Geod(ellipsis="GRS80")
-
+g = pyproj.Geod(ellps="GRS80")
 
 class Correction():
-    
     # 緯度経度からto方角, from方角, 距離(メートル)を取得
     def gps(self, lat1, long1, lat2, long2):
 
@@ -19,14 +17,44 @@ class Correction():
         azimuth, bkw_azimuth, distance = g.inv(long1, lat1, long2, lat2)
         return(azimuth, bkw_azimuth, distance)
 
-    def threshold(self):
-        """
-        しきい値計算プログラム
-        現在地点(点A), 次のwaypoint(点B), 前のwaypoint(点C)三点を頂点とし、
-        不等辺三角形としてあらわす。
-        角A, B, Cのθを元に高さ(h)を算出する。
-        高さ(h)をしきい値とし、±90cmとする。
-        右を+, 左を-とし、+方向に超えた場合は-1を,-方向に超えた場合は+1を返す
-        """
+    # ヘロンの公式
+    def heron(self, a, b, c):
+        s = 0.5 * (a + b + c)
+        large_S = math.sqrt(s * (s - a) * (s - b) * (s - c))
+        h = 2 * large_S / a
+        return h
 
-        # 角
+    # しきい値計算
+    def threshold(self, prev, next, now):
+        next_prev = self.gps(next["long"], next["lat"], prev["long"], prev["lat"])
+        next_now = self.gps(next["long"], next["lat"], now["long"], now["lat"])
+        now_prev = self.gps(now["long"], now["lat"], prev["long"], prev["lat"])
+
+        print(next_now, next_prev, now_prev)
+
+        h = self.heron(next_prev[2], next_now[2], now_prev[2])
+
+        if h > 1:
+            
+
+if __name__ == "__main__":
+
+    # 研究所B
+    Institute_B = {
+        "lat" : 35.62616455678764,
+        "long" : 139.34219715172813,
+    }
+
+    # 片倉高校
+    Katakura_H = {
+        "lat" : 35.632018133236116,
+        "long" : 139.33117493228036,
+    }
+
+    # 八王子みなみ野駅
+    Hachi_South = {
+        "lat" : 35.63028463240432,
+        "long" : 139.34050754938417,
+    }
+
+    Correction().threshold(Katakura_H, Institute_B, Hachi_South)
