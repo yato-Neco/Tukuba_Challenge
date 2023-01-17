@@ -44,6 +44,7 @@ pub struct AutoEvents {
     pub latlot: (f64, f64),
     pub trun_azimuth: f64,
     pub azimuth: f64,
+    pub tmp_azimuth:f64,
     pub maneuver: &'static str,
 }
 
@@ -90,6 +91,7 @@ pub fn auto() {
         latlot: (0.0, 0.0),
         trun_azimuth: 0.0,
         azimuth: 0.0,
+        tmp_azimuth:0.0,
         maneuver: "Start",
     };
 
@@ -161,10 +163,7 @@ pub fn auto() {
         if flacn.module.gps.in_waypoint && !flacn.event.is_first_time {
             flacn.event.maneuver = "in_waypoint";
 
-            /*
-            flacn.event.trun_azimuth =
-                flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap();
-            */
+            
             
 
             flacn.event.opcode = config::STOP;
@@ -183,12 +182,26 @@ pub fn auto() {
     });
 
     flag_controler.add_fnc("rotate", |flacn| {
+
+        
+        
+        let opcode:u32 = if flacn.module.gps.azimuth - flacn.module.gps.now_azimuth.unwrap() > 0.0 {
+            0x1FA4FFFF
+        }else {
+            0x1F4AFFFF
+        };
+
+        
+        
+
+            
+
         flacn.event.opcode = config::STOP;
         flacn.load_fnc("moter_control");
         time_sleep(0, 50);
 
 
-        let azimuth = flacn.module.gps.now_azimuth;
+        let azimuth = flacn.module.gps.now_azimuth.unwrap();
 
         flacn.module.gps.wt901.ang.unwrap_or((0.0,0.0,0.0)).0;
 
@@ -198,15 +211,17 @@ pub fn auto() {
         //flacn.event.opcode = 0x1F4AFFFF;
         //flacn.event.opcode = 0x1FA4FFFF;
 
-        
-        //while すべき
-        loop {
+       
 
+        while true {
             flacn.event.opcode = 0x1F4AFFFF;
             flacn.load_fnc("moter_control");
             break;
-            time_sleep(0, 10)
+            time_sleep(0, 10)     
         }
+
+        flacn.event.opcode = config::STOP;
+        flacn.load_fnc("moter_control");
     });
 
     let opcode = thread_variable!("key", "lidar");
