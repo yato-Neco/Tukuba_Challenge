@@ -26,9 +26,9 @@ class Correction():
 
     def course(self, h, hdg):
         if h > 1:
-            if hdg > 0:
+            if hdg >= 10:
                 return(1)
-            elif hdg < 0:
+            elif hdg <= -10:
                 return(-1) 
             else:
                 return(0)
