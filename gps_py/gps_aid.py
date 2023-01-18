@@ -41,11 +41,11 @@ class Correction():
         next_now = self.gps(next["long"], next["lat"], now["long"], now["lat"])
         now_prev = self.gps(now["long"], now["lat"], prev["long"], prev["lat"])
 
-        print(next_now, next_prev, now_prev)
+        # print(next_now, next_prev, now_prev)
 
         h = self.heron(next_prev[2], next_now[2], now_prev[2])
 
-        print(h)
+        # print(h)
 
         base = next_prev[1] * -1
         hdg = next_now[1] + base
