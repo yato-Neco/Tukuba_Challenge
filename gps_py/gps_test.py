@@ -24,8 +24,15 @@ h = 2 * S / next_prev[2]
 print(S)
 print(h)
 
-# if next_prev[0] >= 0:
-tmp = next_prev[0] * -1
+base = next_prev[1] * -1
+hdg = next_now[1] + base
 
-to_azmith = next_now[1] + tmp
-print(to_azmith)
+if hdg > 180:
+    hdg = next_now[1] * -1
+
+if hdg > 0:
+    print(1)
+elif hdg < 0:
+    print(-1)
+else:
+    print(0)

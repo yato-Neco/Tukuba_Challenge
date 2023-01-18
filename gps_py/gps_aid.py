@@ -11,7 +11,7 @@ g = pyproj.Geod(ellps="GRS80")
 
 class Correction():
     # 緯度経度からto方角, from方角, 距離(メートル)を取得
-    def gps(self, lat1, long1, lat2, long2):
+    def gps(self, long1, lat1, long2, lat2):
 
         # g.inv(to_long, to_lat, from_long, from_lat)
         azimuth, bkw_azimuth, distance = g.inv(long1, lat1, long2, lat2)
@@ -24,6 +24,17 @@ class Correction():
         h = 2 * large_S / a
         return h
 
+    def course(self, h, hdg):
+        if h > 1:
+            if hdg > 0:
+                return(1)
+            elif hdg < 0:
+                return(-1) 
+            else:
+                return(0)
+        else:
+            return(0)
+
     # しきい値計算
     def threshold(self, prev, next, now):
         next_prev = self.gps(next["long"], next["lat"], prev["long"], prev["lat"])
@@ -34,8 +45,15 @@ class Correction():
 
         h = self.heron(next_prev[2], next_now[2], now_prev[2])
 
-        if h > 1:
-            
+        print(h)
+
+        base = next_prev[1] * -1
+        hdg = next_now[1] + base
+
+        if hdg > 180:
+            hdg = next_now * -1
+
+        return(self.course(h, hdg))
 
 if __name__ == "__main__":
 
@@ -57,4 +75,4 @@ if __name__ == "__main__":
         "long" : 139.34050754938417,
     }
 
-    Correction().threshold(Katakura_H, Institute_B, Hachi_South)
+    print(Correction().threshold(Katakura_H, Institute_B, Hachi_South))
