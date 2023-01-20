@@ -3,6 +3,7 @@ use nav_types::{ENU, WGS84};
 use rthred::sendG;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
+mod gps;
 
 #[test]
 fn test() {
