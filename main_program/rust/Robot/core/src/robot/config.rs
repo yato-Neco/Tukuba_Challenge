@@ -3,7 +3,7 @@ pub const STOP: u32 = 0x1F00FFFF;
 pub const EMERGENCY_STOP: u32 = 0x0F00FFFF;
 pub const BREAK: u32 = 0x0FFFFFFF;
 pub const NONE: u32 = 0xffffffff;
-pub const FRONT:u32 = 0x1FEEFFFF;
+pub const FRONT:u32 = 0x1FDDFFFF;
 pub const TRUN:u32 = 0x1FAEFFFF;
 
 pub type SenderOrders = std::sync::mpsc::Sender<u32>;
