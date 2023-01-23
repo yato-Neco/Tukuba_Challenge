@@ -31,6 +31,7 @@ pub struct Nav {
     pub waypoints: Vec<(f64, f64)>,
     pub destination_index: usize,
     pub lat_lon_history: Vec<(f64, f64)>,
+    pub start_lat_lot_index:Option<usize>,
     pub r: f64,
     pub is_simulater: bool,
     pub gps_senser: GpsSenser,
@@ -96,13 +97,14 @@ impl GpsSenser {
 impl Nav {
     #[inline]
     /// is_fix: false
-    fn init() -> Self {
+    pub fn init() -> Self {
         Self {
             lat_lon: None,
             position: (0.0, 0.0),
             waypoints: Vec::new(),
             destination_index: 0,
             lat_lon_history: Vec::new(),
+            start_lat_lot_index:None,
             r: 0.00001,
             is_simulater: false,
             gps_senser: GpsSenser {
@@ -115,7 +117,7 @@ impl Nav {
 
     #[inline]
     /// is_fix: true
-    fn is_in_waypoint(&mut self) {
+    pub fn is_in_waypoint(&mut self) -> bool {
         if self.destination_index < self.waypoints.len() {
             let lat0_bottom = self.waypoints[self.destination_index].0 - self.r;
             let lat0_top = self.waypoints[self.destination_index].0 + self.r;
@@ -133,11 +135,14 @@ impl Nav {
             }
 
             if is_in {
-                self.destination_index += 1;
+                self.destination_index += 1;    
             }
 
+            return  false;
+
         }else{
-            println!("exit");
+            //println!("exit");
+            return  true;
         }
     }
 
@@ -172,7 +177,7 @@ impl Nav {
 
     #[inline]
     /// is_fix: true
-    fn add_waypoints(&mut self, waypoints: Vec<(f64, f64)>) {
+    pub fn add_waypoints(&mut self, waypoints: Vec<(f64, f64)>) {
         //println!("{:?}", waypoints);
         for waypoints_lat_lot in waypoints.iter() {
             //let distance = self.distance(start_latlot, latlot) * 100.0;
@@ -194,16 +199,24 @@ impl Nav {
     }
 
     #[inline]
-    fn set_lat_lot(&mut self, lat_lon: (f64, f64)) {
-        self.lat_lon_history.push(lat_lon);
+    pub fn set_lat_lot(&mut self, lat_lon: (f64, f64)) {
+        let last_lat = self.lat_lon_history.last().unwrap().0;
+        let last_lot = self.lat_lon_history.last().unwrap().0;
+
+       
         self.lat_lon = Some(lat_lon);
+
+        if last_lat != lat_lon.0 && last_lot != lat_lon.1 {
+            self.lat_lon_history.push(lat_lon);
+        };
+        
     }
 
     /// is_fix: false or true
     /// speed: cm
     /// is_fixで分けるべき？
     #[inline]
-    fn robot_move(&mut self, azimuth: f64, speed: f64) {
+    pub fn robot_move(&mut self, azimuth: f64, speed: f64) {
         //TODO: retrun azimuth
         if self.gps_senser.is_fix {
             let lat_lon = self.lat_lon.unwrap();
@@ -224,4 +237,24 @@ impl Nav {
             self.position.1+=y;
         }
     }
+
+    #[inline]
+    pub fn frist_calculate_azimuth(&self) -> f64 {
+        
+        let nowpotion = self.lat_lon.unwrap();
+        let pos_a = WGS84::from_degrees_and_meters(
+            self.lat_lon_history[0].0,
+            self.lat_lon_history[0].1,
+            0.0,
+        );
+        let pos_b = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
+        let vec = pos_b - pos_a;
+        let azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
+        azimuth
+    }
+
+    
+
+    
+
 }
