@@ -43,6 +43,7 @@ pub trait Flags<T,R> {
 pub trait Event<T,R>  {
     fn add_fnc(&mut self, name: &'static str, f: fn(_self: &mut FlaCon<T,R>));
     fn load_fnc(&mut self, name: &str);
+    fn load_fnc_is(&mut self, name: &str,flag:bool);
     fn none_fnc(_self: &mut FlaCon<T,R>);
 }
 
@@ -90,6 +91,26 @@ impl<T,R> Event<T,R>  for FlaCon<T,R> {
         };
 
         tmp(self);
+    }
+
+    fn load_fnc_is(&mut self, name: &str,flag:bool) {
+        let tmp = match self.fnc_map.get(name) {
+
+            Some(e) => *e,
+            None => {
+                if self.is_panic {
+                    panic!("Not Fnc {}",name);
+
+                }else{
+                    Self::none_fnc
+                }
+
+            },
+        };
+        
+        if flag {
+            tmp(self);
+        }
     }
 
     

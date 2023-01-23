@@ -68,6 +68,8 @@ fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
     let mut microbit_serial_buf: Vec<u8> = vec![0; 1000];
 
 
+
+    
     /*
         match microbit_port.read(microbit_serial_buf.as_mut_slice()) {
             Ok(t) => {
@@ -80,7 +82,7 @@ fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
     
             Err(_) => {}
         }
-        */
+    */
 
 
     loop {
