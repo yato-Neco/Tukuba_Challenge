@@ -372,6 +372,7 @@ fn module_loop(
             Err(_) => {}
         }
 
+        /*
         match wt901_port.read(wt901_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 let data = wt901_serial_buf[..t].to_vec();
@@ -384,6 +385,9 @@ fn module_loop(
 
             Err(_) => {}
         }
+        
+        */
+        
 
         match lidar_port.read(lidar_serial_buf.as_mut_slice()) {
             Ok(t) => {

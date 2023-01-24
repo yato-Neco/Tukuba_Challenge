@@ -156,7 +156,7 @@ pub fn key() {
         };
     });
 
-    let order = thread_variable!("key", "lidar");
+    let order = thread_variable!("key");
 
     let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
         mpsc::channel();
@@ -176,6 +176,7 @@ pub fn key() {
         }
     });
     
+    /*
     thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
         let setting_file = Settings::load_setting("./settings.yaml");
@@ -228,10 +229,14 @@ pub fn key() {
             }
         }
     });
+    */
+    
      
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
+
+        /*
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
                 flag_controler.event.order = e;
@@ -241,6 +246,8 @@ pub fn key() {
             }
             Err(_) => {}
         };
+        */
+        
 
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
@@ -274,7 +281,7 @@ pub fn key() {
 
         //flag_controler.load_fnc("debug");
 
-        time_sleep(0, 10);
+        time_sleep(0, 1);
     }
 
     //terminal.clear().unwrap();

@@ -22,18 +22,49 @@ pub fn test() {
     let opcode = thread_variable!("operator");
 
 
-    thread.insert("operator", operator);
+    //thread.insert("operator", operator);
 
 
-    Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
+    //Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
 
 
     
+    moter_controler.moter_control(config::STOP);
+    time_sleep(0, 600);
 
 
-    let mut azimuth:u32 = 0;
-    moter_controler.moter_control(0x1FA4FFFF);
+    moter_controler.moter_control(0x1F5CFFFF);
+    time_sleep(1, 10);
 
+    moter_controler.moter_control(config::STOP);
+    time_sleep(0, 300);
+
+    moter_controler.moter_control(0x1F5CFFFF);
+    time_sleep(1, 10);
+
+
+    moter_controler.moter_control(config::STOP);
+    time_sleep(0, 300);
+
+    moter_controler.moter_control(0x1F5CFFFF);
+    time_sleep(1, 10);
+
+
+    moter_controler.moter_control(config::STOP);
+    time_sleep(0, 300);
+
+    moter_controler.moter_control(0x1F5CFFFF);
+    time_sleep(1, 10);
+
+
+    moter_controler.moter_control(config::STOP);
+    time_sleep(0, 300);
+
+    //moter_controler.pwm_all_clean();
+
+    
+
+    /*
     loop {
 
         
@@ -48,6 +79,8 @@ pub fn test() {
         time_sleep(0, 10);
 
     }
+    */
+    
 }
 
 
@@ -68,8 +101,6 @@ fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
     let mut microbit_serial_buf: Vec<u8> = vec![0; 1000];
 
 
-
-    
     /*
         match microbit_port.read(microbit_serial_buf.as_mut_slice()) {
             Ok(t) => {
