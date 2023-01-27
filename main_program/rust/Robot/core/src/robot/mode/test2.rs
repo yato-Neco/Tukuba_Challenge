@@ -1,11 +1,18 @@
-use std::{time::{Duration, Instant}, collections::HashMap, sync::mpsc::{Sender, Receiver, self}};
+use std::{
+    collections::HashMap,
+    sync::mpsc::{self, Receiver, Sender},
+    time::{Duration, Instant},
+};
 
-use mytools::{time_sleep, Xtools};
-use robot_gpio::Moter;
-use rthred::{Rthd, sendG};
 use crate::thread_variable;
+use mytools::{ms_sleep, time_sleep, Xtools, mic_sleep};
+use robot_gpio::Moter;
+use rthred::{sendG, Rthd};
 
-use crate::robot::{setting::Settings, config::{self, SenderOrders}};
+use crate::robot::{
+    config::{self, SenderOrders},
+    setting::Settings,
+};
 
 pub fn test() {
     let setting_file = Settings::load_setting("./settings.yaml");
@@ -14,80 +21,56 @@ pub fn test() {
 
     let mut moter_controler = Moter::new(right_moter_pin, left_moter_pin);
 
-
     let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
         std::collections::HashMap::new();
-        let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) = mpsc::channel();
-    
-    let opcode = thread_variable!("operator");
+    let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
+        mpsc::channel();
 
+    let opcode = thread_variable!("operator");
 
     //thread.insert("operator", operator);
 
+    //1s 125ms
+    //1s 40~50ms ????
 
-    //Rthd::<String>::thread_generate(thread, &sendr_err_handles, &opcode);
-
-
-    
-    moter_controler.moter_control(config::STOP);
-    time_sleep(0, 600);
-
-
-    moter_controler.moter_control(0x1F5CFFFF);
-    time_sleep(1, 10);
-
-    moter_controler.moter_control(config::STOP);
-    time_sleep(0, 300);
-
-    moter_controler.moter_control(0x1F5CFFFF);
-    time_sleep(1, 10);
-
-
-    moter_controler.moter_control(config::STOP);
-    time_sleep(0, 300);
-
-    moter_controler.moter_control(0x1F5CFFFF);
-    time_sleep(1, 10);
-
-
-    moter_controler.moter_control(config::STOP);
-    time_sleep(0, 300);
-
-    moter_controler.moter_control(0x1F5CFFFF);
-    time_sleep(1, 10);
-
-
-    moter_controler.moter_control(config::STOP);
-    time_sleep(0, 300);
-
-    //moter_controler.pwm_all_clean();
+    let in_ms = 180 + 5; //1s
+    let in_ms = 185000;
+    let out_ms = 105;
 
     
 
-    /*
-    loop {
+    moter_controler.moter_control(config::STOP);
+    mic_sleep(300);
 
-        
-        match opcode.get("operator").unwrap().1.try_recv() {
-            Ok(e) => {
-                moter_controler.moter_control(e);
-            }
-            Err(_) => {}
-        };
+    moter_controler.moter_control(0x1F5CFFFF);
+    ms_sleep(in_ms);
 
+    moter_controler.moter_control(config::STOP);
+    ms_sleep(300);
 
-        time_sleep(0, 10);
+    moter_controler.moter_control(0x1F5CFFFF);
+    ms_sleep(in_ms);
 
-    }
-    */
-    
+    moter_controler.moter_control(config::STOP);
+    ms_sleep(300);
+
+    moter_controler.moter_control(0x1F5CFFFF);
+    ms_sleep(in_ms);
+
+    moter_controler.moter_control(config::STOP);
+    ms_sleep(300);
+
+    moter_controler.moter_control(0x1F5CFFFF);
+    ms_sleep(in_ms);
+
+    moter_controler.moter_control(config::STOP);
+    ms_sleep(300);
+
+    moter_controler.pwm_all_clean();
+
 }
 
-
-
-
 fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
-
     let mut microbit_port = match serialport::new("COM5", 9600)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Eight)
@@ -100,72 +83,55 @@ fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
 
     let mut microbit_serial_buf: Vec<u8> = vec![0; 1000];
 
-
     /*
         match microbit_port.read(microbit_serial_buf.as_mut_slice()) {
             Ok(t) => {
                 let data = microbit_serial_buf[..t].to_vec();
-    
+
                 println!("{:?}", data);
 
                 azimuth = 0;
             }
-    
+
             Err(_) => {}
         }
     */
 
-
     loop {
-
         sendG(config::FRONT, &msg);
 
-
         /*
-        
-        
         if azimuth > 90 {
             moter_controler.moter_control(config::STOP);
         }
-
-        
         */
-
-
     }
 }
-
 
 fn serial() {
     time_sleep(0, 10);
 }
 
-
 #[test]
 fn s() {
-    let v2 = [0.0,1.0,0.0,0.0,-1.0];
-    let mut v = 0.0; 
+    let v2 = [0.0, 1.0, 0.0, 0.0, -1.0];
+    let mut v = 0.0;
 
     let mut timer = Scheduler::start();
 
-    
     for vv in v2 {
         let t = timer.end();
-        v +=  vv * t;
-        println!("{} {}",v.roundf(10),t);
+        v += vv * t;
+        println!("{} {}", v.roundf(10), t);
         timer = Scheduler::start();
         time_sleep(2, 000);
-
     }
-
-
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Scheduler {
     start_time: Instant,
 }
-
 
 impl Scheduler {
     // カウントを開始する。
@@ -180,6 +146,5 @@ impl Scheduler {
     pub fn end(&self) -> f64 {
         // 二つ目のカウントが始まって終わった時の時間を、一つ目のカウントでは無かったことにする。
         self.start_time.elapsed().as_secs_f64()
-
     }
 }

@@ -49,7 +49,6 @@ pub fn time_sleep(sec: u64, ms: u64) {
     thread::sleep(Duration::from_millis(ms));
 }
 
-
 #[inline]
 pub fn mic_sleep(micro: u64) {
     thread::sleep(Duration::from_micros(micro));

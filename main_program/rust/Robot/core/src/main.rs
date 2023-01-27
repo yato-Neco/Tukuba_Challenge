@@ -11,7 +11,7 @@ extern crate wt901_rs;
 
 mod robot;
 use clap::Parser;
-use robot::mode::{key::key,test::test as other_test,auto::auto,srpauto,test2};
+use robot::mode::{key::key,test::{test as other_test, self},auto::auto,srpauto,test2, nauto};
 
 
 #[derive(Parser, Debug)]
@@ -30,6 +30,7 @@ fn main() {
         "k" => key(),
         "a" => auto(),
         "az" => test2::test(),
+        "na" => nauto::nauto(),
         _ => {srpauto::auto()}
     }
 }

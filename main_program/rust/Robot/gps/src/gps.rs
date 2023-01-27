@@ -9,7 +9,7 @@ fn test() {
     let mut waypoints = Vec::new();
     waypoints.push((36.064225, 136.221375));
 
-    nav.add_waypoints(waypoints);
+    nav.add_waypoints(&waypoints);
 
     nav.robot_move(0.6819655742780839, 1.431415478609833);
 
@@ -21,7 +21,6 @@ fn test() {
     println!("position {:?}", nav.position);
     nav.is_in_waypoint();
     nav.is_in_waypoint();
-
 }
 
 #[derive(Debug)]
@@ -31,10 +30,11 @@ pub struct Nav {
     pub waypoints: Vec<(f64, f64)>,
     pub destination_index: usize,
     pub lat_lon_history: Vec<(f64, f64)>,
-    pub start_lat_lot_index:Option<usize>,
+    pub start_lat_lot_index: Option<usize>,
     pub r: f64,
     pub is_simulater: bool,
     pub gps_senser: GpsSenser,
+    pub start_index: Option<usize>,
 }
 
 #[derive(Debug)]
@@ -104,7 +104,7 @@ impl Nav {
             waypoints: Vec::new(),
             destination_index: 0,
             lat_lon_history: Vec::new(),
-            start_lat_lot_index:None,
+            start_lat_lot_index: None,
             r: 0.00001,
             is_simulater: false,
             gps_senser: GpsSenser {
@@ -112,6 +112,7 @@ impl Nav {
                 lat_lon: None,
                 num_sat: None,
             },
+            start_index: None,
         }
     }
 
@@ -125,24 +126,21 @@ impl Nav {
             let lon1_bottom = self.waypoints[self.destination_index].1 - self.r;
             let lon1_top = self.waypoints[self.destination_index].1 + self.r;
 
-            let mut is_in: bool = false;
 
             if (lat0_bottom <= self.position.0 && self.position.0 <= lat0_top)
                 && (lon1_bottom <= self.position.1 && self.position.1 <= lon1_top)
             {
                 println!("In!!");
-                is_in = true;
+                self.destination_index += 1;
+
             }
 
-            if is_in {
-                self.destination_index += 1;    
-            }
+        
 
-            return  false;
-
-        }else{
+            return false;
+        } else {
             //println!("exit");
-            return  true;
+            return true;
         }
     }
 
@@ -166,6 +164,7 @@ impl Nav {
     #[inline]
     /// is_fix: true
     fn azimuth_distance(&self, a: &(f64, f64), b: &(f64, f64)) -> (f64, f64) {
+        /// distance * 100 の影響で角度がおかしい？
         let pos_a = WGS84::from_degrees_and_meters(a.0, a.1, 0.0);
         let pos_b = WGS84::from_degrees_and_meters(b.0, b.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
@@ -176,9 +175,20 @@ impl Nav {
     }
 
     #[inline]
+    pub fn set_start_index(&mut self) {
+        self.start_index = Some(self.lat_lon_history.len() - 1);
+    }
+
+    #[inline]
+    pub fn get_start_index(&mut self) -> usize {
+        self.start_index.unwrap_or(0)
+    }
+
+    #[inline]
     /// is_fix: true
-    pub fn add_waypoints(&mut self, waypoints: Vec<(f64, f64)>) {
+    pub fn add_waypoints(&mut self, waypoints: &Vec<(f64, f64)>)  {
         //println!("{:?}", waypoints);
+
         for waypoints_lat_lot in waypoints.iter() {
             //let distance = self.distance(start_latlot, latlot) * 100.0;
             //let azimuth = self.azimuth(&start_latlot, latlot);
@@ -186,13 +196,16 @@ impl Nav {
             let (azimuth, distance) =
                 self.azimuth_distance(&self.lat_lon_history[0], waypoints_lat_lot);
             //self.azimuth360(&mut azimuth);
-            println!("azimuth(sita)_distance: {:?}", (azimuth, distance));
+            println!(
+                "azimuth {} distance: {}",
+                azimuth, distance
+            );
 
             let x = azimuth.sin() * distance * 100.0;
             let y = azimuth.cos() * distance * 100.0;
 
             println!("(y,x): {:?}", (y, x));
-            println!("azimuth(sita): {}", (x / y));
+            println!("azimuth: {}", ((x / y)));
 
             self.waypoints.push((y, x));
         }
@@ -200,16 +213,18 @@ impl Nav {
 
     #[inline]
     pub fn set_lat_lot(&mut self, lat_lon: (f64, f64)) {
-        let last_lat = self.lat_lon_history.last().unwrap().0;
-        let last_lot = self.lat_lon_history.last().unwrap().0;
-
-       
         self.lat_lon = Some(lat_lon);
 
-        if last_lat != lat_lon.0 && last_lot != lat_lon.1 {
-            self.lat_lon_history.push(lat_lon);
-        };
-        
+        match self.lat_lon_history.last() {
+            Some((lat, lot)) => {
+                if *lat != lat_lon.0 && *lot != lat_lon.1 {
+                    self.lat_lon_history.push(lat_lon);
+                };
+            }
+            None => {
+                self.lat_lon_history.push(lat_lon);
+            }
+        }
     }
 
     /// is_fix: false or true
@@ -233,14 +248,13 @@ impl Nav {
             println!("(y,x): {:?}", (y, x));
 
             //TODO: 代入
-            self.position.0+=x;
-            self.position.1+=y;
+            self.position.0 += x;
+            self.position.1 += y;
         }
     }
 
     #[inline]
     pub fn frist_calculate_azimuth(&self) -> f64 {
-        
         let nowpotion = self.lat_lon.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(
             self.lat_lon_history[0].0,
@@ -253,8 +267,50 @@ impl Nav {
         azimuth
     }
 
-    
+    pub fn correction(&mut self) {
+        //self.azimuth_distance(, );
+        self.waypoint_azimuth_distance();
+    }
 
-    
+    #[inline]
+    fn heron(a: f64, b: f64, c: f64) -> f64 {
+        let s = 0.5 * (a + b + c);
 
+        let large_s = (s * (s - a) * (s - b) * (s - c)).sqrt();
+
+        let h = 2.0 * large_s / a;
+
+        h
+    }
+
+    #[inline]
+    fn course(self, h: f64, hdg: f64) -> isize {
+        if h > 1.0 {
+            if hdg >= 10.0 {
+                1
+            } else if hdg <= -10.0 {
+                -1
+            } else {
+                0
+            }
+        } else {
+            0
+        }
+    }
+}
+
+pub trait az {
+    fn sita_deg(&self) -> f64;
+    fn sita_deg_360(&self) -> f64;
+
+}
+
+impl az for f64 {
+    fn sita_deg(&self) -> f64 {
+        self * (180.0 / std::f64::consts::PI)
+    }
+
+    fn sita_deg_360(&self) -> f64 {
+        self * (180.0 / std::f64::consts::PI)
+    }
 }

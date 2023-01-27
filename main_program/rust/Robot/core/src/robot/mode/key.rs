@@ -175,68 +175,24 @@ pub fn key() {
             time_sleep(0, 5);
         }
     });
-    
+
+    //thread.insert("lidar", lidar);
+
     /*
     thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
-        let setting_file = Settings::load_setting("./settings.yaml");
-        let (port, rate) = setting_file.load_lidar();
-        let mut port = match serialport::new(port, rate)
-            .stop_bits(serialport::StopBits::One)
-            .data_bits(serialport::DataBits::Eight)
-            .timeout(Duration::from_millis(10))
-            .open()
-        {
-            Ok(p) => p,
-            Err(_) => panic!(),
-        };
-        let mut serial_buf: Vec<u8> = vec![0; 1500];
+
 
         let mut ignition0 = false;
         let mut count = 0;
 
-        loop {
-            match port.read(serial_buf.as_mut_slice()) {
-                Ok(t) => {
-                    //let mut map_vec = Vec::new();
-                    let mut data = serial_buf[..t].to_vec();
-                    let points = ydlidarx2(&mut data);
-
-                    for point in points.iter() {
-                        if point.1 < 30.0 {
-                            if 179.5 < point.0 && point.0 < 180.5 {
-                                count += 1;
-                            }
-                        } else {
-                            if 179.5 < point.0 && point.0 < 180.5 {
-                                count = 0;
-                            }
-                        }
-                        if count == 3 && !ignition0 {
-                            send(config::EMERGENCY_STOP, &msg);
-                            ignition0 = true;
-                        }
-                        if count == 0 && ignition0 {
-                            send(config::EMERGENCY_STOP, &msg);
-                            ignition0 = false;
-                        }
-                        if count >= 4 {
-                            count = 4;
-                        }
-                    }
-                }
-                Err(_) => {}
-            }
-        }
+        
     });
     */
-    
-     
+
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
-
-        /*
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
                 flag_controler.event.order = e;
@@ -246,8 +202,6 @@ pub fn key() {
             }
             Err(_) => {}
         };
-        */
-        
 
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
@@ -285,6 +239,44 @@ pub fn key() {
     }
 
     //terminal.clear().unwrap();
+}
+
+fn lidar(panic_msg: Sender<String>, msg: SenderOrders) {
+    Rthd::<String>::send_panic_msg(panic_msg);
+
+    let setting_file = Settings::load_setting("./settings.yaml");
+    let (port, rate) = setting_file.load_lidar();
+    let mut port = match serialport::new(port, rate)
+        .stop_bits(serialport::StopBits::One)
+        .data_bits(serialport::DataBits::Eight)
+        .timeout(Duration::from_millis(10))
+        .open()
+    {
+        Ok(p) => p,
+        Err(_) => panic!(),
+    };
+    let mut serial_buf: Vec<u8> = vec![0; 1500];
+
+    loop {
+        match port.read(serial_buf.as_mut_slice()) {
+            Ok(t) => {
+                //let mut map_vec = Vec::new();
+                let mut data = serial_buf[..t].to_vec();
+                let points = ydlidarx2(&mut data);
+
+                for point in points.iter() {
+                    
+                    if point.0 > 0.0 && 0.0 < point.1 {
+
+                    }
+
+                   
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
 }
 
 pub fn input_key(key_bind: [u32; 4]) -> u32 {

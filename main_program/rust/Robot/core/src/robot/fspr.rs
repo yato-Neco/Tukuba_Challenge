@@ -1,3 +1,4 @@
+/*
 struct IMap<I> {
     data: Vec<IntMap<I>>,
 }
@@ -47,3 +48,6 @@ fn test() {
     let r = tmp.fnd(0);
     println!("{:?}", r);
 }
+
+
+*/
