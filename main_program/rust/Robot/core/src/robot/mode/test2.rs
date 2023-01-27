@@ -34,37 +34,39 @@ pub fn test() {
     //1s 40~50ms ????
 
     let in_ms = 180 + 5; //1s
-    let in_ms = 185000;
+    let in_ms = 1300000; //185000
+    // in debug 1344000
+    // in rlease 
     let out_ms = 105;
 
     
 
     moter_controler.moter_control(config::STOP);
-    ms_sleep(300);
+    ms_sleep(1000);
 
     moter_controler.moter_control(0x1F5CFFFF);
     mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
-    ms_sleep(300);
+    ms_sleep(1000);
 
     moter_controler.moter_control(0x1F5CFFFF);
     mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
-    ms_sleep(300);
+    ms_sleep(1000);
 
     moter_controler.moter_control(0x1F5CFFFF);
     mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
-    ms_sleep(300);
+    ms_sleep(1000);
 
     moter_controler.moter_control(0x1F5CFFFF);
     mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
-    ms_sleep(300);
+    ms_sleep(1000);
 
     moter_controler.pwm_all_clean();
 

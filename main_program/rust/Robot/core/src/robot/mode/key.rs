@@ -193,6 +193,7 @@ pub fn key() {
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
+        /*
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
                 flag_controler.event.order = e;
@@ -202,6 +203,8 @@ pub fn key() {
             }
             Err(_) => {}
         };
+        */
+        
 
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {

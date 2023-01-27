@@ -78,37 +78,37 @@ impl Moter {
     }
 
     pub fn _front(&mut self, r_duty: f64, l_duty: f64) {
-        self.r_pin0.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.r_pin1.set_pwm_frequency(50_0000.0, r_duty).unwrap();
-        self.l_pin0.set_pwm_frequency(50_0000.0, l_duty).unwrap();
-        self.l_pin1.set_pwm_frequency(50_0000.0, 0.0).unwrap();
+        self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
 
     pub fn _back(&mut self, r_duty: f64, l_duty: f64) {
-        self.r_pin0.set_pwm_frequency(50_0000.0, r_duty).unwrap();
-        self.r_pin1.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.l_pin0.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.l_pin1.set_pwm_frequency(50_0000.0, l_duty).unwrap();
+        self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
 
     pub fn _left(&mut self, r_duty: f64, l_duty: f64) {
-        self.r_pin0.set_pwm_frequency(50_0000.0, r_duty).unwrap();
-        self.r_pin1.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.l_pin0.set_pwm_frequency(50_0000.0, l_duty).unwrap();
-        self.l_pin1.set_pwm_frequency(50_0000.0, 0.0).unwrap();
+        self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
+        self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
+        self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
 
     pub fn _right(&mut self, r_duty: f64, l_duty: f64) {
-        self.r_pin0.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.r_pin1.set_pwm_frequency(50_0000.0, r_duty).unwrap();
-        self.l_pin0.set_pwm_frequency(50_0000.0, 0.0).unwrap();
-        self.l_pin1.set_pwm_frequency(50_0000.0, l_duty).unwrap();
+        self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
+        self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
+        self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
     pub fn _stop(&mut self) {
-        self.r_pin0.set_pwm_frequency(50_0000.0, 1.0).unwrap();
-        self.r_pin1.set_pwm_frequency(50_0000.0, 1.0).unwrap();
-        self.l_pin0.set_pwm_frequency(50_0000.0, 1.0).unwrap();
-        self.l_pin1.set_pwm_frequency(50_0000.0, 1.0).unwrap();
+        self.r_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
+        self.r_pin1.set_pwm_frequency(45_0000.0, 1.0).unwrap();
+        self.l_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
+        self.l_pin1.set_pwm_frequency(45_0000.0, 1.0).unwrap();
     }
 
     /// PWMのリセット
