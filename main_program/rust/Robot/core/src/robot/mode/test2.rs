@@ -40,28 +40,28 @@ pub fn test() {
     
 
     moter_controler.moter_control(config::STOP);
-    mic_sleep(300);
+    ms_sleep(300);
 
     moter_controler.moter_control(0x1F5CFFFF);
-    ms_sleep(in_ms);
+    mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
     ms_sleep(300);
 
     moter_controler.moter_control(0x1F5CFFFF);
-    ms_sleep(in_ms);
+    mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
     ms_sleep(300);
 
     moter_controler.moter_control(0x1F5CFFFF);
-    ms_sleep(in_ms);
+    mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
     ms_sleep(300);
 
     moter_controler.moter_control(0x1F5CFFFF);
-    ms_sleep(in_ms);
+    mic_sleep(in_ms);
 
     moter_controler.moter_control(config::STOP);
     ms_sleep(300);
