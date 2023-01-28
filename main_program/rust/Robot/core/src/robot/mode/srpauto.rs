@@ -20,7 +20,6 @@ use robot_gpio::Moter;
 use robot_serialport::RasPico;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
-use wt901_rs::WT901;
 
 struct SRP<'a> {
     opcode: u32,
@@ -245,7 +244,7 @@ pub fn auto() {
     
 
     let (gps_sender, gps_receiver) = std::sync::mpsc::channel::<String>();
-    let (wt901_sender, wt901_receiver) = std::sync::mpsc::channel::<WT901>();
+    //let (wt901_sender, wt901_receiver) = std::sync::mpsc::channel::<WT901>();
 
     /*
     RthdG::<(), Settings>::_thread_generate(
@@ -272,6 +271,7 @@ pub fn auto() {
             Err(_) => {}
         }
 
+        /*
         match wt901_receiver.try_recv() {
             Ok(e) => {
                 flag_controler
@@ -282,6 +282,8 @@ pub fn auto() {
             }
             Err(_) => {}
         }
+        */
+        
 
         // nowpotsiton_history push
         flag_controler.load_fnc("gps_Fix");
@@ -324,7 +326,7 @@ fn module_loop(
     lidar_setting: (String, u32, usize),
     gps_msg: Sender<String>,
     lidar_msg: Sender<String>,
-    wt901_msg: Sender<WT901>,
+    //wt901_msg: Sender<WT901>,
 ) {
     let mut gps_port = match serialport::new(gps_setting.0, gps_setting.1)
         .stop_bits(serialport::StopBits::One)
@@ -359,7 +361,7 @@ fn module_loop(
     let mut gps_serial_buf: Vec<u8> = vec![0; gps_setting.2];
     let mut wt901_serial_buf: Vec<u8> = vec![0; wt901_setting.2];
     let mut lidar_serial_buf: Vec<u8> = vec![0; lidar_setting.2];
-    let mut wt901 = WT901::new();
+    //let mut wt901 = WT901::new();
 
     loop {
         match gps_port.read(gps_serial_buf.as_mut_slice()) {

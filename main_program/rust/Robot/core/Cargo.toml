@@ -16,7 +16,8 @@ lidar = {path = "../lidar"}
 rthred = {path = "../rthred"}
 scheduler = {path = "../scheduler"}
 mytools = {path = "../mytools"}
-wt901-rs = { git = "https://github.com/yato-Neco/wt901-rs.git", branch = "master"}
+wt901 = {path = "../wt901"}
+
 
 
 #rppal = { version = "0.13.1", features = ["hal"] }

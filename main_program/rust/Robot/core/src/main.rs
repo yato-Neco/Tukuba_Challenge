@@ -7,7 +7,7 @@ extern crate rthred;
 extern crate scheduler;
 extern crate mytools;
 extern crate robot_serialport;
-extern crate wt901_rs;
+extern crate wt901;
 
 mod robot;
 use clap::Parser;
