@@ -1,4 +1,7 @@
-use std::{collections::VecDeque, time::{Duration, Instant}};
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
 
 #[derive(Debug, Clone)]
 pub struct WT901 {
@@ -8,12 +11,13 @@ pub struct WT901 {
     pub mag: Option<(i16, i16, i16)>,
     pub angvec: Option<(f32, f32, f32)>,
     start_time: Instant,
-    pub aziment:(f64,f64,f64),
-    pub anglar:(f32, f32, f32),
-    pub old_anglar:(f32, f32, f32)
-
+    pub aziment: (f64, f64, f64),
+    pub anglar: (f32, f32, f32),
+    pub old_anglar: (f32, f32, f32),
+    tmp: VecDeque<u8>,
+    flag: bool,
+    count: usize,
 }
-
 
 impl WT901 {
     #[inline]
@@ -24,67 +28,74 @@ impl WT901 {
             ang: None,
             mag: None,
             angvec: None,
-            start_time:Instant::now(),
-            aziment:(0.0,0.0,0.0),
-            anglar:(0.0,0.0,0.0),
-            old_anglar:(0.0,0.0,0.0),
+            start_time: Instant::now(),
+            aziment: (0.0, 0.0, 0.0),
+            anglar: (0.0, 0.0, 0.0),
+            old_anglar: (0.0, 0.0, 0.0),
+            tmp: VecDeque::new(),
+            flag: false,
+            count: 0,
         }
     }
 
     #[inline]
     pub fn cope_serial_data(&mut self, serial_buf: Vec<u8>) {
-        let mut data = VecDeque::from(serial_buf);
+        if serial_buf[0] == 0x55 {
+            self.flag = true;
+        }
 
-        loop {
-            if data.len() >= 11 {
-                if data[0] != 0x55 {
-                    //TODO: 0x55を先頭にずらす。
-                    data.pop_front();
-
-                    continue;
-                }
-
-                match data[1] {
-                    0x50 => {}
-                    0x51 => {
-                        self.acc = Some((
-                            i16::from_le_bytes([data[2], data[3]]) as f32 / 32768.0 * 16.0,
-                            i16::from_le_bytes([data[4], data[5]]) as f32 / 32768.0 * 16.0,
-                            i16::from_le_bytes([data[6], data[7]]) as f32 / 32768.0 * 16.0,
-                        ));
-                    }
-                    0x52 => {
-                        self.gyro = Some((
-                            i16::from_le_bytes([data[2], data[3]]) as f32 / 32768.0 * 2000.0,
-                            i16::from_le_bytes([data[4], data[5]]) as f32 / 32768.0 * 2000.0,
-                            i16::from_le_bytes([data[6], data[7]]) as f32 / 32768.0 * 2000.0,
-                        ));
-                    }
-                    0x54 => {
-                        //println!("mag_X: {:?}, mag_Y: {:?}, mag_Z: {:?}",);
-
-                        self.mag = Some((
-                            i16::from_le_bytes([data[2], data[3]]),
-                            i16::from_le_bytes([data[4], data[5]]),
-                            i16::from_le_bytes([data[6], data[7]]),
-                        ));
-                    }
-
-                    0x53 => {
-                        self.ang = Some((
-                            i16::from_le_bytes([data[2], data[3]]) as f32 / 32768.0 * 180.0,
-                            i16::from_le_bytes([data[4], data[5]]) as f32 / 32768.0 * 180.0,
-                            i16::from_le_bytes([data[6], data[7]]) as f32 / 32768.0 * 180.0,
-                        ));
-                        //println!("ang: {}, {}, {}",);
-                    }
-                    _ => {}
-                }
+        if self.flag {
+            for i in serial_buf.iter() {
+                self.tmp.push_back(*i);
+                self.count += 1;
             }
-            break;
+        }
+
+        if self.count > 10 {
+            match self.tmp[1] {
+                0x50 => {}
+                0x51 => {
+                    self.acc = Some((
+                        i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0 * 16.0,
+                        i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0 * 16.0,
+                        i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0 * 16.0,
+                    ));
+                }
+                0x52 => {
+                    //println!("{:?}", self.tmp);
+
+                    self.gyro = Some((
+                        i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0 * 2000.0,
+                        i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0 * 2000.0,
+                        i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0 * 2000.0,
+                    ));
+                }
+                0x54 => {
+                    //println!("mag_X: {:?}, mag_Y: {:?}, mag_Z: {:?}",);
+
+                    self.mag = Some((
+                        i16::from_le_bytes([self.tmp[2], self.tmp[3]]),
+                        i16::from_le_bytes([self.tmp[4], self.tmp[5]]),
+                        i16::from_le_bytes([self.tmp[6], self.tmp[7]]),
+                    ));
+                }
+
+                0x53 => {
+                    self.ang = Some((
+                        i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0 * 180.0,
+                        i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0 * 180.0,
+                        i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0 * 180.0,
+                    ));
+                    //println!("ang: {}, {}, {}",);
+                }
+                _ => {}
+            }
+
+            self.flag = false;
+            self.count = 0;
+            self.tmp.clear();
         }
     }
-
 
     pub fn z_aziment(&mut self) {
         self.anglar.2 = self.gyro.unwrap_or((0.0, 0.0, 0.0)).2;
@@ -95,11 +106,76 @@ impl WT901 {
         }
     }
 
-
     pub fn end(&mut self) -> f64 {
         let end = self.start_time.elapsed();
         self.start_time = Instant::now();
         end.as_secs_f64()
     }
-
 }
+
+/*
+ //let mut data = VecDeque::from(serial_buf);
+        self.tmp.push_back(serial_buf.clone()[0]);
+
+        //println!("{:?}", self.tmp);
+
+        loop {
+            if self.tmp.len() >= 11 {
+                if self.tmp[0] != 0x55 {
+                    //TODO: 0x55を先頭にずらす。
+                    self.tmp.pop_front();
+
+                    continue;
+                }
+
+                match self.tmp[1] {
+                    0x50 => {}
+                    0x51 => {
+                        self.acc = Some((
+                            i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0 * 16.0,
+                            i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0 * 16.0,
+                            i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0 * 16.0,
+                        ));
+                    }
+                    0x52 => {
+                        //println!("{:?}", self.tmp);
+
+                        self.gyro = Some((
+                            i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0
+                                * 2000.0,
+                            i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0
+                                * 2000.0,
+                            i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0
+                                * 2000.0,
+                        ));
+                    }
+                    0x54 => {
+                        //println!("mag_X: {:?}, mag_Y: {:?}, mag_Z: {:?}",);
+
+                        self.mag = Some((
+                            i16::from_le_bytes([self.tmp[2], self.tmp[3]]),
+                            i16::from_le_bytes([self.tmp[4], self.tmp[5]]),
+                            i16::from_le_bytes([self.tmp[6], self.tmp[7]]),
+                        ));
+                    }
+
+                    0x53 => {
+                        self.ang = Some((
+                            i16::from_le_bytes([self.tmp[2], self.tmp[3]]) as f32 / 32768.0 * 180.0,
+                            i16::from_le_bytes([self.tmp[4], self.tmp[5]]) as f32 / 32768.0 * 180.0,
+                            i16::from_le_bytes([self.tmp[6], self.tmp[7]]) as f32 / 32768.0 * 180.0,
+                        ));
+                        //println!("ang: {}, {}, {}",);
+                    }
+                    _ => {}
+                }
+            }
+            break;
+        }
+
+        if self.tmp.len() > 19 {
+            self.tmp.clear();
+        }
+
+
+*/

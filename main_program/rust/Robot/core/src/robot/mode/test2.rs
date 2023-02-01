@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::thread_variable;
-use mytools::{ms_sleep, time_sleep, Xtools, mic_sleep};
+use mytools::{mic_sleep, ms_sleep, time_sleep, Xtools};
 use robot_gpio::Moter;
 use rthred::{sendG, Rthd};
 
@@ -13,6 +13,8 @@ use crate::robot::{
     config::{self, SenderOrders},
     setting::Settings,
 };
+
+use wt901::WT901;
 
 pub fn test() {
     let setting_file = Settings::load_setting("./settings.yaml");
@@ -35,41 +37,51 @@ pub fn test() {
 
     let in_ms = 180 + 5; //1s
     let in_ms = 1300000; //185000
-    // in debug 1344000
-    // in rlease 
+                         // in debug 1344000
+                         // in rlease
     let out_ms = 105;
 
-    
+    let mut wt901_port = match serialport::new("/dev/ttyUSB0", 9600)
+        .stop_bits(serialport::StopBits::One)
+        .data_bits(serialport::DataBits::Eight)
+        .timeout(Duration::from_millis(10))
+        .open()
+    {
+        Ok(p) => p,
+        Err(_) => {
+            panic!()
+        }
+    };
 
-    moter_controler.moter_control(config::STOP);
-    ms_sleep(1000);
+    let mut wt901_serial_buf: Vec<u8> = vec![0; 2000];
 
-    moter_controler.moter_control(0x1F5CFFFF);
-    mic_sleep(in_ms);
 
-    moter_controler.moter_control(config::STOP);
-    ms_sleep(1000);
+    let mut wt901_serial = WT901::new();
 
-    moter_controler.moter_control(0x1F5CFFFF);
-    mic_sleep(in_ms);
+    loop {
 
-    moter_controler.moter_control(config::STOP);
-    ms_sleep(1000);
+        match wt901_port.read(wt901_serial_buf.as_mut_slice()) {
+            Ok(t) => {
+                let data = wt901_serial_buf[..t].to_vec();
+                wt901_serial.cope_serial_data(data);
+                wt901_serial.z_aziment();
+                println!("{:?}",wt901_serial.aziment.2);
+            }
 
-    moter_controler.moter_control(0x1F5CFFFF);
-    mic_sleep(in_ms);
+            Err(_) => {}
+        }
 
-    moter_controler.moter_control(config::STOP);
-    ms_sleep(1000);
 
-    moter_controler.moter_control(0x1F5CFFFF);
-    mic_sleep(in_ms);
+        moter_controler.moter_control(0x1F6DFFFF);
+        
 
-    moter_controler.moter_control(config::STOP);
-    ms_sleep(1000);
+        if wt901_serial.aziment.2 < -90.0 {
+            moter_controler.moter_control(config::STOP);
+            //break;
+        }
 
-    moter_controler.pwm_all_clean();
-
+        //ms_sleep(10);
+    }
 }
 
 fn operator(panic_msg: Sender<String>, msg: SenderOrders) {

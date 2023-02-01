@@ -28,7 +28,7 @@ Robot:
   GPS:
     Serial:
       port:
-        - "COM4"
+        - "/dev/ttyUSB1"
       rate:
         - 115200
       buf_size:

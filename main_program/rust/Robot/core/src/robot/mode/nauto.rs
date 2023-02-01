@@ -132,16 +132,25 @@ pub fn nauto() {
     let mut lidar_serial_buf: Vec<u8> = vec![0; 2000];
 
     //waypoint設定 -->
+
+    flacn.module.nav.gps_senser.is_fix = true;
+
+
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
-    waypoints.push((36.064227, 136.221376));
+    waypoints.push((35.625845,139.341318));
+    waypoints.push((35.626002,139.341571));
+
+    flacn.module.nav.gps_senser.is_fix = false;
+
+
     //<--
 
     // demo -->
     //flacn.module.nav.lat_lon = Some((36.064226, 136.221375));
-    flacn.module.nav.set_lat_lot((36.064226, 136.221375));
-    flacn.module.nav.robot_move(0.0, 0.0);
-    flacn.module.nav.set_lat_lot((36.064226, 136.221376));
-    flacn.module.nav.robot_move(0.0, 0.0);
+    //flacn.module.nav.set_lat_lot((36.064226, 136.221375));
+    //flacn.module.nav.robot_move(0.0, 0.0);
+    //flacn.module.nav.set_lat_lot((36.064226, 136.221376));
+    //flacn.module.nav.robot_move(0.0, 0.0);
     //println!("{:?}", flacn.module.nav);
     //flacn.event.is_first_time = false;
     //<--
@@ -169,16 +178,18 @@ pub fn nauto() {
         let azimuth = flacn.module.nav.start_azimuth + flacn.module.nav.next_azimuth;
 
         let trne_threshold_azimuth = (
-            flacn.module.wt901.aziment.2 - flacn.event.trne_threshold,
-            flacn.module.wt901.aziment.2 + flacn.event.trne_threshold,
+            azimuth - flacn.event.trne_threshold,
+            azimuth + flacn.event.trne_threshold,
         );
         //println!("{}",azimuth);
 
-        if azimuth > 0.0 {
+        if flacn.module.wt901.aziment.2 > 0.0 {
             flacn.module.moter_controler.moter_control(0x1F5CFFFF);
         }else{
             flacn.module.moter_controler.moter_control(0x1FC5FFFF);
         }
+
+        
 
         if trne_threshold_azimuth.0 <= azimuth && azimuth >= trne_threshold_azimuth.1 {
             println!("Ok");
@@ -190,7 +201,8 @@ pub fn nauto() {
         }
     });
 
-    flacn.module.nav.add_waypoints(waypoints);
+
+    let mut f = true;
 
     loop {
         match gps_port {
@@ -203,7 +215,15 @@ pub fn nauto() {
                             .module
                             .nav
                             .set_lat_lot(flacn.module.nav.gps_senser.lat_lon.unwrap());
+
+                            if f {
+                                flacn.module.nav.add_waypoints(waypoints.clone());
+                                f = false;
+                            }
+
                     }
+                    println!("{:?}",flacn.module.nav.gps_senser.num_sat);
+
                     flacn.module.nav.robot_move(0.0, 0.0);
                 }
                 Err(_) => {
@@ -222,10 +242,13 @@ pub fn nauto() {
                 }
             }
         }
-
+     
         match wt901_port {
             Some(ref mut wt901) => match wt901.read(wt901_serial_buf.as_mut_slice()) {
                 Ok(t) => {
+                    /*
+                    
+                    */
                     let data = wt901_serial_buf[..t].to_vec();
                     flacn.module.wt901.cope_serial_data(data);
                     flacn.module.wt901.z_aziment();
@@ -266,7 +289,7 @@ pub fn nauto() {
 
         if flacn.event.is_first_time && flacn.event.is_continue {
             time_sleep(0, 10);
-            println!("continue");
+           // println!("continue");
             continue;
         }
         // ↓ 最初の処理が終わらないと処理されない。
