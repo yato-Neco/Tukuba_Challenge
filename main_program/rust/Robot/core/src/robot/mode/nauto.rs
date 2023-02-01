@@ -34,7 +34,7 @@ pub struct AutoEvents {
     pub is_continue: bool,
     pub is_flash: bool,
     pub trne_threshold: f64,
-    pub opcode: u32,
+    //pub opcode: u32,
     pub maneuver: &'static str,
 }
 
@@ -72,8 +72,7 @@ pub fn nauto() {
         is_first_time: true,
         is_flash: true,
         trne_threshold: 3.5,
-        opcode: 0xfffffff,
-
+        //opcode: 0xfffffff,
         maneuver: "Start",
     };
 
@@ -96,7 +95,7 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("None GPS Module");
+            mytools::warning_msg("No GPS Module");
             None
         }
     };
@@ -109,7 +108,7 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("None wt901 Module");
+            mytools::warning_msg("No wt901 Module");
             None
         }
     };
@@ -122,7 +121,7 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("None LiDAR Module");
+            mytools::warning_msg("No LiDAR Module");
             None
         }
     };
@@ -201,10 +200,18 @@ pub fn nauto() {
         }
     });
 
+    flacn.add_fnc("no_fix", |flacn|{
+        flacn.module.moter_controler.moter_control(config::STOP)
+    });
+
+    flacn.module.nav.add_waypoints(waypoints);
 
     let mut f = true;
 
     loop {
+
+        flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
+
         match gps_port {
             Some(ref mut gps) => match gps.read(gps_serial_buf.as_mut_slice()) {
                 Ok(t) => {

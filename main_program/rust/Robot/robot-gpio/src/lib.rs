@@ -56,7 +56,7 @@ impl Moter {
 
     /// 右モーター制御
     #[inline]
-    pub fn right(&mut self, duty: f64, mode: Mode) {
+     fn right(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Back {
             self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
             self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
@@ -67,7 +67,7 @@ impl Moter {
     }
     /// 左モーター制御
     #[inline]
-    pub fn left(&mut self, duty: f64, mode: Mode) {
+     fn left(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Back {
             self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
             self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
@@ -77,34 +77,34 @@ impl Moter {
         }
     }
 
-    pub fn _front(&mut self, r_duty: f64, l_duty: f64) {
+     fn _front(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
 
-    pub fn _back(&mut self, r_duty: f64, l_duty: f64) {
+     fn _back(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
 
-    pub fn _left(&mut self, r_duty: f64, l_duty: f64) {
+     fn _left(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
 
-    pub fn _right(&mut self, r_duty: f64, l_duty: f64) {
+     fn _right(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
-    pub fn _stop(&mut self) {
+     fn _stop(&mut self) {
         self.r_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, 1.0).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
@@ -210,8 +210,8 @@ impl Moter {
 
     /// right モーター 前後
     /// duty 0.0 ~ 1.0
-    pub fn _right(&mut self, duty: f64) {}
-    pub fn right(&mut self, duty: f64, mode: Mode) {
+     fn _right(&mut self, duty: f64) {}
+     fn right(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
         } else {
         }
@@ -223,8 +223,8 @@ impl Moter {
 
     /// left モーター 前後
     /// duty 0.0 ~ 1.0
-    pub fn _left(&mut self, duty: f64) {}
-    pub fn left(&mut self, duty: f64, mode: Mode) {
+     fn _left(&mut self, duty: f64) {}
+     fn left(&mut self, duty: f64, mode: Mode) {
         if mode == Mode::Front {
         } else {
         }
