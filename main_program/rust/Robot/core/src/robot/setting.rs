@@ -43,7 +43,7 @@ impl Settings {
         ([r0, r1], [l0, l1])
     }
 
-    pub fn load_key_bind(&self) -> [u32;4] {
+    pub fn load_key_bind(&self) -> [u32; 4] {
         let f_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][0]
             .as_i64()
             .unwrap() as u32;
@@ -56,8 +56,8 @@ impl Settings {
         let s_key = self.setting_yaml["Robot"]["Key_mode"]["speed"][3]
             .as_i64()
             .unwrap() as u32;
-            
-        [f_key,a_key,d_key,s_key]
+
+        [f_key, a_key, d_key, s_key]
     }
 
     /// Yaml 読み込み
@@ -121,7 +121,19 @@ impl Settings {
         return (port, rate);
     }
 
-    pub fn load_lidar(&self) -> (String,u32) {
+    pub fn load_wt901(&self) -> (String, u32) {
+        let port = self.setting_yaml["Robot"]["WT901"]["Serial"]["port"][0]
+            .as_str()
+            .unwrap_or("COM4")
+            .to_string();
+        let rate = self.setting_yaml["Robot"]["WT901"]["Serial"]["rate"][0]
+            .as_i64()
+            .unwrap_or(115200) as u32;
+
+        return (port, rate);
+    }
+
+    pub fn load_lidar(&self) -> (String, u32) {
         let port = self.setting_yaml["Robot"]["Lidar"]["Serial"]["port"][0]
             .as_str()
             .unwrap_or("COM4")

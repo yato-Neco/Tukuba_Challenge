@@ -16,7 +16,7 @@ use wt901::WT901;
 use crate::{
     robot::{
         config::{self, SenderOrders},
-        setting::Settings,
+        setting::Settings, tui::start,
     },
     thread_variable,
 };
@@ -34,7 +34,7 @@ pub struct AutoEvents {
     pub is_continue: bool,
     pub is_flash: bool,
     pub trne_threshold: f64,
-    //pub opcode: u32,
+    pub fix_flash: bool,
     pub maneuver: &'static str,
 }
 
@@ -45,6 +45,7 @@ struct AutoModule {
     pub scheduler: Scheduler,
     pub moter_controler: Moter,
     pub wt901: WT901,
+    pub terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
 }
 
 pub fn nauto() {
@@ -53,14 +54,20 @@ pub fn nauto() {
     let moter_controler = Moter::new(right_moter_pin, left_moter_pin);
     let gps_setting = setting_file.load_gps_serial();
     let lidar_setting = setting_file.load_lidar();
+    let wt901_setting = setting_file.load_wt901();
     let wt901 = WT901::new();
+
+    let terminal = start();
 
     let module = AutoModule {
         nav: Nav::init(),
         scheduler: Scheduler::start(),
         moter_controler: moter_controler,
         wt901: wt901,
+        terminal:terminal,
     };
+
+    
 
     let event = AutoEvents {
         is_core_stop: false,
@@ -71,6 +78,7 @@ pub fn nauto() {
         is_trune: false,
         is_first_time: true,
         is_flash: true,
+        fix_flash: true,
         trne_threshold: 3.5,
         //opcode: 0xfffffff,
         maneuver: "Start",
@@ -100,7 +108,7 @@ pub fn nauto() {
         }
     };
 
-    let mut wt901_port = match serialport::new("COM3", 9600)
+    let mut wt901_port = match serialport::new(wt901_setting.0, wt901_setting.1)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Eight)
         .timeout(Duration::from_millis(10))
@@ -134,13 +142,11 @@ pub fn nauto() {
 
     flacn.module.nav.gps_senser.is_fix = true;
 
-
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
-    waypoints.push((35.625845,139.341318));
-    waypoints.push((35.626002,139.341571));
+    waypoints.push((35.625845, 139.341318));
+    waypoints.push((35.626002, 139.341571));
 
     flacn.module.nav.gps_senser.is_fix = false;
-
 
     //<--
 
@@ -180,36 +186,34 @@ pub fn nauto() {
             azimuth - flacn.event.trne_threshold,
             azimuth + flacn.event.trne_threshold,
         );
-        //println!("{}",azimuth);
 
         if flacn.module.wt901.aziment.2 > 0.0 {
             flacn.module.moter_controler.moter_control(0x1F5CFFFF);
-        }else{
+        } else {
             flacn.module.moter_controler.moter_control(0x1FC5FFFF);
         }
 
-        
-
         if trne_threshold_azimuth.0 <= azimuth && azimuth >= trne_threshold_azimuth.1 {
-            println!("Ok");
-
+            //println!("Ok");
             flacn.module.moter_controler.moter_control(config::STOP);
             ms_sleep(100);
             flacn.module.moter_controler.moter_control(config::FRONT);
             flacn.event.is_trune = false;
         }
+
+
+
     });
 
-    flacn.add_fnc("no_fix", |flacn|{
+
+
+    flacn.add_fnc("no_fix", |flacn| {
         flacn.module.moter_controler.moter_control(config::STOP)
     });
 
-    flacn.module.nav.add_waypoints(waypoints);
 
-    let mut f = true;
 
     loop {
-
         flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
 
         match gps_port {
@@ -223,13 +227,12 @@ pub fn nauto() {
                             .nav
                             .set_lat_lot(flacn.module.nav.gps_senser.lat_lon.unwrap());
 
-                            if f {
-                                flacn.module.nav.add_waypoints(waypoints.clone());
-                                f = false;
-                            }
-
+                        if flacn.event.fix_flash {
+                            flacn.module.nav.add_waypoints(waypoints.clone());
+                            flacn.event.fix_flash = false;
+                        }
                     }
-                    println!("{:?}",flacn.module.nav.gps_senser.num_sat);
+                    println!("{:?}", flacn.module.nav.gps_senser.num_sat);
 
                     flacn.module.nav.robot_move(0.0, 0.0);
                 }
@@ -249,12 +252,12 @@ pub fn nauto() {
                 }
             }
         }
-     
+
         match wt901_port {
             Some(ref mut wt901) => match wt901.read(wt901_serial_buf.as_mut_slice()) {
                 Ok(t) => {
                     /*
-                    
+
                     */
                     let data = wt901_serial_buf[..t].to_vec();
                     flacn.module.wt901.cope_serial_data(data);
@@ -280,7 +283,6 @@ pub fn nauto() {
 
         flacn.module.nav.robot_move(0.0, 0.0);
 
-
         flacn.load_fnc_is("rote", flacn.event.is_trune);
 
         if flacn.event.is_trune {
@@ -296,12 +298,12 @@ pub fn nauto() {
 
         if flacn.event.is_first_time && flacn.event.is_continue {
             time_sleep(0, 10);
-           // println!("continue");
+            // println!("continue");
             continue;
         }
         // ↓ 最初の処理が終わらないと処理されない。
 
-        let mut flag = flacn.module.nav.in_waypoint(); 
+        let mut flag = flacn.module.nav.in_waypoint();
         //println!("{:?}", flag);
 
         // 最終地点
@@ -333,10 +335,8 @@ pub fn nauto() {
         //time_sleep(0, 10);
         ms_sleep(10);
         //flacn.module.nav.set_lat_lot((36.064227, 136.221376));
-
     }
 }
-
 
 /*
 fn operator(panic_msg: Sender<String>, msg: SenderOrders) {

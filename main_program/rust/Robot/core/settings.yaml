@@ -20,17 +20,26 @@ Robot:
 
     Serial:
       port:
-        - "/dev/ttyUSB0"
+        - ""
       rate:
         - 115200
 
   
-  GPS:
+  WT901:
     Serial:
       port:
         - "/dev/ttyUSB1"
       rate:
         - 115200
+      buf_size:
+        - 500
+  
+  GPS:
+    Serial:
+      port:
+        - "/dev/ttyUSB0"
+      rate:
+        - 9600
       buf_size:
         - 500
       
