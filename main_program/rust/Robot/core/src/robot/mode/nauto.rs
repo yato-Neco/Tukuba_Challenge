@@ -5,23 +5,29 @@ use std::{
     time::Duration,
 };
 
+use crossterm::{
+    event::DisableMouseCapture,
+    execute,
+    terminal::{disable_raw_mode, LeaveAlternateScreen},
+};
 use flacon::{Event, FlaCon, Flags};
 use gps::gps::Nav;
 use mytools::{ms_sleep, time_sleep};
 use robot_gpio::Moter;
-use rthred::{send, sendG};
+use rthred::{send, sendG, Rthd};
 use tui::{backend::CrosstermBackend, Terminal};
 use wt901::WT901;
 
 use crate::{
     robot::{
         config::{self, SenderOrders},
-        setting::Settings, tui::start,
+        setting::Settings,
+        tui::{na_ui, start},
     },
     thread_variable,
 };
 
-use super::test2::Scheduler;
+use super::{key::input_key, test2::Scheduler};
 
 #[derive(Debug, Clone)]
 pub struct AutoEvents {
@@ -34,11 +40,14 @@ pub struct AutoEvents {
     pub is_continue: bool,
     pub is_flash: bool,
     pub trne_threshold: f64,
+    pub is_gps_module: bool,
+    pub is_wt901_module: bool,
+    pub is_lidar_module: bool,
     pub fix_flash: bool,
     pub maneuver: &'static str,
 }
 
-struct AutoModule {
+pub struct AutoModule {
     //pub terminal: Terminal<CrosstermBackend<Stdout>>,
     //pub moter_controler: Moter,
     pub nav: Nav,
@@ -57,17 +66,15 @@ pub fn nauto() {
     let wt901_setting = setting_file.load_wt901();
     let wt901 = WT901::new();
 
-    let terminal = start();
+    let mut terminal = start();
 
     let module = AutoModule {
         nav: Nav::init(),
         scheduler: Scheduler::start(),
         moter_controler: moter_controler,
         wt901: wt901,
-        terminal:terminal,
+        terminal: terminal,
     };
-
-    
 
     let event = AutoEvents {
         is_core_stop: false,
@@ -79,7 +86,11 @@ pub fn nauto() {
         is_first_time: true,
         is_flash: true,
         fix_flash: true,
+        is_gps_module: true,
+        is_lidar_module: true,
+        is_wt901_module: true,
         trne_threshold: 3.5,
+
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -103,7 +114,8 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("No GPS Module");
+            //mytools::warning_msg("No GPS Module");
+            flacn.event.is_gps_module = false;
             None
         }
     };
@@ -116,7 +128,9 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("No wt901 Module");
+            //mytools::warning_msg("No wt901 Module");
+            flacn.event.is_wt901_module = false;
+
             None
         }
     };
@@ -129,7 +143,8 @@ pub fn nauto() {
     {
         Ok(p) => Some(p),
         Err(_) => {
-            mytools::warning_msg("No LiDAR Module");
+            flacn.event.is_lidar_module = false;
+            //mytools::warning_msg("No LiDAR Module");
             None
         }
     };
@@ -161,12 +176,14 @@ pub fn nauto() {
     //<--
 
     flacn.add_fnc("first_time", |flacn| {
-        flacn.event.maneuver = "first_time";
+        flacn.event.maneuver = "角度取得中";
         //(flacn.module.send)(config::FRONT, &flacn.module.msg);
         println!("{}", flacn.module.nav.lat_lon_history.len());
         flacn.module.moter_controler.moter_control(config::FRONT);
 
         if flacn.module.nav.lat_lon_history.len() > 1 {
+            flacn.event.maneuver = "角度取得完了";
+
             flacn.module.nav.set_start_index();
             flacn.module.nav.frist_calculate_azimuth();
 
@@ -186,6 +203,7 @@ pub fn nauto() {
             azimuth - flacn.event.trne_threshold,
             azimuth + flacn.event.trne_threshold,
         );
+        flacn.event.maneuver = "回転中...";
 
         if flacn.module.wt901.aziment.2 > 0.0 {
             flacn.module.moter_controler.moter_control(0x1F5CFFFF);
@@ -195,26 +213,90 @@ pub fn nauto() {
 
         if trne_threshold_azimuth.0 <= azimuth && azimuth >= trne_threshold_azimuth.1 {
             //println!("Ok");
+            flacn.event.maneuver = "回転完了";
             flacn.module.moter_controler.moter_control(config::STOP);
             ms_sleep(100);
+            flacn.event.maneuver = "前進";
             flacn.module.moter_controler.moter_control(config::FRONT);
             flacn.event.is_trune = false;
         }
-
-
-
     });
-
-
 
     flacn.add_fnc("no_fix", |flacn| {
-        flacn.module.moter_controler.moter_control(config::STOP)
+        if !flacn.event.is_trune {
+            flacn.event.maneuver = "GPS取得中のため停止中...";
+            flacn.module.moter_controler.moter_control(config::STOP)
+        }
     });
 
+    flacn.add_fnc("tui", |flacn| {
+        flacn
+            .module
+            .terminal
+            .draw(|f| {
+                na_ui(f, &flacn.event, &flacn.module.nav,&flacn.module.wt901);
+            })
+            .unwrap();
+    });
 
+    let mut thread: HashMap<&str, fn(Sender<String>, SenderOrders)> =
+        std::collections::HashMap::new();
+    let order = thread_variable!("key");
+
+    thread.insert("key", |panic_msg: Sender<String>, msg: SenderOrders| {
+        Rthd::<String>::send_panic_msg(panic_msg);
+        let setting_file = Settings::load_setting("./settings.yaml");
+
+        let key_bind = setting_file.load_key_bind();
+
+        loop {
+            let order = input_key(key_bind);
+            msg.send(order).unwrap();
+            time_sleep(0, 10);
+        }
+    });
+
+    Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
+    flacn.module.terminal.clear().unwrap();
 
     loop {
+        flacn.load_fnc("tui");
+
+        match order.get("key").unwrap().1.try_recv() {
+            Ok(e) => {
+                if e == config::BREAK {
+                    flacn.module.terminal.clear().unwrap();
+                    flacn.module.terminal.flush().unwrap();
+                    //time_sleep(0, 500);
+
+                    disable_raw_mode().unwrap();
+                    execute!(
+                        flacn.module.terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )
+                    .unwrap();
+
+                    flacn.module.terminal.show_cursor().unwrap();
+
+                    flacn.module.moter_controler.moter_control(config::STOP);
+                    time_sleep(0, 500);
+                    flacn.module.moter_controler.pwm_all_clean();
+                    flacn.module.moter_controler.reset();
+                    
+                    flacn.module.terminal.flush().unwrap();
+                    flacn.module.terminal.clear().unwrap();
+                    flacn.module.terminal.flush().unwrap();
+
+                    break;
+                } else if e == config::EMERGENCY_STOP {
+                }
+            }
+            Err(_) => {}
+        };
+
         flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
+        //flacn.module.terminal.flush().unwrap();
 
         match gps_port {
             Some(ref mut gps) => match gps.read(gps_serial_buf.as_mut_slice()) {
@@ -232,9 +314,9 @@ pub fn nauto() {
                             flacn.event.fix_flash = false;
                         }
                     }
-                    println!("{:?}", flacn.module.nav.gps_senser.num_sat);
+                    //println!("{:?}", flacn.module.nav.gps_senser.num_sat);
 
-                    flacn.module.nav.robot_move(0.0, 0.0);
+                    //flacn.module.nav.robot_move(0.0, 0.0);
                 }
                 Err(_) => {
                     flacn.module.nav.gps_senser.is_fix = false;
@@ -256,9 +338,6 @@ pub fn nauto() {
         match wt901_port {
             Some(ref mut wt901) => match wt901.read(wt901_serial_buf.as_mut_slice()) {
                 Ok(t) => {
-                    /*
-
-                    */
                     let data = wt901_serial_buf[..t].to_vec();
                     flacn.module.wt901.cope_serial_data(data);
                     flacn.module.wt901.z_aziment();
@@ -320,14 +399,9 @@ pub fn nauto() {
             flacn.event.is_first_time = false;
             flacn.module.nav.waypoint_azimuth_distance();
             flacn.module.wt901.aziment.2 = 0.0;
-            println!("trune");
 
-            println!(
-                "start_azimuth {} next_azimuth: {} : {}",
-                flacn.module.nav.start_azimuth,
-                flacn.module.nav.next_azimuth,
-                flacn.module.nav.start_azimuth + flacn.module.nav.next_azimuth
-            );
+            flacn.event.maneuver = "waypoint到着";
+
             flacn.event.is_trune = true;
             flag.0 = false;
         }

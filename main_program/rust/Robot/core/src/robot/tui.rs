@@ -1,4 +1,3 @@
-
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal::LeaveAlternateScreen;
 use crossterm::{
@@ -6,10 +5,12 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use flacon::{FlaCon};
+use flacon::FlaCon;
+use gps::gps::Nav;
 use gps::GPS;
 use mytools::time_sleep;
 use robot_gpio::Moter;
+use std::fmt::format;
 use std::{error::Error, io};
 use tui::widgets::Paragraph;
 use tui::{
@@ -19,11 +20,12 @@ use tui::{
     widgets::{Block, BorderType, Borders},
     Frame, Terminal,
 };
+use wt901::{self, WT901};
 
-use super::mode::{key::KeyModule, key::KeyEvents, auto::AutoEvents};
+use super::mode::{key::KeyEvents, key::KeyModule, nauto::AutoEvents, nauto::AutoModule};
 
 pub fn start() -> Terminal<CrosstermBackend<std::io::Stdout>> {
-    print!("\x1b[2J");
+    //print!("\x1b[2J");
 
     enable_raw_mode().unwrap();
     let mut stdout = io::stdout();
@@ -33,7 +35,7 @@ pub fn start() -> Terminal<CrosstermBackend<std::io::Stdout>> {
     terminal
 }
 
-pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>) {
+pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901: &WT901) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
@@ -46,14 +48,65 @@ pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>)
         )
         .split(f.size());
 
-    let left_block = Paragraph::new(format!(
-        "is_move:{}\n\nis_emergency_stop: {}\n\norder: {:x}\n ",
-        flacn.event.is_move,
-        flacn.event.is_emergency_stop_lv0,
-        flacn.event.order,
+    let left_block = Paragraph::new(format!("{}", event.maneuver))
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(tui::layout::Alignment::Left);
+    f.render_widget(left_block, chunks[0]);
+
+    let middle_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+            ]
+            .as_ref(),
+        )
+        .split(chunks[1]);
+    let middle_top_block = Paragraph::new(format!(
+        "gps_module: {}\nwt901_module: {}\nlidar_module: {}",
+        event.is_gps_module, event.is_wt901_module, event.is_lidar_module
+    ))
+    .block(Block::default().borders(Borders::ALL))
+    .alignment(tui::layout::Alignment::Center);
+    f.render_widget(middle_top_block, middle_chunks[0]);
+
+    let center_block = Paragraph::new("Middle02")
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(tui::layout::Alignment::Center);
+    f.render_widget(center_block, middle_chunks[1]);
+
+    let middle_bottom = Paragraph::new("Middle03")
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(tui::layout::Alignment::Center);
+    f.render_widget(middle_bottom, middle_chunks[2]);
+
+    let right_block = Paragraph::new(format!(
+        "GPS:\n is_fix: {:?}\n num_sat: {:?}\n row data: {:?}\nWT901:\n azimath: {:?}",
+        nav.gps_senser.is_fix, nav.gps_senser.num_sat, nav.gps_senser.row_data, wt901.aziment,
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Left);
+    f.render_widget(right_block, chunks[2]);
+}
+
+pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule, KeyEvents>) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+            ]
+            .as_ref(),
+        )
+        .split(f.size());
+
+    let left_block = Paragraph::new(format!(""))
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(tui::layout::Alignment::Left);
     f.render_widget(left_block, chunks[0]);
 
     let middle_chunks = Layout::default()
@@ -82,98 +135,13 @@ pub fn key_ui<B: Backend>(f: &mut Frame<B>, flacn: &FlaCon<KeyModule,KeyEvents>)
         .alignment(tui::layout::Alignment::Center);
     f.render_widget(middle_bottom, middle_chunks[2]);
 
-    
-    let right_block = Paragraph::new(
-        format!("{:?}\n",
-        flacn.module.moter_controler,
-        //flacn.module
-    ))
+    let right_block = Paragraph::new(format!(""))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);
     f.render_widget(right_block, chunks[2]);
 }
 
-
-pub fn auto_ui<B: Backend>(f: &mut Frame<B>, flacn: AutoEvents,module:GPS) {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-            ]
-            .as_ref(),
-        )
-        .split(f.size());
-
-    let left_block = Paragraph::new(format!(
-        "is_move:{}\nis_emergency_stop: {}\norder: {:x} \nis_break {}\nazimuth: {}\nfirst_time: {}\nin_waypoint: {} \nnum_sat: {:?}\ncontinue: {}\nnowa:{:?} \nmaneuver: {}",
-        flacn.is_move,
-        flacn.is_emergency_stop_lv0,
-        flacn.order,
-        flacn.is_break,
-        module.azimuth,
-        flacn.first_time,
-        module.in_waypoint,
-        module.num_sat,
-        flacn.is_continue,
-        module.now_azimuth,
-        flacn.maneuver,
-
-    ))
-    .block(Block::default().borders(Borders::ALL))
-    .alignment(tui::layout::Alignment::Left);
-    f.render_widget(left_block, chunks[0]);
-
-    let middle_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-            ]
-            .as_ref(),
-        )
-        .split(chunks[1]);
-    let middle_top_block = Paragraph::new("Middle01")
-        .block(Block::default().borders(Borders::ALL))
-        .alignment(tui::layout::Alignment::Center);
-    f.render_widget(middle_top_block, middle_chunks[0]);
-
-    let center_block = Paragraph::new("Middle02")
-        .block(Block::default().borders(Borders::ALL))
-        .alignment(tui::layout::Alignment::Center);
-    f.render_widget(center_block, middle_chunks[1]);
-
-    let middle_bottom = Paragraph::new("Middle03")
-        .block(Block::default().borders(Borders::ALL))
-        .alignment(tui::layout::Alignment::Center);
-    f.render_widget(middle_bottom, middle_chunks[2]);
-
-    
-    let right_block = Paragraph::new(
-        format!("now: {:?} \nis_fix: {:?} \n{:?} \n{:?}\n{:?}\n{:?}\n{:?}\n{:?}",
-        module.nowpotion,
-        module.is_fix,
-        module.waypoints,
-        module.next_latlot,
-        module._rome,
-        module.nowtime,
-        module.gps_format,
-        module.nowpotion_history,
-    ))
-        .block(Block::default().borders(Borders::ALL))
-        .alignment(tui::layout::Alignment::Left);
-    f.render_widget(right_block, chunks[2]);
-}
-
-
-
-
-
-pub fn end(terminal:&mut Terminal<CrosstermBackend<std::io::Stdout>>) {
+pub fn end(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) {
     time_sleep(0, 5000);
 
     disable_raw_mode().unwrap();
@@ -181,7 +149,8 @@ pub fn end(terminal:&mut Terminal<CrosstermBackend<std::io::Stdout>>) {
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    ).unwrap();
+    )
+    .unwrap();
     terminal.show_cursor().unwrap();
 }
 

@@ -28,7 +28,7 @@ fn test() {
     //nav.in_waypoint();
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Nav {
     pub lat_lon: Option<(f64, f64)>,
     pub position: (f64, f64),
@@ -46,11 +46,13 @@ pub struct Nav {
     pub is_in_waypoint: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct GpsSenser {
     pub is_fix: bool,
     pub lat_lon: Option<(f64, f64)>,
     pub num_sat: Option<usize>,
+    pub row_data:String,
+
     //pub nowtime: String,
 }
 
@@ -65,6 +67,7 @@ impl GpsSenser {
         let gps_format = match vec.iter().find(|&&num_sat| num_sat == "numSat") {
             Some(_) => {
                 //println!("{} {:?}",i,gps_format[i].split(',').collect::<Vec<&str>>());
+                self.row_data = gps_format.clone();
 
                 gps_format.split(',').collect::<Vec<&str>>()
             }
@@ -124,6 +127,7 @@ impl Nav {
                 is_fix: false,
                 lat_lon: None,
                 num_sat: None,
+                row_data:String::new(),
             },
             start_index: None,
         }

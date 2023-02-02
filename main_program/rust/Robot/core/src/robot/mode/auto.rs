@@ -334,13 +334,7 @@ pub fn auto() {
             let event = flacn.event.clone();
             let module = flacn.module.gps.clone();
             
-            flacn
-                .module
-                .terminal
-                .draw(|f| {
-                    tui::auto_ui(f, event, module);
-                })
-                .unwrap();
+           
             
             
         });
