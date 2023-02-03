@@ -5,8 +5,9 @@ fn test() {
     let mut nav = Nav::init();
     nav.set_lat_lot((36.064225, 136.221375));
     nav.gps_senser.is_fix = true;
-
-    nav.bkw_azimuth();
+    let a =nav.azimuth_distance(&(36.064225, 136.221375),&(36.064235, 136.221375));
+    println!("{:?}",a);
+    //nav.bkw_azimuth();
     //let mut waypoints = Vec::new();
     //waypoints.push((36.064225, 136.221375));
     //waypoints.push((36.064225, 136.221375));
@@ -28,7 +29,7 @@ fn test() {
     //nav.in_waypoint();
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Nav {
     pub lat_lon: Option<(f64, f64)>,
     pub position: (f64, f64),
@@ -46,13 +47,12 @@ pub struct Nav {
     pub is_in_waypoint: bool,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct GpsSenser {
     pub is_fix: bool,
     pub lat_lon: Option<(f64, f64)>,
     pub num_sat: Option<usize>,
-    pub row_data:String,
-
+    pub row_data: String,
     //pub nowtime: String,
 }
 
@@ -127,7 +127,7 @@ impl Nav {
                 is_fix: false,
                 lat_lon: None,
                 num_sat: None,
-                row_data:String::new(),
+                row_data: String::new(),
             },
             start_index: None,
         }
@@ -150,14 +150,14 @@ impl Nav {
             if (area.0 <= self.position.0 && self.position.0 <= area.1)
                 && (area.2 <= self.position.1 && self.position.1 <= area.3)
             {
-                println!("In!!");
+                //println!("In!!");
                 self.destination_index += 1;
                 self.is_in_waypoint = true;
 
                 if self.destination_index >= self.waypoints.len() {
                     //println!("{:?}", self.waypoints[self.destination_index]);
                     println!("{:?}", self.position);
-                    println!("exit");
+                    //println!("exit");
                     return (false, true);
                 }
 
@@ -270,7 +270,7 @@ impl Nav {
         } else {
             let x = azimuth.sin() * speed * 100.0; // / 100000.0;
             let y = azimuth.cos() * speed * 100.0; // / 100000.0;
-            //println!("(y,x): {:?}", (y, x));
+                                                   //println!("(y,x): {:?}", (y, x));
 
             //TODO: 代入
             self.position.0 += x;
@@ -279,7 +279,7 @@ impl Nav {
     }
 
     #[inline]
-    pub fn frist_calculate_azimuth(&mut self) {
+    pub fn frist_calculate_azimuth(&mut self) -> bool {
         let nowpotion = self.lat_lon.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(
             self.lat_lon_history[0].0,
@@ -287,8 +287,16 @@ impl Nav {
             0.0,
         );
         let pos_b = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
-        let vec = pos_b - pos_a;
-        self.start_azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
+        let distance: f64 = pos_a.distance(&pos_b);
+
+        if distance > 1.5 {
+            let vec = pos_b - pos_a;
+            self.start_azimuth =
+                f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
+            return true;
+        }
+
+        return false;
     }
 
     pub fn correction(&mut self) {
@@ -326,34 +334,39 @@ impl Nav {
 
         h
     }
-    
 
     fn hosei(&mut self) {
-
-
-        if  self.destination_index <= 0 {
-            
-            let next_prev = self.azimuth_distance(&self.row_waypoints[self.destination_index],&self.lat_lon_history[self.start_index.unwrap()]);
-            let next_now = self.azimuth_distance(&self.row_waypoints[self.destination_index],&self.lat_lon.unwrap());
-            let now_prev = self.azimuth_distance(&self.lat_lon.unwrap(), &self.lat_lon_history[self.start_index.unwrap()]);
-
-            
-            
-        }else {
-
-
-            
-            let next_prev = self.azimuth_distance(&self.row_waypoints[self.destination_index],&self.row_waypoints[self.destination_index - 1]);
-            let next_now = self.azimuth_distance(&self.row_waypoints[self.destination_index],&self.lat_lon.unwrap());
-            let now_prev = self.azimuth_distance(&self.lat_lon.unwrap(), &self.row_waypoints[self.destination_index - 1]);
-            
-            
+        if self.destination_index <= 0 {
+            let next_prev = self.azimuth_distance(
+                &self.row_waypoints[self.destination_index],
+                &self.lat_lon_history[self.start_index.unwrap()],
+            );
+            let next_now = self.azimuth_distance(
+                &self.row_waypoints[self.destination_index],
+                &self.lat_lon.unwrap(),
+            );
+            let now_prev = self.azimuth_distance(
+                &self.lat_lon.unwrap(),
+                &self.lat_lon_history[self.start_index.unwrap()],
+            );
+        } else {
+            let next_prev = self.azimuth_distance(
+                &self.row_waypoints[self.destination_index],
+                &self.row_waypoints[self.destination_index - 1],
+            );
+            let next_now = self.azimuth_distance(
+                &self.row_waypoints[self.destination_index],
+                &self.lat_lon.unwrap(),
+            );
+            let now_prev = self.azimuth_distance(
+                &self.lat_lon.unwrap(),
+                &self.row_waypoints[self.destination_index - 1],
+            );
         }
     }
 
     #[inline]
     fn course(self, h: f64, hdg: f64) -> isize {
-
         if h > 1.0 {
             if hdg >= 10.0 {
                 1
@@ -366,9 +379,6 @@ impl Nav {
             0
         }
     }
-
-
-
 }
 
 pub trait az {
