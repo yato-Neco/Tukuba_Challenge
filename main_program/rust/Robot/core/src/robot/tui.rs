@@ -48,7 +48,7 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
         )
         .split(f.size());
 
-    let left_block = Paragraph::new(format!("{}", event.maneuver))
+    let left_block = Paragraph::new(format!("maneuver: {}\nis_first_time: {}\nis_flash: {}\nstart_azimuth: {}\nnext_azimuth: {}", event.maneuver,event.is_first_time,event.is_flash,nav.start_azimuth,nav.next_azimuth))
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Left);
     f.render_widget(left_block, chunks[0]);
@@ -66,7 +66,7 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
         .split(chunks[1]);
     let middle_top_block = Paragraph::new(format!(
         "gps_module: {}\nwt901_module: {}\nlidar_module: {}",
-        event.is_gps_module, event.is_wt901_module, event.is_lidar_module
+        event.is_gps_module, event.is_wt901_module, event.is_lidar_module,
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Center);
@@ -83,8 +83,8 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
     f.render_widget(middle_bottom, middle_chunks[2]);
 
     let right_block = Paragraph::new(format!(
-        "GPS:\n is_fix: {:?}\n num_sat: {:?}\n row data: {:?}\nWT901:\n azimath: {:?}",
-        nav.gps_senser.is_fix, nav.gps_senser.num_sat, nav.gps_senser.row_data, wt901.aziment,
+        "GPS:\n is_fix: {:?}\n num_sat: {:?}\n lat lot: {:?}\n row data: {:?}\nWT901:\n azimath: {:?}",
+        nav.gps_senser.is_fix, nav.gps_senser.num_sat,nav.lat_lon ,nav.gps_senser.row_data, wt901.aziment,
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Left);

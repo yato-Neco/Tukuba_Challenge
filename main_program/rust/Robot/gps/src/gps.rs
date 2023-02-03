@@ -89,7 +89,7 @@ impl GpsSenser {
             Some(e) => {
                 if *e == "Fix" {
                     self.is_fix = true;
-                } else {
+                } else if *e ==  "No-Fix" {
                     self.is_fix = false;
                 }
             }
@@ -289,7 +289,7 @@ impl Nav {
         let pos_b = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
 
-        if distance > 1.5 {
+        if distance > 30.5 {
             let vec = pos_b - pos_a;
             self.start_azimuth =
                 f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
