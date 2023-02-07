@@ -64,6 +64,9 @@ impl<T, R> Event<T, R> for FlaCon<T, R> {
         self.fnc_map.insert(name, fnc_pointer);
     }
 
+ 
+
+
     /// フラグのイベントを呼び出す関数
     fn load_fnc(&mut self, name: &str) {
         let tmp = match self.fnc_map.get(name) {

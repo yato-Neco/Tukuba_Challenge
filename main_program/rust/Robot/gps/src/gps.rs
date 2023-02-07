@@ -279,7 +279,7 @@ impl Nav {
     }
 
     #[inline]
-    pub fn frist_calculate_azimuth(&mut self) -> bool {
+    pub fn frist_calculate_azimuth(&mut self,cm:f64) -> bool {
         let nowpotion = self.lat_lon.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(
             self.lat_lon_history[0].0,
@@ -289,7 +289,7 @@ impl Nav {
         let pos_b = WGS84::from_degrees_and_meters(nowpotion.0, nowpotion.1, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
 
-        if distance > 30.5 {
+        if distance > cm {
             let vec = pos_b - pos_a;
             self.start_azimuth =
                 f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);

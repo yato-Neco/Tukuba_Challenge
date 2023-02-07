@@ -186,7 +186,7 @@ pub fn key() {
         let mut ignition0 = false;
         let mut count = 0;
 
-        
+
     });
     */
 
@@ -204,7 +204,6 @@ pub fn key() {
             Err(_) => {}
         };
         */
-        
 
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
@@ -268,18 +267,12 @@ fn lidar(panic_msg: Sender<String>, msg: SenderOrders) {
                 let points = ydlidarx2(&mut data);
 
                 for point in points.iter() {
-                    
-                    if point.0 > 0.0 && 0.0 < point.1 {
-
-                    }
-
-                   
+                    if point.0 > 0.0 && 0.0 < point.1 {}
                 }
             }
             Err(_) => {}
         }
     }
-
 }
 
 pub fn input_key(key_bind: [u32; 4]) -> u32 {

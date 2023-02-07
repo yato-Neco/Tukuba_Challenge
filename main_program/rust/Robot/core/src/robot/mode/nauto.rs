@@ -44,7 +44,7 @@ pub struct AutoEvents {
     pub is_wt901_module: bool,
     pub is_lidar_module: bool,
     pub fix_flash: bool,
-    pub is_start_azimath: bool,
+    pub is_start_azimath_end: bool,
     pub maneuver: &'static str,
 }
 
@@ -90,7 +90,7 @@ pub fn nauto() {
         is_gps_module: true,
         is_lidar_module: true,
         is_wt901_module: true,
-        is_start_azimath: true,
+        is_start_azimath_end: false,
         trne_threshold: 3.5,
 
         //opcode: 0xfffffff,
@@ -182,12 +182,12 @@ pub fn nauto() {
         flacn.module.moter_controler.moter_control(config::FRONT);
 
         if flacn.module.nav.lat_lon_history.len() > 1 {
-            flacn.event.maneuver = "角度取得完了";
+            flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(100.0);
 
-            flacn.module.nav.set_start_index();
-            flacn.event.is_start_azimath = !flacn.module.nav.frist_calculate_azimuth();
+            if flacn.event.is_start_azimath_end {
+                flacn.event.maneuver = "角度取得完了";
+                flacn.module.nav.set_start_index();
 
-            if !flacn.event.is_start_azimath {
                 flacn.module.moter_controler.moter_control(config::STOP);
 
                 flacn.event.is_continue = false;
@@ -200,7 +200,7 @@ pub fn nauto() {
     flacn.add_fnc("rote", |flacn| {
         //println!("{}",flacn.module.wt901.aziment.2);
 
-        let azimuth = flacn.module.nav.start_azimuth + flacn.module.nav.next_azimuth;
+        let azimuth = flacn.module.nav.start_azimuth - flacn.module.nav.next_azimuth;
 
         let trne_threshold_azimuth = (
             azimuth - flacn.event.trne_threshold,
@@ -398,7 +398,7 @@ pub fn nauto() {
         }
 
         // waypoint 処理
-        if (flag.0 || flacn.event.is_first_time) & !flacn.event.is_start_azimath {
+        if (flag.0 || flacn.event.is_first_time) & flacn.event.is_start_azimath_end {
             flacn.event.is_first_time = false;
             flacn.module.nav.waypoint_azimuth_distance();
             //flacn.module.wt901.aziment.2 = 0.0;
