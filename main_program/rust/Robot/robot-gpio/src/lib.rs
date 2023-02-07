@@ -76,39 +76,42 @@ impl Moter {
             self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
         }
     }
-
-     fn _front(&mut self, r_duty: f64, l_duty: f64) {
+    #[inline]
+    fn _front(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
 
-     fn _back(&mut self, r_duty: f64, l_duty: f64) {
+    #[inline]
+    fn _back(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
 
-     fn _left(&mut self, r_duty: f64, l_duty: f64) {
+    #[inline]
+   fn _left(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, l_duty).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, 0.0).unwrap();
     }
-
-     fn _right(&mut self, r_duty: f64, l_duty: f64) {
+    #[inline]
+    fn _right(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.r_pin1.set_pwm_frequency(45_0000.0, r_duty).unwrap();
         self.l_pin0.set_pwm_frequency(45_0000.0, 0.0).unwrap();
         self.l_pin1.set_pwm_frequency(45_0000.0, l_duty).unwrap();
     }
-     fn _stop(&mut self) {
-        self.r_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
-        self.r_pin1.set_pwm_frequency(45_0000.0, 1.0).unwrap();
-        self.l_pin0.set_pwm_frequency(45_0000.0, 1.0).unwrap();
-        self.l_pin1.set_pwm_frequency(45_0000.0, 1.0).unwrap();
+    #[inline]
+    fn _stop(&mut self) {
+        self.r_pin0.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.r_pin1.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.l_pin0.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.l_pin1.set_pwm_frequency(0.0, 1.0).unwrap();
     }
 
     /// PWMのリセット
@@ -119,7 +122,6 @@ impl Moter {
         self.l_pin0.clear_pwm().unwrap();
         self.l_pin1.clear_pwm().unwrap();
     }
-    #[inline]
     #[inline]
     pub fn reset(&mut self) -> bool {
         self.r_pin0.reset_on_drop()

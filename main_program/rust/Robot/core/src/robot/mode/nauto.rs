@@ -92,7 +92,6 @@ pub fn nauto() {
         is_wt901_module: true,
         is_start_azimath_end: false,
         trne_threshold: 3.5,
-
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -158,8 +157,11 @@ pub fn nauto() {
     //waypoint設定 -->
 
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
+    waypoints.push((35.627095, 139.340267));
     waypoints.push((35.625845, 139.341318));
     waypoints.push((35.626002, 139.341571));
+
+
 
     //<--
 
@@ -182,7 +184,7 @@ pub fn nauto() {
         flacn.module.moter_controler.moter_control(config::FRONT);
 
         if flacn.module.nav.lat_lon_history.len() > 1 {
-            flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(100.0);
+            flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(10.0);
 
             if flacn.event.is_start_azimath_end {
                 flacn.event.maneuver = "角度取得完了";
@@ -207,12 +209,22 @@ pub fn nauto() {
             azimuth + flacn.event.trne_threshold,
         );
 
+        let now_azimuth = flacn.module.wt901.gyro.unwrap_or((0.0, 0.0, 0.0)).2 as f64
+            + flacn.module.nav.start_azimuth;
+
         flacn.event.maneuver = "回転中...";
 
-        flacn.module.moter_controler.moter_control(0x1F5CFFFF);
+        //右マイナス
+        //左プラス
+        
 
-        if trne_threshold_azimuth.0 <= azimuth && azimuth >= trne_threshold_azimuth.1 {
-            //println!("Ok");
+        if azimuth > 0.0 {
+            flacn.module.moter_controler.moter_control(0x1F5CFFFF);
+        } else {
+            flacn.module.moter_controler.moter_control(0x1FC5FFFF);
+        }
+
+        if trne_threshold_azimuth.0 <= now_azimuth && now_azimuth >= trne_threshold_azimuth.1 {
             flacn.event.maneuver = "回転完了";
             flacn.module.moter_controler.moter_control(config::STOP);
             ms_sleep(100);
@@ -225,7 +237,7 @@ pub fn nauto() {
     flacn.add_fnc("no_fix", |flacn| {
         if !flacn.event.is_trune {
             flacn.event.maneuver = "GPS取得中のため停止中...";
-            flacn.module.moter_controler.moter_control(config::STOP)
+            flacn.module.moter_controler.moter_control(config::STOP);
         }
     });
 
@@ -316,9 +328,7 @@ pub fn nauto() {
                             flacn.event.fix_flash = false;
                         }
                     }
-
                     //println!("{:?}", flacn.module.nav.gps_senser.num_sat);
-
                     //flacn.module.nav.robot_move(0.0, 0.0);
                 }
                 Err(_) => {
@@ -328,7 +338,6 @@ pub fn nauto() {
             None => {
                 //flacn.module.nav.set_lat_lot((36.164227, 136.241375));
                 //mytools::warning_msg("non");
-
                 if true {
                     //flacn.module.nav.gps_senser.is_fix = true;
                     //flacn.event.is_continue = false;

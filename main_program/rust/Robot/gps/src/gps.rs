@@ -5,8 +5,8 @@ fn test() {
     let mut nav = Nav::init();
     nav.set_lat_lot((36.064225, 136.221375));
     nav.gps_senser.is_fix = true;
-    let a =nav.azimuth_distance(&(36.064225, 136.221375),&(36.064235, 136.221375));
-    println!("{:?}",a);
+    let a = nav.azimuth_distance(&(36.064225, 136.221375), &(36.064235, 136.221375));
+    println!("{:?}", a);
     //nav.bkw_azimuth();
     //let mut waypoints = Vec::new();
     //waypoints.push((36.064225, 136.221375));
@@ -89,7 +89,7 @@ impl GpsSenser {
             Some(e) => {
                 if *e == "Fix" {
                     self.is_fix = true;
-                } else if *e ==  "No-Fix" {
+                } else if *e == "No-Fix" {
                     self.is_fix = false;
                 }
             }
@@ -220,7 +220,7 @@ impl Nav {
         for waypoints_lat_lot in waypoints.iter() {
             //let distance = self.distance(start_latlot, latlot) * 100.0;
             //let azimuth = self.azimuth(&start_latlot, latlot);
-
+            
             let (azimuth, distance) =
                 self.azimuth_distance(&self.lat_lon_history[0], waypoints_lat_lot);
             //self.azimuth360(&mut azimuth);
@@ -228,10 +228,6 @@ impl Nav {
 
             let x = azimuth.sin() * distance * 100.0;
             let y = azimuth.cos() * distance * 100.0;
-
-            //println!("(y,x): {:?}", (y, x));
-            //println!("azimuth: {}", ((x / y)));
-
             self.waypoints.push((y, x));
         }
     }
@@ -279,7 +275,7 @@ impl Nav {
     }
 
     #[inline]
-    pub fn frist_calculate_azimuth(&mut self,cm:f64) -> bool {
+    pub fn frist_calculate_azimuth(&mut self, cm: f64) -> bool {
         let nowpotion = self.lat_lon.unwrap();
         let pos_a = WGS84::from_degrees_and_meters(
             self.lat_lon_history[0].0,
