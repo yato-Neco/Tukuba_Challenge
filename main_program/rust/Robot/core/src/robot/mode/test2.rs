@@ -70,9 +70,9 @@ pub fn test() {
 
             Err(_) => {}
         }
+        //0x1F4BFFFF
 
-
-        moter_controler.moter_control(0x1F6DFFFF);
+        moter_controler.moter_control(0x1F29FFFF);
         
 
         if wt901_serial.aziment.2 < -90.0 {
