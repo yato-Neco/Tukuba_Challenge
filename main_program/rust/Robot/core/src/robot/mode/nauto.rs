@@ -161,8 +161,6 @@ pub fn nauto() {
     waypoints.push((35.625845, 139.341318));
     waypoints.push((35.626002, 139.341571));
 
-
-
     //<--
 
     // demo -->
@@ -216,13 +214,14 @@ pub fn nauto() {
 
         //右マイナス
         //左プラス
-        
 
-        if azimuth > 0.0 {
-            flacn.module.moter_controler.moter_control(0x1F5CFFFF);
-        } else {
-            flacn.module.moter_controler.moter_control(0x1FC5FFFF);
+
+        if trne_threshold_azimuth.0 > now_azimuth {
+            flacn.module.moter_controler.moter_control(0x1F29FFFF);
+        } else if now_azimuth < trne_threshold_azimuth.1 {
+            flacn.module.moter_controler.moter_control(0x1F92FFFF);
         }
+
 
         if trne_threshold_azimuth.0 <= now_azimuth && now_azimuth >= trne_threshold_azimuth.1 {
             flacn.event.maneuver = "回転完了";
