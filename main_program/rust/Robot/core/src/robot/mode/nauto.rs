@@ -45,6 +45,7 @@ pub struct AutoEvents {
     pub is_lidar_module: bool,
     pub fix_flash: bool,
     pub is_start_azimath_end: bool,
+    pub is_init_azimuth:bool,
     pub maneuver: &'static str,
 }
 
@@ -92,6 +93,7 @@ pub fn nauto() {
         is_wt901_module: true,
         is_start_azimath_end: false,
         trne_threshold: 3.5,
+        is_init_azimuth:true,
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -175,6 +177,7 @@ pub fn nauto() {
     //flacn.event.is_first_time = false;
     //<--
 
+
     flacn.add_fnc("first_time", |flacn| {
         flacn.event.maneuver = "角度取得中";
         //(flacn.module.send)(config::FRONT, &flacn.module.msg);
@@ -207,21 +210,18 @@ pub fn nauto() {
             azimuth + flacn.event.trne_threshold,
         );
 
-        let now_azimuth = flacn.module.wt901.gyro.unwrap_or((0.0, 0.0, 0.0)).2 as f64
-            + flacn.module.nav.start_azimuth;
+        let now_azimuth = flacn.module.wt901.gyro.unwrap_or((0.0, 0.0, 0.0)).2 as f64;
 
         flacn.event.maneuver = "回転中...";
 
         //右マイナス
         //左プラス
 
-
-        if trne_threshold_azimuth.0 > now_azimuth {
+        if trne_threshold_azimuth.0 > 0 {
             flacn.module.moter_controler.moter_control(0x1F29FFFF);
-        } else if now_azimuth < trne_threshold_azimuth.1 {
+        } else {
             flacn.module.moter_controler.moter_control(0x1F92FFFF);
         }
-
 
         if trne_threshold_azimuth.0 <= now_azimuth && now_azimuth >= trne_threshold_azimuth.1 {
             flacn.event.maneuver = "回転完了";
@@ -407,14 +407,12 @@ pub fn nauto() {
 
         // waypoint 処理
         if (flag.0 || flacn.event.is_first_time) & flacn.event.is_start_azimath_end {
-            flacn.event.is_first_time = false;
             flacn.module.nav.waypoint_azimuth_distance();
-            //flacn.module.wt901.aziment.2 = 0.0;
-
+            flacn.module.wt901.aziment.2 = 0.0;
             flacn.event.maneuver = "waypoint到着";
-
             flacn.event.is_trune = true;
             flag.0 = false;
+            flacn.event.is_first_time = false;
         }
 
         //time_sleep(0, 10);

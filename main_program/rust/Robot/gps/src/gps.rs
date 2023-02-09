@@ -5,7 +5,9 @@ fn test() {
     let mut nav = Nav::init();
     nav.set_lat_lot((36.064225, 136.221375));
     nav.gps_senser.is_fix = true;
-    let a = nav.azimuth_distance(&(36.064225, 136.221375), &(36.064235, 136.221375));
+    let a = nav.azimuth_distance(&(35.627226,139.339983), &(35.627178,139.340020)).0 * (180.0 / std::f64::consts::PI);
+    println!("{:?}", a);
+    let a = nav.azimuth_distance(&(35.627178,139.340020), &(35.627095, 139.340267)).0 * (180.0 / std::f64::consts::PI);
     println!("{:?}", a);
     //nav.bkw_azimuth();
     //let mut waypoints = Vec::new();

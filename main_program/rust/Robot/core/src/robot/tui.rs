@@ -48,9 +48,12 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
         )
         .split(f.size());
 
-    let left_block = Paragraph::new(format!("maneuver: {}\nis_first_time: {}\nis_flash: {}\nstart_azimuth: {}\nnext_azimuth: {}", event.maneuver,event.is_first_time,event.is_flash,nav.start_azimuth,nav.next_azimuth))
-        .block(Block::default().borders(Borders::ALL))
-        .alignment(tui::layout::Alignment::Left);
+    let left_block = Paragraph::new(format!(
+        "maneuver: {}\nis_first_time: {}\nis_flash: {}\nstart_azimuth: {}\nnext_azimuth: {}\nis_trune {}\n",
+        event.maneuver, event.is_first_time, event.is_flash, nav.start_azimuth, nav.next_azimuth, event.is_trune
+    ))
+    .block(Block::default().borders(Borders::ALL))
+    .alignment(tui::layout::Alignment::Left);
     f.render_widget(left_block, chunks[0]);
 
     let middle_chunks = Layout::default()
@@ -72,12 +75,12 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
     .alignment(tui::layout::Alignment::Center);
     f.render_widget(middle_top_block, middle_chunks[0]);
 
-    let center_block = Paragraph::new("Middle02")
+    let center_block = Paragraph::new("")
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Center);
     f.render_widget(center_block, middle_chunks[1]);
 
-    let middle_bottom = Paragraph::new("Middle03")
+    let middle_bottom = Paragraph::new("")
         .block(Block::default().borders(Borders::ALL))
         .alignment(tui::layout::Alignment::Center);
     f.render_widget(middle_bottom, middle_chunks[2]);
