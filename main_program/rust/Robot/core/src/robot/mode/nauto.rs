@@ -198,8 +198,6 @@ pub fn nauto() {
     });
 
     flacn.add_fnc("rote", |flacn| {
-        //println!("{}",flacn.module.wt901.aziment.2);
-
         let azimuth = flacn.module.nav.start_azimuth - flacn.module.nav.next_azimuth;
 
         let trne_threshold_azimuth = (
@@ -207,21 +205,20 @@ pub fn nauto() {
             azimuth + flacn.event.trne_threshold,
         );
 
-        let now_azimuth = flacn.module.wt901.gyro.unwrap_or((0.0, 0.0, 0.0)).2 as f64
-            + flacn.module.nav.start_azimuth;
+        let now_azimuth = flacn.module.wt901.aziment.2 as f64;
 
         flacn.event.maneuver = "回転中...";
 
         //右マイナス
         //左プラス
 
-
-        if trne_threshold_azimuth.0 > now_azimuth {
-            flacn.module.moter_controler.moter_control(0x1F29FFFF);
-        } else if now_azimuth < trne_threshold_azimuth.1 {
+        if trne_threshold_azimuth.0 > 0.0 {
             flacn.module.moter_controler.moter_control(0x1F92FFFF);
-        }
 
+        } else {
+            flacn.module.moter_controler.moter_control(0x1F29FFFF);
+
+        }
 
         if trne_threshold_azimuth.0 <= now_azimuth && now_azimuth >= trne_threshold_azimuth.1 {
             flacn.event.maneuver = "回転完了";
@@ -232,6 +229,7 @@ pub fn nauto() {
             flacn.event.is_trune = false;
         }
     });
+    
 
     flacn.add_fnc("no_fix", |flacn| {
         if !flacn.event.is_trune {
@@ -306,7 +304,6 @@ pub fn nauto() {
             Err(_) => {}
         };
 
-        flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
         //flacn.module.terminal.flush().unwrap();
 
         match gps_port {
@@ -370,6 +367,8 @@ pub fn nauto() {
             },
             None => {}
         }
+        flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
+
 
         flacn.module.nav.robot_move(0.0, 0.0);
 
@@ -407,14 +406,12 @@ pub fn nauto() {
 
         // waypoint 処理
         if (flag.0 || flacn.event.is_first_time) & flacn.event.is_start_azimath_end {
-            flacn.event.is_first_time = false;
             flacn.module.nav.waypoint_azimuth_distance();
-            //flacn.module.wt901.aziment.2 = 0.0;
-
+            flacn.module.wt901.aziment.2 = 0.0;
             flacn.event.maneuver = "waypoint到着";
-
             flacn.event.is_trune = true;
             flag.0 = false;
+            flacn.event.is_first_time = false;
         }
 
         //time_sleep(0, 10);
