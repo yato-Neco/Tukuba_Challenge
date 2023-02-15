@@ -120,7 +120,7 @@ impl Nav {
             row_waypoints: Vec::new(),
             lat_lon_history: Vec::new(),
             start_lat_lot_index: None,
-            r: 11.0,
+            r: 100.0,
             is_simulater: false,
             next_azimuth: 0.0,
             start_azimuth: 0.0,

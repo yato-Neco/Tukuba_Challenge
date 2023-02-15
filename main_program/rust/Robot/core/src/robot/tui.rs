@@ -49,8 +49,8 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
         .split(f.size());
 
     let left_block = Paragraph::new(format!(
-        "maneuver: {}\nis_first_time: {}\nis_flash: {}\nstart_azimuth: {}\nnext_azimuth: {}\nis_trune {}\n",
-        event.maneuver, event.is_first_time, event.is_flash, nav.start_azimuth, nav.next_azimuth, event.is_trune
+        "maneuver: {}\nis_first_time: {}\nis_flash: {}\nstart_azimuth: {}\nnext_azimuth: {}\nis_trune: {}\nis_continue: {}",
+        event.maneuver, event.is_first_time, event.is_flash, nav.start_azimuth, nav.next_azimuth, event.is_trune,event.is_continue
     ))
     .block(Block::default().borders(Borders::ALL))
     .alignment(tui::layout::Alignment::Left);

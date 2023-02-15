@@ -45,7 +45,7 @@ pub struct AutoEvents {
     pub is_lidar_module: bool,
     pub fix_flash: bool,
     pub is_start_azimath_end: bool,
-    pub is_init_azimuth:bool,
+    pub is_init_azimuth: bool,
     pub maneuver: &'static str,
 }
 
@@ -93,7 +93,7 @@ pub fn nauto() {
         is_wt901_module: true,
         is_start_azimath_end: false,
         trne_threshold: 3.5,
-        is_init_azimuth:true,
+        is_init_azimuth: true,
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -177,7 +177,6 @@ pub fn nauto() {
     //flacn.event.is_first_time = false;
     //<--
 
-
     flacn.add_fnc("first_time", |flacn| {
         flacn.event.maneuver = "角度取得中";
         //(flacn.module.send)(config::FRONT, &flacn.module.msg);
@@ -212,15 +211,13 @@ pub fn nauto() {
 
         flacn.event.maneuver = "回転中...";
 
-        //右マイナス
-        //左プラス
-
+        //右マイナス 4b
+        //左プラス b4
+        
         if trne_threshold_azimuth.0 > 0.0 {
-            flacn.module.moter_controler.moter_control(0x1F92FFFF);
-
-        } else {
             flacn.module.moter_controler.moter_control(0x1F29FFFF);
-
+        } else {
+            flacn.module.moter_controler.moter_control(0x1F92FFFF);
         }
 
         if trne_threshold_azimuth.0 <= now_azimuth && now_azimuth >= trne_threshold_azimuth.1 {
@@ -230,14 +227,30 @@ pub fn nauto() {
             flacn.event.maneuver = "前進";
             flacn.module.moter_controler.moter_control(config::FRONT);
             flacn.event.is_trune = false;
+            flacn.module.wt901.aziment.2 = 0.0;
         }
     });
-    
 
     flacn.add_fnc("no_fix", |flacn| {
         if !flacn.event.is_trune {
             flacn.event.maneuver = "GPS取得中のため停止中...";
             flacn.module.moter_controler.moter_control(config::STOP);
+        }
+    });
+
+    flacn.add_fnc("is_15", |flacn| {
+        if flacn.module.wt901.aziment.2 > 15.0 {
+            flacn.event.maneuver = "補正now";
+
+            flacn.module.moter_controler.moter_control(0x1FDCFFFF);
+        } else if flacn.module.wt901.aziment.2 < -15.0 {
+            flacn.event.maneuver = "補正now";
+
+            flacn.module.moter_controler.moter_control(0x1FCDFFFF);
+        } else {
+            flacn.event.maneuver = "前進";
+
+            flacn.module.moter_controler.moter_control(config::FRONT);
         }
     });
 
@@ -372,10 +385,11 @@ pub fn nauto() {
         }
         flacn.load_fnc_is("no_fix", !flacn.module.nav.gps_senser.is_fix);
 
-
         flacn.module.nav.robot_move(0.0, 0.0);
 
         flacn.load_fnc_is("rote", flacn.event.is_trune);
+
+        flacn.load_fnc_is("is_15", !flacn.event.is_trune);
 
         if flacn.event.is_trune {
             time_sleep(0, 10);
