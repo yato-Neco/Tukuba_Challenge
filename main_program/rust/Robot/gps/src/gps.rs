@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use nav_types::{ENU, WGS84};
 
 #[test]
@@ -37,7 +39,7 @@ fn test() {
     //nav.in_waypoint();
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Nav {
     pub lat_lon: Option<(f64, f64)>,
     pub position: (f64, f64),
@@ -49,6 +51,7 @@ pub struct Nav {
     pub next_azimuth: f64,
     pub start_azimuth: f64,
     pub r: f64,
+    pub file:File,
     pub is_simulater: bool,
     pub gps_senser: GpsSenser,
     pub start_index: Option<usize>,
@@ -118,6 +121,8 @@ impl Nav {
     #[inline]
     /// is_fix: false
     pub fn init() -> Self {
+        let filename = "lat_lon_history.txt";
+        let mut file = File::create(filename).unwrap();
         Self {
             lat_lon: None,
             position: (0.0, 0.0),
@@ -127,10 +132,12 @@ impl Nav {
             lat_lon_history: Vec::new(),
             start_lat_lot_index: None,
             r: 100.0,
+            file:file,
             is_simulater: false,
             next_azimuth: 0.0,
             start_azimuth: 0.0,
             is_in_waypoint: false,
+            
             gps_senser: GpsSenser {
                 is_fix: false,
                 lat_lon: None,
@@ -242,11 +249,13 @@ impl Nav {
     #[inline]
     pub fn set_lat_lot(&mut self, lat_lon: (f64, f64)) {
         self.lat_lon = Some(lat_lon);
+        
 
         match self.lat_lon_history.last() {
             Some((lat, lot)) => {
                 if *lat != lat_lon.0 || *lot != lat_lon.1 {
                     self.lat_lon_history.push(lat_lon);
+                    
                 };
             }
             None => {

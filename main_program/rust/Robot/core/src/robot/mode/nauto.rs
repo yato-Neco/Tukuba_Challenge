@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::Stdout,
+    io::{Stdout, Write},
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,
 };
@@ -45,8 +45,8 @@ pub struct AutoEvents {
     pub is_lidar_module: bool,
     pub fix_flash: bool,
     pub is_start_azimath_end: bool,
-    pub is_init_azimuth:bool,
-    pub azimuth:f64,
+    pub is_init_azimuth: bool,
+    pub azimuth: f64,
     pub maneuver: &'static str,
 }
 
@@ -94,8 +94,8 @@ pub fn nauto() {
         is_wt901_module: true,
         is_start_azimath_end: false,
         trne_threshold: 3.5,
-        is_init_azimuth:true,
-        azimuth:0.0,
+        is_init_azimuth: true,
+        azimuth: 0.0,
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -162,7 +162,7 @@ pub fn nauto() {
 
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
     //35.627350, 139.339841
-    waypoints.push((35.627089,139.340275));
+    waypoints.push((35.627089, 139.340275));
     waypoints.push((35.625845, 139.341318));
     //waypoints.push((35.626002, 139.341571));
 
@@ -206,8 +206,8 @@ pub fn nauto() {
         flacn.event.azimuth = flacn.module.nav.start_azimuth - flacn.module.nav.next_azimuth;
 
         let trne_threshold_azimuth = (
-            flacn.event.azimuth  - flacn.event.trne_threshold,
-            flacn.event.azimuth  + flacn.event.trne_threshold,
+            flacn.event.azimuth - flacn.event.trne_threshold,
+            flacn.event.azimuth + flacn.event.trne_threshold,
         );
 
         let now_azimuth = flacn.module.wt901.aziment.2 as f64;
@@ -216,7 +216,7 @@ pub fn nauto() {
 
         //右マイナス 4b
         //左プラス b4
-        
+
         if trne_threshold_azimuth.0 > 0.0 {
             flacn.module.moter_controler.moter_control(0x1F29FFFF);
         } else {
@@ -294,12 +294,18 @@ pub fn nauto() {
             //flacn.module.nav.set_lat_lot((35.627407,139.339781));
         }
 
-
         //flacn.load_fnc("tui");
         //println!("{:?}",flacn.module.nav.lat_lon_history);
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
                 if e == config::BREAK {
+                    flacn
+                        .module
+                        .nav
+                        .file
+                        .write_all(format!("{:?}", flacn.module.nav.lat_lon_history).as_bytes())
+                        .unwrap();
+
                     flacn.module.terminal.flush().unwrap();
                     //time_sleep(0, 500);
 
@@ -368,8 +374,6 @@ pub fn nauto() {
                         flacn.event.fix_flash = false;
                     }
                 }
-
-                
             }
         }
 
@@ -403,7 +407,7 @@ pub fn nauto() {
 
         flacn.load_fnc_is("rote", flacn.event.is_trune);
 
-        flacn.load_fnc_is("is_15", !flacn.event.is_trune);
+        //flacn.load_fnc_is("is_15", !flacn.event.is_trune);
 
         if flacn.event.is_trune {
             time_sleep(0, 10);
@@ -428,7 +432,6 @@ pub fn nauto() {
 
         // 最終地点
         if flag.1 {
-            
             flacn.event.maneuver = "最終地点";
             flacn.module.moter_controler.moter_control(config::STOP);
             ms_sleep(800);
