@@ -45,7 +45,8 @@ pub struct AutoEvents {
     pub is_lidar_module: bool,
     pub fix_flash: bool,
     pub is_start_azimath_end: bool,
-    pub is_init_azimuth: bool,
+    pub is_init_azimuth:bool,
+    pub azimuth:f64,
     pub maneuver: &'static str,
 }
 
@@ -93,7 +94,8 @@ pub fn nauto() {
         is_wt901_module: true,
         is_start_azimath_end: false,
         trne_threshold: 3.5,
-        is_init_azimuth: true,
+        is_init_azimuth:true,
+        azimuth:0.0,
         //opcode: 0xfffffff,
         maneuver: "Start",
     };
@@ -159,15 +161,16 @@ pub fn nauto() {
     //waypoint設定 -->
 
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
-    waypoints.push((35.627095, 139.340267));
+    //35.627350, 139.339841
+    waypoints.push((35.627089,139.340275));
     waypoints.push((35.625845, 139.341318));
-    waypoints.push((35.626002, 139.341571));
+    //waypoints.push((35.626002, 139.341571));
 
     //<--
 
     // demo -->
     //flacn.module.nav.lat_lon = Some((36.064226, 136.221375));
-    //flacn.module.nav.set_lat_lot((5.625845, 139.341518));
+    //flacn.module.nav.set_lat_lot((35.627551,139.339658));
     //flacn.module.nav.gps_senser.is_fix = true;
 
     //flacn.module.nav.robot_move(0.0, 0.0);
@@ -200,11 +203,11 @@ pub fn nauto() {
     });
 
     flacn.add_fnc("rote", |flacn| {
-        let azimuth = flacn.module.nav.start_azimuth - flacn.module.nav.next_azimuth;
+        flacn.event.azimuth = flacn.module.nav.start_azimuth - flacn.module.nav.next_azimuth;
 
         let trne_threshold_azimuth = (
-            azimuth - flacn.event.trne_threshold,
-            azimuth + flacn.event.trne_threshold,
+            flacn.event.azimuth  - flacn.event.trne_threshold,
+            flacn.event.azimuth  + flacn.event.trne_threshold,
         );
 
         let now_azimuth = flacn.module.wt901.aziment.2 as f64;
@@ -286,6 +289,13 @@ pub fn nauto() {
 
     loop {
         flacn.load_fnc("tui");
+
+        if flacn.module.scheduler.end() > 5.0 {
+            //flacn.module.nav.set_lat_lot((35.627407,139.339781));
+        }
+
+
+        //flacn.load_fnc("tui");
         //println!("{:?}",flacn.module.nav.lat_lon_history);
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
@@ -350,12 +360,16 @@ pub fn nauto() {
             None => {
                 //flacn.module.nav.set_lat_lot((36.164227, 136.241375));
                 //mytools::warning_msg("non");
-                if true {
+                if false {
                     //flacn.module.nav.gps_senser.is_fix = true;
                     //flacn.event.is_continue = false;
-                } else {
-                    //flacn.module.nav.gps_senser.is_fix = false;
+                    if flacn.event.fix_flash {
+                        flacn.module.nav.add_waypoints(waypoints.clone());
+                        flacn.event.fix_flash = false;
+                    }
                 }
+
+                
             }
         }
 
@@ -414,10 +428,14 @@ pub fn nauto() {
 
         // 最終地点
         if flag.1 {
+            
+            flacn.event.maneuver = "最終地点";
             flacn.module.moter_controler.moter_control(config::STOP);
             ms_sleep(800);
             flacn.module.moter_controler.pwm_all_clean();
             ms_sleep(800);
+            flacn.load_fnc("tui");
+
             break;
         }
 
@@ -429,9 +447,12 @@ pub fn nauto() {
             flacn.event.is_trune = true;
             flag.0 = false;
             flacn.event.is_first_time = false;
+            flacn.load_fnc("tui");
         }
 
         //time_sleep(0, 10);
+        flacn.load_fnc("tui");
+
         ms_sleep(10);
         //flacn.module.nav.set_lat_lot((36.064227, 136.221376));
     }

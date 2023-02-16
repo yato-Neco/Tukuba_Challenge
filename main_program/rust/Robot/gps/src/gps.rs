@@ -5,9 +5,15 @@ fn test() {
     let mut nav = Nav::init();
     nav.set_lat_lot((36.064225, 136.221375));
     nav.gps_senser.is_fix = true;
-    let a = nav.azimuth_distance(&(35.627226,139.339983), &(35.627178,139.340020)).0 * (180.0 / std::f64::consts::PI);
+    let a = nav
+        .azimuth_distance(&(35.627551, 139.339658), &(35.627407, 139.339781))
+        .0
+        * (180.0 / std::f64::consts::PI);
     println!("{:?}", a);
-    let a = nav.azimuth_distance(&(35.627178,139.340020), &(35.627095, 139.340267)).0 * (180.0 / std::f64::consts::PI);
+    let a = nav
+        .azimuth_distance(&(35.627407, 139.339781), &(35.627350, 139.339841))
+        .0
+        * (180.0 / std::f64::consts::PI);
     println!("{:?}", a);
     //nav.bkw_azimuth();
     //let mut waypoints = Vec::new();
@@ -155,10 +161,9 @@ impl Nav {
                 //println!("In!!");
                 self.destination_index += 1;
                 self.is_in_waypoint = true;
-
                 if self.destination_index >= self.waypoints.len() {
                     //println!("{:?}", self.waypoints[self.destination_index]);
-                    println!("{:?}", self.position);
+                    //println!("{:?}", self.position);
                     //println!("exit");
                     return (false, true);
                 }
@@ -177,13 +182,13 @@ impl Nav {
     #[inline]
     /// is_fix: true
     pub fn waypoint_azimuth_distance(&mut self) -> f64 {
-        let pos_a = WGS84::from_degrees_and_meters(
+        let pos_b = WGS84::from_degrees_and_meters(
             self.row_waypoints[self.destination_index].0,
             self.row_waypoints[self.destination_index].1,
             0.0,
         );
-        let pos_b =
-            WGS84::from_degrees_and_meters(self.lat_lon.unwrap().0, self.lat_lon.unwrap().1, 0.0);
+        let (lat, lot) = self.lat_lon_history.last().unwrap();
+        let pos_a = WGS84::from_degrees_and_meters(*lat, *lot, 0.0);
         let distance: f64 = pos_a.distance(&pos_b);
         let vec = pos_b - pos_a;
         self.next_azimuth = f64::atan2(vec.east(), vec.north()) * (180.0 / std::f64::consts::PI);
@@ -222,7 +227,7 @@ impl Nav {
         for waypoints_lat_lot in waypoints.iter() {
             //let distance = self.distance(start_latlot, latlot) * 100.0;
             //let azimuth = self.azimuth(&start_latlot, latlot);
-            
+
             let (azimuth, distance) =
                 self.azimuth_distance(&self.lat_lon_history[0], waypoints_lat_lot);
             //self.azimuth360(&mut azimuth);
