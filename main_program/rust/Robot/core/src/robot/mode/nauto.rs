@@ -162,7 +162,7 @@ pub fn nauto() {
 
     let mut waypoints: Vec<(f64, f64)> = Vec::new();
     //35.627350, 139.339841
-    waypoints.push((35.627089, 139.340275));
+    waypoints.push((35.627091, 139.340262));
     waypoints.push((35.625845, 139.341318));
     //waypoints.push((35.626002, 139.341571));
 
@@ -170,8 +170,8 @@ pub fn nauto() {
 
     // demo -->
     //flacn.module.nav.lat_lon = Some((36.064226, 136.221375));
-    //flacn.module.nav.set_lat_lot((35.627551,139.339658));
-    //flacn.module.nav.gps_senser.is_fix = true;
+    flacn.module.nav.set_lat_lot((35.627551, 139.339658));
+    flacn.module.nav.gps_senser.is_fix = true;
 
     //flacn.module.nav.robot_move(0.0, 0.0);
     //flacn.module.nav.set_lat_lot((36.064226, 136.221376));
@@ -291,7 +291,7 @@ pub fn nauto() {
         flacn.load_fnc("tui");
 
         if flacn.module.scheduler.end() > 5.0 {
-            //flacn.module.nav.set_lat_lot((35.627407,139.339781));
+            flacn.module.nav.set_lat_lot((35.627407, 139.339781));
         }
 
         //flacn.load_fnc("tui");
@@ -366,7 +366,7 @@ pub fn nauto() {
             None => {
                 //flacn.module.nav.set_lat_lot((36.164227, 136.241375));
                 //mytools::warning_msg("non");
-                if false {
+                if true {
                     //flacn.module.nav.gps_senser.is_fix = true;
                     //flacn.event.is_continue = false;
                     if flacn.event.fix_flash {
