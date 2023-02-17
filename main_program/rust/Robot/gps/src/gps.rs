@@ -122,7 +122,7 @@ impl Nav {
     /// is_fix: false
     pub fn init() -> Self {
         let filename = "lat_lon_history.txt";
-        let mut file = File::create(filename).unwrap();
+        let file = File::create(filename).unwrap();
         Self {
             lat_lon: None,
             position: (0.0, 0.0),
@@ -131,7 +131,7 @@ impl Nav {
             row_waypoints: Vec::new(),
             lat_lon_history: Vec::new(),
             start_lat_lot_index: None,
-            r: 100.0,
+            r: 10.0,
             file:file,
             is_simulater: false,
             next_azimuth: 0.0,
