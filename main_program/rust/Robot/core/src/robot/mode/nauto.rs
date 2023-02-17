@@ -187,13 +187,14 @@ pub fn nauto() {
         flacn.module.moter_controler.moter_control(config::FRONT);
 
         if flacn.module.nav.lat_lon_history.len() > 1 {
-            flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(10.0);
+            flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(100.0);
 
             if flacn.event.is_start_azimath_end {
                 flacn.event.maneuver = "角度取得完了";
                 flacn.module.nav.set_start_index();
 
                 flacn.module.moter_controler.moter_control(config::STOP);
+                ms_sleep(100);
 
                 flacn.event.is_continue = false;
             }
@@ -288,14 +289,18 @@ pub fn nauto() {
     flacn.module.terminal.clear().unwrap();
 
     loop {
+        
         flacn.load_fnc("tui");
 
+        /*
         if flacn.module.scheduler.end() > 5.0 {
             //flacn.module.nav.set_lat_lot((35.627407,139.339781));
         }
-
+        */
+        
         //flacn.load_fnc("tui");
         //println!("{:?}",flacn.module.nav.lat_lon_history);
+
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
                 if e == config::BREAK {
@@ -338,6 +343,7 @@ pub fn nauto() {
 
         //flacn.module.terminal.flush().unwrap();
 
+
         match gps_port {
             Some(ref mut gps) => match gps.read(gps_serial_buf.as_mut_slice()) {
                 Ok(t) => {
@@ -363,7 +369,7 @@ pub fn nauto() {
                     //flacn.module.nav.gps_senser.is_fix = false;
                 }
             },
-            None => {
+            None => { 
                 //flacn.module.nav.set_lat_lot((36.164227, 136.241375));
                 //mytools::warning_msg("non");
                 if false {
@@ -460,6 +466,9 @@ pub fn nauto() {
         //flacn.module.nav.set_lat_lot((36.064227, 136.221376));
     }
 }
+
+
+
 
 /*
 fn operator(panic_msg: Sender<String>, msg: SenderOrders) {
