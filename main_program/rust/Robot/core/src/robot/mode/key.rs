@@ -128,6 +128,7 @@ pub fn key() {
     flag_controler.add_fnc("is_emergency_stop", |flacn| {
         // is_emergency_stop_lv0 が true の時、呼び出す
         if flacn.event.is_emergency_stop_lv0 {
+            flacn.module.moter_controler.moter_control(config::STOP);
             //flacn.module.raspico_controler.write(config::STOP);
         };
     });
@@ -177,33 +178,53 @@ pub fn key() {
     });
 
     //thread.insert("lidar", lidar);
+    //slet (gps_sender, gps_receiver) = std::sync::mpsc::channel::<bool>();
 
-    /*
     thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
+        let setting_file = Settings::load_setting("./settings.yaml");
+        let (port, rate) = setting_file.load_lidar();
+        let mut port = match serialport::new(port, rate)
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .timeout(Duration::from_millis(10))
+            .open()
+        {
+            Ok(p) => p,
+            Err(_) => panic!(),
+        };
+        let mut serial_buf: Vec<u8> = vec![0; 1500];
 
+        loop {
+            match port.read(serial_buf.as_mut_slice()) {
+                Ok(t) => {
+                    //let mut map_vec = Vec::new();
+                    let mut data = serial_buf[..t].to_vec();
+                    let points = ydlidarx2(&mut data);
 
-        let mut ignition0 = false;
-        let mut count = 0;
-
-
+                    for point in points.iter() {
+                        if point.0 > 0.0 && 0.0 < point.1 {}
+                    }
+                }
+                Err(_) => {}
+            }
+        }
     });
-    */
 
     Rthd::<String>::thread_generate(thread, &sendr_err_handles, &order);
 
     loop {
-        /*
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
-                flag_controler.event.order = e;
-                println!("E:{:x}", flag_controler.event.order);
-                flag_controler.load_fnc("emergency_stop");
-                flag_controler.load_fnc("moter_control");
+                flag_controler.event.is_emergency_stop_lv0 = e == 0;
+
+                //flag_controler.event.order = e;
+                //println!("E:{:x}", flag_controler.event.order);
+                //flag_controler.load_fnc("emergency_stop");
+                //flag_controler.load_fnc("moter_control");
             }
             Err(_) => {}
         };
-        */
 
         match order.get("key").unwrap().1.try_recv() {
             Ok(e) => {
@@ -227,53 +248,13 @@ pub fn key() {
             Err(_) => {}
         };
 
-        /*
-        terminal
-            .draw(|f| {
-                tui::key_ui(f, &flag_controler);
-            })
-            .unwrap();
-        */
-
-        //flag_controler.load_fnc("debug");
-
-        time_sleep(0, 1);
+        time_sleep(0, 15);
     }
 
     //terminal.clear().unwrap();
 }
 
-fn lidar(panic_msg: Sender<String>, msg: SenderOrders) {
-    Rthd::<String>::send_panic_msg(panic_msg);
 
-    let setting_file = Settings::load_setting("./settings.yaml");
-    let (port, rate) = setting_file.load_lidar();
-    let mut port = match serialport::new(port, rate)
-        .stop_bits(serialport::StopBits::One)
-        .data_bits(serialport::DataBits::Eight)
-        .timeout(Duration::from_millis(10))
-        .open()
-    {
-        Ok(p) => p,
-        Err(_) => panic!(),
-    };
-    let mut serial_buf: Vec<u8> = vec![0; 1500];
-
-    loop {
-        match port.read(serial_buf.as_mut_slice()) {
-            Ok(t) => {
-                //let mut map_vec = Vec::new();
-                let mut data = serial_buf[..t].to_vec();
-                let points = ydlidarx2(&mut data);
-
-                for point in points.iter() {
-                    if point.0 > 0.0 && 0.0 < point.1 {}
-                }
-            }
-            Err(_) => {}
-        }
-    }
-}
 
 pub fn input_key(key_bind: [u32; 4]) -> u32 {
     let key = getch::Getch::new();

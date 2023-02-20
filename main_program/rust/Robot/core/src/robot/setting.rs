@@ -157,6 +157,7 @@ impl Settings {
                 .unwrap(),
         )
         .unwrap();
+    
         let mut rdr = csv::Reader::from_reader(file);
         for (i, result) in rdr.records().enumerate() {
             let record = result.expect("a CSV record");
