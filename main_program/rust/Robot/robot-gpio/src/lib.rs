@@ -54,28 +54,7 @@ impl Moter {
         };
     }
 
-    /// 右モーター制御
-    #[inline]
-     fn right(&mut self, duty: f64, mode: Mode) {
-        if mode == Mode::Back {
-            self.r_pin1.set_pwm_frequency(50.0, duty).unwrap();
-            self.r_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
-        } else {
-            self.r_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-            self.r_pin0.set_pwm_frequency(50.0, duty).unwrap();
-        }
-    }
-    /// 左モーター制御
-    #[inline]
-     fn left(&mut self, duty: f64, mode: Mode) {
-        if mode == Mode::Back {
-            self.l_pin1.set_pwm_frequency(50.0, duty).unwrap();
-            self.l_pin0.set_pwm_frequency(0.0, 0.0).unwrap();
-        } else {
-            self.l_pin1.set_pwm_frequency(0.0, 0.0).unwrap();
-            self.l_pin0.set_pwm_frequency(50.0, duty).unwrap();
-        }
-    }
+    
     #[inline]
     fn _front(&mut self, r_duty: f64, l_duty: f64) {
         self.r_pin0.set_pwm_frequency(4_000.0, 0.0).unwrap();   
@@ -108,10 +87,10 @@ impl Moter {
     }
     #[inline]
     fn _stop(&mut self) {
-        self.r_pin0.set_pwm_frequency(4_000.0, 1.0).unwrap();
-        self.r_pin1.set_pwm_frequency(4_000.0, 1.0).unwrap();
-        self.l_pin0.set_pwm_frequency(4_000.0, 1.0).unwrap();
-        self.l_pin1.set_pwm_frequency(4_000.0, 1.0).unwrap();
+        self.r_pin0.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.r_pin1.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.l_pin0.set_pwm_frequency(0.0, 1.0).unwrap();
+        self.l_pin1.set_pwm_frequency(0.0, 1.0).unwrap();
     }
 
     /// PWMのリセット
@@ -138,23 +117,23 @@ impl Moter {
 
         match (rM as u8, lM as u8) {
             (1..=7, 1..=7) => {
-                self._front((rM / 7.0),(lM / 7.0));
+                self._front(rM / 7.0,lM / 7.0);
                 //self.right(rM as f64 / 7.0, Mode::Back);
                 //self.left(lM as f64 / 7.0, Mode::Back);
             }
             (8..=14, 8..=14) => {
-                self._back(((rM-7.0) / 7.0) ,((lM-7.0) / 7.0));
+                self._back((rM-7.0) / 7.0 ,(lM-7.0) / 7.0);
 
                 //self.right((rM - 7) as f64 / 7.0, Mode::Front);
                 //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (1..=7, 8..=14) => {
-                self._right((rM / 7.0),((lM-7.0) / 7.0));
+                self._right(rM / 7.0,(lM-7.0) / 7.0);
                 //self.right(rM as f64 / 7.0, Mode::Back);
                 //self.left((lM - 7) as f64 / 7.0, Mode::Front);
             }
             (8..=14, 1..=7) => {
-                self._left(((rM-7.0) / 7.0),(lM / 7.0));
+                self._left((rM-7.0) / 7.0,lM / 7.0);
                 //self.right((rM - 7) as f64 / 7.0, Mode::Front);
                 //self.left(lM as f64 / 7.0, Mode::Back);
             }

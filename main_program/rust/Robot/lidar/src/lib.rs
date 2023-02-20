@@ -1,40 +1,5 @@
-///　詳しくは以下
-/// https://www.robotshop.com/media/files/content/y/ydl/pdf/ydlidar-x2-360-laser-scanner-datasheet.pdf
-/// ```
-/// let mut port = match serialport::new("COM4", 115200)
-///         .stop_bits(serialport::StopBits::One)
-///         .data_bits(serialport::DataBits::Eight)
-///         .timeout(Duration::from_millis(10))
-///         .open()
-///      {
-///         Ok(p) => (p),
-///         Err(_) => (panic!()),
-///       };
-///
-/// let mut serial_buf: Vec<u8> = vec![0; 500];
-///
-/// loop {
-///     match port.read(serial_buf.as_mut_slice()) {
-///         Ok(t) => {
-///
-///             let mut data = serial_buf[..t].to_vec();
-///             let points =  ydlidarx2_rs::ydlidarx2(&mut data);
-///
-///                 }
-///             }
-///
-///             Err(_) => {}
-///         }
-/// }
-///
-/// ```
-///
-/// Vec<(azimuth, distance)>
-///
-///
-///
+
 pub fn ydlidarx2(data: &mut [u8]) -> Vec<(f64, f64)> {
-    let rounf_num = 10_f64.powf(6.0);
 
     let mut points = Vec::with_capacity(300);
 
@@ -56,7 +21,7 @@ pub fn ydlidarx2(data: &mut [u8]) -> Vec<(f64, f64)> {
     angel_fsa += ang_correct(distance_1);
     angel_lsa += ang_correct(distance_lsa);
 
-    let pre_angle = ((angel_lsa - angel_fsa) * rounf_num).round() / rounf_num;
+    let pre_angle = angel_lsa - angel_fsa;
 
     let mut count = 0;
     let mut angle_i = 0.0;
@@ -74,7 +39,7 @@ pub fn ydlidarx2(data: &mut [u8]) -> Vec<(f64, f64)> {
 
         distance_i = as_u32_be(&[*t1, *t2]) as f64 / 4.0;
 
-        angle_i = ((((pre_angle / (angel_lsn)) * (i as f64)) + angel_fsa) * 1.0) / 1.0;
+        angle_i = ((pre_angle / (angel_lsn)) * ((i - 1) as f64) ) + angel_fsa;
 
         if distance_i == 0.0 {
             angle_i = 0.0;
@@ -110,17 +75,35 @@ fn as_u32_be(array: &[u8; 2]) -> u32 {
     ((array[0] as u32) << 8) | ((array[1] as u32) << 0)
 }
 
+pub trait  Xtools {
+
+    fn roundf(&self,square:i32) -> f64;
+}
+
+impl Xtools for f64 {
+    fn roundf(&self,square:i32) -> f64 {
+        if square == 0 {
+            (self).round()
+
+        }else{
+            (self * (square as f64)).round() / (square as f64)
+        }
+   }
+   
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use mytools::Xtools;
     use super::*;
 
     #[test]
     fn it_works() {
         //println!("{}", as_u32_be(&[170, 85]));
         
-        let roun  = 100;
+        let roun = 1;
 
         let mut t:HashMap<String,f64> = HashMap::new();
 
@@ -143,14 +126,19 @@ mod tests {
         println!("{:?}",t);
 
 
+        let mut map = Vec::new();
         
         for (a, d) in t.iter() {
             let a = a.parse::<f64>().unwrap();
             let y = a.sin() * d;
             let x = a.cos() * d;
-            println!("{:?}", (x, y));
+            //println!("{:?}", (x, y));
+            map.push((x,y))
         }
 
+        println!("{:?}",map);
+
+        
         //println!("{:?}", result);
         
         
