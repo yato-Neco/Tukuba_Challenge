@@ -8,7 +8,6 @@ use gps::{self, GPS};
 use lidar::ydlidarx2;
 use mytools::time_sleep;
 use robot_gpio::Moter;
-use robot_serialport::RasPico;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
 use tui;
@@ -139,11 +138,13 @@ pub fn key() {
 
         flacn.load_fnc("set_emergency_stop");
 
-        if flacn.event.is_emergency_stop_lv0 && !flacn.event.is_emergency_stop_lv0_delay {
+        if flacn.event.is_emergency_stop_lv0 {
             flacn
                 .module
                 .moter_controler
                 .moter_control(config::EMERGENCY_STOP);
+            flacn.event.is_move = false;
+            flacn.event.order = config::EMERGENCY_STOP;
         } else {
             flacn.load_fnc("set_move");
         }
@@ -157,7 +158,7 @@ pub fn key() {
         };
     });
 
-    let order = thread_variable!("key");
+    let order = thread_variable!("key", "lidar");
 
     let (sendr_err_handles, _receiver_err_handle): (Sender<String>, Receiver<String>) =
         mpsc::channel();
@@ -183,8 +184,8 @@ pub fn key() {
     thread.insert("lidar", |panic_msg: Sender<String>, msg: SenderOrders| {
         Rthd::<String>::send_panic_msg(panic_msg);
         let setting_file = Settings::load_setting("./settings.yaml");
-        let (port, rate) = setting_file.load_lidar();
-        let mut port = match serialport::new(port, rate)
+        let lidar_setting = setting_file.load_lidar();
+        let mut lidar_port = match serialport::new(lidar_setting.0, lidar_setting.1)
             .stop_bits(serialport::StopBits::One)
             .data_bits(serialport::DataBits::Eight)
             .timeout(Duration::from_millis(10))
@@ -193,17 +194,33 @@ pub fn key() {
             Ok(p) => p,
             Err(_) => panic!(),
         };
+
         let mut serial_buf: Vec<u8> = vec![0; 1500];
 
         loop {
-            match port.read(serial_buf.as_mut_slice()) {
+            match lidar_port.read(serial_buf.as_mut_slice()) {
                 Ok(t) => {
                     //let mut map_vec = Vec::new();
                     let mut data = serial_buf[..t].to_vec();
-                    let points = ydlidarx2(&mut data);
+                    //println!("{:?}",data);
+                    if data.len() > 11 {
+                        let points = ydlidarx2(&mut data);
 
-                    for point in points.iter() {
-                        if point.0 > 0.0 && 0.0 < point.1 {}
+                        for point in points.iter() {
+                            if point.1 < 90.0 {
+                                //315 250
+                                if 250.0 < point.0 && point.0 < 315.0 {
+                                    //println!("{:?}",point);
+                                    send(0, &msg);
+                                } else {
+                                }
+                            } else {
+                                if 250.0 < point.0 && point.0 < 315.0 {
+                                } else {
+                                    //send(1, &msg);
+                                }
+                            }
+                        }
                     }
                 }
                 Err(_) => {}
@@ -217,11 +234,10 @@ pub fn key() {
         match order.get("lidar").unwrap().1.try_recv() {
             Ok(e) => {
                 flag_controler.event.is_emergency_stop_lv0 = e == 0;
-
                 //flag_controler.event.order = e;
                 //println!("E:{:x}", flag_controler.event.order);
-                //flag_controler.load_fnc("emergency_stop");
-                //flag_controler.load_fnc("moter_control");
+                flag_controler.load_fnc("emergency_stop");
+                flag_controler.load_fnc("moter_control");
             }
             Err(_) => {}
         };
@@ -248,13 +264,11 @@ pub fn key() {
             Err(_) => {}
         };
 
-        time_sleep(0, 15);
+        time_sleep(0, 5);
     }
 
     //terminal.clear().unwrap();
 }
-
-
 
 pub fn input_key(key_bind: [u32; 4]) -> u32 {
     let key = getch::Getch::new();
