@@ -6,7 +6,7 @@ use flacon::{Event, FlaCon, Flags};
 use getch;
 use gps::{self, GPS};
 use lidar::ydlidarx2;
-use mytools::time_sleep;
+use mytools::{time_sleep, warning_msg};
 use robot_gpio::Moter;
 use rthred::{send, sendG, Rthd, RthdG};
 use scheduler::Scheduler;
@@ -191,40 +191,50 @@ pub fn key() {
             .timeout(Duration::from_millis(10))
             .open()
         {
-            Ok(p) => p,
-            Err(_) => panic!(),
+            Ok(p) => Some(p),
+            Err(_) => {
+                warning_msg("not find LiDAR");
+                None
+            },
         };
 
         let mut serial_buf: Vec<u8> = vec![0; 1500];
 
         loop {
-            match lidar_port.read(serial_buf.as_mut_slice()) {
-                Ok(t) => {
-                    //let mut map_vec = Vec::new();
-                    let mut data = serial_buf[..t].to_vec();
-                    //println!("{:?}",data);
-                    if data.len() > 11 {
-                        let points = ydlidarx2(&mut data);
-
-                        for point in points.iter() {
-                            if point.1 < 90.0 {
-                                //315 250
-                                if 250.0 < point.0 && point.0 < 315.0 {
-                                    //println!("{:?}",point);
-                                    send(0, &msg);
-                                } else {
-                                }
-                            } else {
-                                if 250.0 < point.0 && point.0 < 315.0 {
-                                } else {
-                                    //send(1, &msg);
+            match lidar_port {
+                Some(ref mut lidar) => {
+                    match lidar.read(serial_buf.as_mut_slice()) {
+                        Ok(t) => {
+                            //let mut map_vec = Vec::new();
+                            let mut data = serial_buf[..t].to_vec();
+                            //println!("{:?}",data);
+                            if data.len() > 11 {
+                                let points = ydlidarx2(&mut data);
+        
+                                for point in points.iter() {
+                                    if point.1 < 90.0 {
+                                        //315 250
+                                        if 250.0 < point.0 && point.0 < 315.0 {
+                                            //println!("{:?}",point);
+                                            send(0, &msg);
+                                        } else {
+                                        }
+                                    } else {
+                                        if 250.0 < point.0 && point.0 < 315.0 {
+                                        } else {
+                                            //send(1, &msg);
+                                        }
+                                    }
                                 }
                             }
                         }
+                        Err(_) => {}
                     }
                 }
-                Err(_) => {}
+                None => {
+                }
             }
+            
         }
     });
 

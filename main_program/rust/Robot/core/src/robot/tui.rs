@@ -87,8 +87,8 @@ pub fn na_ui<B: Backend>(f: &mut Frame<B>, event: &AutoEvents, nav: &Nav, wt901:
     f.render_widget(middle_bottom, middle_chunks[2]);
 
     let right_block = Paragraph::new(format!(
-        "GPS:\n is_fix: {:?}\n num_sat: {:?}\n lat lot: {:?}\n row data: {:?}\nWT901:\n azimath: {:?}\n row_data: {:?}",
-        nav.gps_senser.is_fix, nav.gps_senser.num_sat,nav.lat_lon ,nav.gps_senser.row_data, wt901.aziment,wt901.tmp2
+        "GPS:\n UTC: {}\n is_fix: {:?}\n num_sat: {:?}\n lat lot: {:?}\n row data: {:?}\nWT901:\n azimath: {:?}\n row_data: {:?}",
+        nav.gps_senser.utc,nav.gps_senser.is_fix, nav.gps_senser.num_sat,nav.lat_lon ,nav.gps_senser.row_data, wt901.aziment,wt901.tmp2
 
     ))
     .block(Block::default().borders(Borders::ALL))

@@ -1,6 +1,6 @@
 use core::time::Duration;
 fn main() {
-    let mut port = match serialport::new("/dev/ttyUSB0", 115200)
+    let mut port = match serialport::new("/dev/ttyAMA0", 115200)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Eight)
         .timeout(Duration::from_millis(10))
@@ -20,19 +20,29 @@ fn main() {
                 let mut data = serial_buf[..t].to_vec();
                 tmp_vec.append(&mut data);
 
-                if tmp_vec.len() > 200 {
+                if tmp_vec.len() > 350 {
                     let gps_data = String::from_utf8_lossy(&tmp_vec).to_string();
 
-                    let vec: Vec<&str> = gps_data.split("$").collect();
+                    let vec: Vec<&str> = gps_data.split("$GPGGA").collect();
+                    match vec.get(1) {
+                        Some(i) => {
+                            let tmp: Vec<&str> = i.split("\r\n").collect();
+                            let tmp2: Vec<&str> = tmp[0].split(",").collect();
+                            if tmp2.len() > 14 {
+                                let lat = tmp2[2].parse::<f64>().unwrap_or(0.0) / 100.0;
+                                let lot = tmp2[4].parse::<f64>().unwrap_or(0.0) / 100.0;
+                                let lat_tmp = ((lat - lat.floor()) * 100.0) / 60.0;
+                                let lot_tmp = ((lot - lot.floor()) * 100.0) / 60.0;
 
-                    for (i, data) in vec.iter().enumerate() {
-                        match data.find("GNRMC") {
-                            Some(p) => {
-                                println!("{:?}", vec[i].replace("ÜC", "").trim());
+                                println!(
+                                    "{:?} {:?},{:?}",
+                                    tmp2[6],
+                                    lat.floor() + lat_tmp,
+                                    lot.floor() + lot_tmp,
+                                );
                             }
-
-                            None => {}
                         }
+                        None => {}
                     }
 
                     tmp_vec.clear();

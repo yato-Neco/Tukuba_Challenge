@@ -51,7 +51,7 @@ pub struct Nav {
     pub next_azimuth: f64,
     pub start_azimuth: f64,
     pub r: f64,
-    pub file:File,
+    pub file: File,
     pub is_simulater: bool,
     pub gps_senser: GpsSenser,
     pub start_index: Option<usize>,
@@ -65,9 +65,43 @@ pub struct GpsSenser {
     pub num_sat: Option<usize>,
     pub row_data: String,
     //pub nowtime: String,
+    pub utc: String,
+    pub tmp: Vec<u8>,
 }
 
 impl GpsSenser {
+    #[inline]
+    pub fn parser2(&mut self, data: &mut Vec<u8>) {
+        self.tmp.append(data);
+
+        if self.tmp.len() > 315 {
+            let gps_data = String::from_utf8_lossy(&self.tmp).to_string();
+
+            let vec: Vec<&str> = gps_data.split("$GPGGA").collect();
+            match vec.get(1) {
+                Some(i) => {
+                    let tmp: Vec<&str> = i.split("\r\n").collect();
+                    let tmp2: Vec<&str> = tmp[0].split(",").collect();
+                    if tmp2.len() > 14 {
+                        let lat = tmp2[2].parse::<f64>().unwrap_or(0.0) / 100.0;
+                        let lot = tmp2[4].parse::<f64>().unwrap_or(0.0) / 100.0;
+                        let lat_tmp = ((lat - lat.floor()) * 100.0) / 60.0;
+                        let lot_tmp = ((lot - lot.floor()) * 100.0) / 60.0;
+
+                        self.lat_lon = Some((lat.floor() + lat_tmp, lot.floor() + lot_tmp));
+                        self.utc = tmp2[1].to_string();
+                        self.is_fix = tmp2[6] == "1" || tmp2[6] == "2";
+                        self.num_sat = Some(tmp2[7].parse::<usize>().unwrap_or(0));
+                        self.row_data = tmp.get(0).unwrap_or(&"").to_string();
+                        
+                    }
+                }
+                None => {}
+            }
+
+            self.tmp.clear();
+        }
+    }
     #[inline]
     pub fn parser(&mut self, gps_data: String) {
         let gps_format = gps_data.replace(' ', "");
@@ -132,17 +166,19 @@ impl Nav {
             lat_lon_history: Vec::new(),
             start_lat_lot_index: None,
             r: 10.0,
-            file:file,
+            file: file,
             is_simulater: false,
             next_azimuth: 0.0,
             start_azimuth: 0.0,
             is_in_waypoint: false,
-            
+
             gps_senser: GpsSenser {
                 is_fix: false,
                 lat_lon: None,
                 num_sat: None,
                 row_data: String::new(),
+                tmp: Vec::new(),
+                utc: String::new(),
             },
             start_index: None,
         }
@@ -249,13 +285,11 @@ impl Nav {
     #[inline]
     pub fn set_lat_lot(&mut self, lat_lon: (f64, f64)) {
         self.lat_lon = Some(lat_lon);
-        
 
         match self.lat_lon_history.last() {
             Some((lat, lot)) => {
                 if *lat != lat_lon.0 || *lot != lat_lon.1 {
                     self.lat_lon_history.push(lat_lon);
-                    
                 };
             }
             None => {
