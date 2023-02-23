@@ -187,6 +187,7 @@ pub fn nauto() {
 
         if flacn.module.nav.lat_lon_history.len() > 1 {
             flacn.event.is_start_azimath_end = flacn.module.nav.frist_calculate_azimuth(10.0);
+
             if flacn.event.is_start_azimath_end {
                 flacn.event.maneuver = "角度取得完了";
                 flacn.module.nav.set_start_index();

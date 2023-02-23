@@ -1,4 +1,16 @@
 use core::time::Duration;
+
+use moter_rpm::XtoolsBool;
+mod lib;
+
+struct GNRMC {
+    utc: &'static str,
+    status: &'static str,
+    lat: &'static str,
+    lot: &'static str,
+    speed: &'static str,
+}
+
 fn main() {
     let mut port = match serialport::new("/dev/ttyAMA0", 115200)
         .stop_bits(serialport::StopBits::One)
@@ -11,7 +23,7 @@ fn main() {
             panic!()
         }
     };
-    let mut serial_buf: Vec<u8> = vec![0; 2000];
+    let mut serial_buf: Vec<u8> = vec![0; 1000];
     let mut tmp_vec: Vec<u8> = Vec::new();
 
     loop {
