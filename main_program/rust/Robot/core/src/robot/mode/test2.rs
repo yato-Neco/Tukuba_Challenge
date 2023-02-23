@@ -58,6 +58,8 @@ pub fn test() {
 
     let mut wt901_serial = WT901::new();
 
+    let flag = true;
+
     loop {
 
         match wt901_port.read(wt901_serial_buf.as_mut_slice()) {
@@ -72,13 +74,27 @@ pub fn test() {
         }
         //0x1F4BFFFF
 
-        moter_controler.moter_control(0x1F29FFFF);
         
 
-        if wt901_serial.aziment.2 < -90.0 {
+
+        if flag {
+            
+            moter_controler.moter_control(config::FRONT);
+            time_sleep(0, 50);
             moter_controler.moter_control(config::STOP);
-            //break;
+            time_sleep(0, 50);
+            flag = !flag
+        }else{
+            moter_controler.moter_control(0x1F29FFFF);
+            if wt901_serial.aziment.2 < -90.0 {
+                moter_controler.moter_control(config::STOP);
+                time_sleep(0, 50);
+                flag = !flag
+            }
         }
+        
+
+        
 
         //ms_sleep(10);
     }
