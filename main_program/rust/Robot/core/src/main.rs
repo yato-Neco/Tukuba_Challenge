@@ -5,11 +5,14 @@ extern crate load_shdlib;
 extern crate slam;
 extern crate rthred;
 extern crate scheduler;
+extern crate mytools;
+extern crate robot_serialport;
+extern crate wt901;
 
 mod robot;
-mod xtools;
 use clap::Parser;
-use robot::mode::Mode;
+use robot::mode::{key::key,test::{test as other_test, self},auto::auto,srpauto,test2, nauto};
+
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -18,17 +21,24 @@ struct Args {
     mode: String,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Args::parse();
     match args.mode.as_str() {
-        "auto" => Mode::auto(),
-        "key" => Mode::key(),
-        "test" => Mode::test(),
-        "display" => {}
-        "k" => Mode::key(),
-        "a" => Mode::auto(),
-        "d" => {}
-        _ => {}
+        "auto" => auto(),
+        "key" => key(),
+        "test" => other_test(),
+        "k" => key(),
+        "a" => auto(),
+        "az" => test2::test(),
+        "na" => nauto::nauto(),
+        _ => {srpauto::auto()}
     }
+}
+
+
+#[test]
+fn test() {
+   
+
+    //println!("{}", (((i128::MAX / 1000) / 120) / 24) / 365);
 }

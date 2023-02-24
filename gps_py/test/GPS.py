@@ -59,7 +59,7 @@ class GPS:
                 return False
 
 
-    def zaimuth_return(self, now_LatLon: Tuple[float, float], LatLon: Tuple[float, float] = None) -> Dict["azimuth", "back_azimuth"]:
+    def azimuth_return(self, now_LatLon: Tuple[float, float], LatLon: Tuple[float, float] = None) -> Dict["azimuth", "back_azimuth"]:
         """
         緯度経度で角度を求める
         """
@@ -87,8 +87,7 @@ class GPS:
     def spped(self, now_LatLon: Tuple[float, float], LatLon: Tuple[float, float] = None,) -> float:
         g = Geod(ellps='WGS84')
         time :float = 3.0
-        result = g.inv(now_LatLon[1], now_LatLon[0],
-                           LatLon[1], LatLon[0])
+        result = g.inv(now_LatLon[1], now_LatLon[0], LatLon[1], LatLon[0])
         distance = result[3]
 
 
@@ -105,7 +104,7 @@ class GPS:
             flag = False
             self.point_list.pop(0)
             print("Ok")
-            print(self.zaimuth_return(now_LatLon, self.point_list[0]))
+            print(self.azimuth_return(now_LatLon, self.point_list[0]))
             print(self.point_list)
 
         

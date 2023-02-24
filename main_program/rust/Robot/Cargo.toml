@@ -11,5 +11,10 @@ members = [
     "robot-gpio",
     "robot-serialport",
     "rthred",
-    "scheduler"
+    "scheduler",
+    "mytools",
+    "camera",
+    "SRP",
+    "wt901",
+
 ]

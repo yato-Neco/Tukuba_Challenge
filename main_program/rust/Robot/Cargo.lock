@@ -24,6 +24,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "SRP"
+version = "2.0.0"
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -98,6 +102,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
 
 [[package]]
+name = "camera"
+version = "0.1.0"
+
+[[package]]
 name = "cassowary"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -161,13 +169,15 @@ dependencies = [
  "gps",
  "lidar",
  "load-shdlib",
+ "mytools",
  "robot-gpio",
+ "robot-serialport",
  "rthred",
  "scheduler",
  "serialport",
  "slam",
- "tokio",
  "tui",
+ "wt901",
  "yaml-rust",
 ]
 
@@ -236,7 +246,7 @@ dependencies = [
 
 [[package]]
 name = "flacon"
-version = "0.1.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "gps",
@@ -276,9 +286,11 @@ dependencies = [
 
 [[package]]
 name = "gps"
-version = "0.1.0"
+version = "1.1.1"
 dependencies = [
+ "mytools",
  "nav-types",
+ "rthred",
  "serialport",
 ]
 
@@ -364,6 +376,9 @@ dependencies = [
 [[package]]
 name = "lidar"
 version = "0.1.0"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "linked-hash-map"
@@ -373,7 +388,7 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "load-shdlib"
-version = "0.1.0"
+version = "1.0.1"
 dependencies = [
  "libloading",
 ]
@@ -441,6 +456,10 @@ dependencies = [
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
 ]
+
+[[package]]
+name = "mytools"
+version = "0.1.0"
 
 [[package]]
 name = "nalgebra"
@@ -740,15 +759,34 @@ checksum = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
 
 [[package]]
 name = "robot-gpio"
-version = "0.1.0"
+version = "1.0.0"
+dependencies = [
+ "mytools",
+ "rppal",
+]
 
 [[package]]
 name = "robot-serialport"
 version = "0.1.0"
+dependencies = [
+ "serialport",
+]
+
+[[package]]
+name = "rppal"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "612e1a22e21f08a246657c6433fe52b773ae43d07c9ef88ccfc433cc8683caba"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "rthred"
-version = "0.1.0"
+version = "1.1.1"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "ryu"
@@ -758,7 +796,7 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
 name = "scheduler"
-version = "0.1.0"
+version = "2.0.0"
 
 [[package]]
 name = "scopeguard"
@@ -833,7 +871,10 @@ dependencies = [
 
 [[package]]
 name = "slam"
-version = "0.1.0"
+version = "0.1.1"
+dependencies = [
+ "mytools",
+]
 
 [[package]]
 name = "smallvec"
@@ -1051,6 +1092,13 @@ name = "windows_x86_64_msvc"
 version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
+
+[[package]]
+name = "wt901"
+version = "0.1.0"
+dependencies = [
+ "serialport",
+]
 
 [[package]]
 name = "yaml-rust"

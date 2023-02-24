@@ -3,8 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Mutex};
 use std::{panic, thread};
 
-mod xtools;
-use xtools::warning_msg;
+use mytools::warning_msg;
 pub type SenderOrders = std::sync::mpsc::Sender<u32>;
 
 /*
@@ -148,6 +147,27 @@ impl<T: 'static + std::marker::Send, R: 'static + std::marker::Send> RthdG<T, R>
             .name(name.to_string())
             .spawn(move || {
                 func(sendr_join_handle_errmsg, receiver, arg);
+            })
+            .unwrap();
+
+        //return return_sender;
+    }
+
+    /*Sender<T>,*/
+    /*sender,*/
+    pub fn _thread_generate(
+        name: &str,
+        err_msg: &Sender<String>,
+        //sender: Sender<T>,
+        arg: R,
+        func: fn(Sender<String>,  R),
+    ) {
+        let sendr_join_handle_errmsg = mpsc::Sender::clone(err_msg);
+        //let return_sender;
+        let _thread = thread::Builder::new()
+            .name(name.to_string())
+            .spawn(move || {
+                func(sendr_join_handle_errmsg,  arg);
             })
             .unwrap();
 

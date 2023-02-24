@@ -25,4 +25,16 @@ main_program/rust/lidar_plot/target/
 
 objectdetection/train/
 
-main_program/rust/Robot/target/
+main_program/rust/Robot/target/debug
+main_program/rust/Robot/target/armv7-unknown-linux-musleabihf
+main_program/rust/Robot/target/release
+main_program/rust/Robot/.cargo
+main_program/rust/Robot/robot-gpio/Cargo.toml
+main_program/rust/Robot/Cargo.lock
+
+main_program/rust/Robot/target/release
+main_program/rust/Robot/target/.rustc_info.json
+main_program/rust/Robot/target/.rustdoc_fingerprint.json
+main_program/rust/Robot/target/.rustdoc_fingerprint.json
+main_program/rust/Robot/target/CACHEDIR.TAG
+main_program/rust/moter_rpm/target

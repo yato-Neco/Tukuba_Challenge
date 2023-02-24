@@ -1,26 +1,29 @@
-mod xtools;
 
 use std::collections::HashMap;
-use xtools::time_sleep;
+use mytools::time_sleep;
 
 
 
 /// 時間更新
-struct SLAM {
+pub struct SLAM {
     // (robot_postion[x,y], lider_data [frequency,distance])
-    vec: Box<Vec<((f64, f64), Vec<(f64, f64)>)>>,
+    vec: Vec<((f64, f64), Vec<(f64, f64)>)>,
     max: usize,
 }
 
 impl SLAM {
-    fn new(max: usize) -> Self {
+    pub fn new(max: usize) -> Self {
         Self {
-            vec: Box::new(Vec::with_capacity(max)),
+            vec: Vec::with_capacity(max),
             max,
         }
     }
 
-    fn push(&mut self, value: ((f64, f64), Vec<(f64, f64)>)) {
+    fn load_point(&mut self) {
+
+    }
+
+    pub fn push(&mut self, value: ((f64, f64), Vec<(f64, f64)>)) {
         self.vec.push(value);
         self.del();
     }
@@ -30,7 +33,7 @@ impl SLAM {
         //(self.vec.0.get(self.max - 1), self.vec.1.get(self.max - 1))
     }
 
-    fn obb(&self){
+    pub fn obb(&self){
 
         let slam_data = self.vec.get(0).unwrap();
 
@@ -50,7 +53,7 @@ impl SLAM {
     }
     
 
-    fn del(&mut self) {
+    pub fn del(&mut self) {
         if self.vec.len() > self.max {
             self.vec.remove(0);
         }
@@ -63,7 +66,7 @@ impl SLAM {
 
 #[cfg(test)]
 mod tests {
-    use crate::{xtools::time_sleep, SLAM};
+    use crate::{time_sleep, SLAM};
 
     #[test]
     fn it_works() {
@@ -78,6 +81,12 @@ mod tests {
             time_sleep(0, 500);
 
             count += 1.0;
+        }
+    }
+    #[test]
+    fn for_test() {
+        for i in (0..100).step_by(2) {
+            println!("{}",i);
         }
     }
 }

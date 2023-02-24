@@ -10,14 +10,18 @@ load-shdlib = { path = "../load-shdlib" }
 slam = { path = "../slam" }
 flacon = {path = "../flacon"}
 robot-gpio = {path = "../robot-gpio"}
+robot-serialport = {path = "../robot-serialport"}
 gps = {path = "../gps"}
 lidar = {path = "../lidar"}
 rthred = {path = "../rthred"}
 scheduler = {path = "../scheduler"}
+mytools = {path = "../mytools"}
+wt901 = {path = "../wt901"}
+
+
 
 #rppal = { version = "0.13.1", features = ["hal"] }
 yaml-rust = "0.4"
-tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.57"
 getch = "0.3.1"
 tui = "0.19.0"
